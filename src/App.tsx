@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Edit3, Download, Upload, FileSpreadsheet, BookOpen, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin, PieChart } from 'lucide-react';
+import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Edit3, Download, Upload, FileSpreadsheet, BookOpen, HardHat, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin, PieChart } from 'lucide-react';
 
 // --- SABİTLER VE VERİ SETLERİ ---
 
@@ -50,7 +50,7 @@ const INITIAL_POS_LIBRARY = {
     { pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
     { pos: "15.341.1006", desc: "5 cm kalınlıkta Taşyünü levhalar ile dış cephe mantolama yapılması", unit: "m²", price: 980.50 },
     { pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53 },
-    { pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+    { pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34 },
   ],
   "Zemin ve Duvar Kaplamaları": [
     { pos: "15.385.1008", desc: "60x60 cm anma ebatlarında, I.kalite, beyaz, sırlı porselen karo döşeme kaplaması", unit: "m²", price: 850.53 },
@@ -122,7 +122,7 @@ const initialArchitecturalData = [
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
   { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
-  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Kompozit alüminyum levha cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
 ];
 
 const formatCurrency = (value) => {
@@ -156,7 +156,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
     className={`flex items-center px-8 py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
       active
         ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
+        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-t-4 border-transparent'
     }`}
   >
     <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
@@ -165,7 +165,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
 );
 
 const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group w-full">
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group w-full">
     <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 ${colorClass}`}>
        <Icon className="w-24 h-24" />
     </div>
