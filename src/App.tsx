@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Edit3, Download, Upload, FileSpreadsheet, BookOpen, HardHat, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin, PieChart } from 'lucide-react';
+import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Download, Upload, FileSpreadsheet, BookOpen, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin } from 'lucide-react';
 
 // --- SABİTLER VE VERİ SETLERİ ---
 
@@ -121,8 +121,8 @@ const initialArchitecturalData = [
   { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0 },
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0 },
-  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
+  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Kompozit alüminyum levha cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
 ];
 
 const formatCurrency = (value) => {
@@ -153,10 +153,10 @@ const loadScript = (src) => {
 const TabButton = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
+    className={`flex items-center px-8 py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
       active
         ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
+        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-t-4 border-transparent'
     }`}
   >
     <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
@@ -299,7 +299,7 @@ const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }) => {
              <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Kapalı Alan (m²)</label>
                 <div className="relative">
-                   <PieChart className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
+                   <Grid className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
                    <input 
                     type="number" 
                     name="area"
@@ -575,7 +575,7 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
   }, {});
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 w-full">
       {Object.keys(groupedData).map((category) => {
         const items = groupedData[category];
         const categoryTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
@@ -748,7 +748,7 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500">
+    <div className="space-y-8 animate-in fade-in duration-500 w-full">
       <div className="flex justify-between items-end border-b border-slate-200 pb-2">
          <h2 className="text-xl font-bold text-slate-800 flex items-center">
            <DoorOpen className="w-6 h-6 mr-2 text-indigo-600" />
@@ -764,12 +764,12 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       </div>
       
       {/* Input Section */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 w-full">
         <h3 className="text-sm font-bold text-slate-500 uppercase mb-4 tracking-wider flex items-center">
              {editingId ? <Edit3 className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
              {editingId ? 'Kapı Düzenle' : 'Yeni Kapı Ekle'}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1">Tip (Örn: K1)</label>
             <input 
@@ -822,16 +822,16 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       </div>
 
       {/* List Table */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-100 text-slate-500 font-bold uppercase">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
+        <table className="w-full text-left text-sm table-fixed min-w-[800px]">
+          <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-3">Tip</th>
-              <th className="px-6 py-3">Ebat (En/Boy)</th>
-              <th className="px-6 py-3 text-center">Adet</th>
-              <th className="px-6 py-3 text-right">Kapı Kanadı (m²)</th>
-              <th className="px-6 py-3 text-right">Kasa+Pervaz (m²)</th>
-              <th className="px-6 py-3 text-right">İşlem</th>
+              <th className="px-6 py-4 w-32">Tip</th>
+              <th className="px-6 py-4 w-32">Ebat (En/Boy)</th>
+              <th className="px-6 py-4 w-24 text-center">Adet</th>
+              <th className="px-6 py-4 w-40 text-right">Kapı Kanadı (m²)</th>
+              <th className="px-6 py-4 w-40 text-right">Kasa+Pervaz (m²)</th>
+              <th className="px-6 py-4 w-32 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -843,16 +843,16 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
               const { leafArea, frameArea } = calculateRowValues(item);
               return (
                 <tr key={item.id} className={`hover:bg-slate-50 ${editingId === item.id ? 'bg-orange-50' : ''}`}>
-                  <td className="px-6 py-3 font-bold text-indigo-700">{item.label}</td>
-                  <td className="px-6 py-3">{item.width} / {item.height} cm</td>
-                  <td className="px-6 py-3 text-center font-bold">{item.count}</td>
-                  <td className="px-6 py-3 text-right font-mono text-slate-700">
+                  <td className="px-6 py-4 font-bold text-indigo-700">{item.label}</td>
+                  <td className="px-6 py-4">{item.width} / {item.height} cm</td>
+                  <td className="px-6 py-4 text-center font-bold">{item.count}</td>
+                  <td className="px-6 py-4 text-right font-mono text-slate-700">
                     {leafArea.toFixed(2)} m²
                   </td>
-                  <td className="px-6 py-3 text-right font-mono text-slate-700">
+                  <td className="px-6 py-4 text-right font-mono text-slate-700">
                     {frameArea.toFixed(2)} m²
                   </td>
-                  <td className="px-6 py-3 text-right">
+                  <td className="px-6 py-4 text-right">
                     <div className="flex justify-end space-x-2">
                       <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
                         <Pencil className="w-4 h-4" />
@@ -881,7 +881,7 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       </div>
 
       {/* Summary Cards (Hırdavat Hesabı) */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
           <div className="p-3 bg-blue-50 rounded-full mb-3 text-blue-600">
             <Lock className="w-6 h-6" />
@@ -1028,7 +1028,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
   };
 
   return (
-    <div className="space-y-8 animate-in fade-in duration-500 pb-10">
+    <div className="space-y-8 animate-in fade-in duration-500 pb-10 w-full">
       <div className="flex justify-between items-end border-b border-slate-200 pb-2">
            <h2 className="text-xl font-bold text-slate-800 flex items-center">
              <Maximize className="w-6 h-6 mr-2 text-blue-600" />
@@ -1058,7 +1058,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         </button>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 relative overflow-hidden w-full">
         <div className={`absolute top-0 right-0 p-4 opacity-5 pointer-events-none`}>
             <Box className="w-32 h-32" />
         </div>
@@ -1066,7 +1066,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
             {editingId ? <Edit3 className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {editingId ? 'Pencere Düzenle' : `Yeni ${windowType === 'pvc' ? 'PVC' : 'Alüminyum'} Pencere Ekle`}
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-6 gap-4 items-end relative z-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end relative z-10">
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1">Tip (Örn: P1)</label>
             <input 
@@ -1128,48 +1128,52 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         </div>
       </div>
 
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-        <table className="w-full text-left text-sm">
-          <thead className="bg-slate-100 text-slate-500 font-bold uppercase">
+      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
+        <table className="w-full text-left text-sm table-fixed min-w-[800px]">
+          <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-3 w-32">Poz No</th>
-              <th className="px-6 py-3">Tip</th>
-              <th className="px-6 py-3">Çeşit</th>
-              <th className="px-6 py-3">Ebat</th>
-              <th className="px-6 py-3 text-center">Adet</th>
-              <th className="px-6 py-3 text-right">
+              <th className="px-6 py-4 w-32">Poz No</th>
+              <th className="px-6 py-4">Tip</th>
+              <th className="px-6 py-4">Çeşit</th>
+              <th className="px-6 py-4">Ebat</th>
+              <th className="px-6 py-4 text-center">Adet</th>
+              <th className="px-6 py-4 text-right">
                 {windowType === 'pvc' ? 'PVC Profil (kg)' : 'Alüminyum Profil (kg)'}
               </th>
-              <th className="px-6 py-3 text-right">İşlem</th>
+              <th className="px-6 py-4 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.length === 0 ? (
-              <tr><td colSpan="7" className="px-6 py-4 text-center text-slate-400">Veri yok.</td></tr>
+              <tr><td colSpan="7" className="px-6 py-8 text-center text-slate-400">Veri yok.</td></tr>
             ) : items.map((item) => {
                 const weight = calculateWindowValues(item);
                 const posNo = item.type === 'pvc' ? '15.455.1001' : '15.460.1010';
                 
                 return (
               <tr key={item.id} className={`hover:bg-slate-50 ${editingId === item.id ? 'bg-orange-50' : ''}`}>
-                <td className="px-6 py-3 font-mono text-xs font-bold text-slate-500">
+                <td className="px-6 py-4 font-mono text-xs font-bold text-slate-500">
                    {posNo}
                 </td>
-                <td className="px-6 py-3 font-bold text-blue-700">{item.label}</td>
-                <td className="px-6 py-3">
+                <td className="px-6 py-4 font-bold text-blue-700">{item.label}</td>
+                <td className="px-6 py-4">
                   <span className={`text-xs px-2 py-1 rounded-full font-bold ${item.type === 'pvc' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
                     {item.type === 'pvc' ? 'PVC' : 'Alüminyum'}
                   </span>
                 </td>
-                <td className="px-6 py-3">{item.width}/{item.height}</td>
-                <td className="px-6 py-3 text-center font-bold">{item.count}</td>
-                <td className="px-6 py-3 text-right font-mono text-slate-700">
+                <td className="px-6 py-4">{item.width} / {item.height}</td>
+                <td className="px-6 py-4 text-center font-bold">{item.count}</td>
+                <td className="px-6 py-4 text-right font-mono text-slate-700">
                   {weight.weight.toFixed(2)} kg
                 </td>
-                <td className="px-6 py-3 text-right">
+                <td className="px-6 py-4 text-right">
                   <div className="flex justify-end space-x-2">
-                    <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:bg-blue-50 p-1 rounded"><Pencil className="w-4 h-4"/></button>
-                    <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 hover:bg-red-50 p-1 rounded"><Trash2 className="w-4 h-4"/></button>
+                    <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
+                      <Pencil className="w-4 h-4" />
+                    </button>
+                    <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
+                      <Trash2 className="w-4 h-4" />
+                    </button>
                   </div>
                 </td>
               </tr>
@@ -1178,7 +1182,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         </table>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
           <div className="bg-blue-50 p-4 rounded-xl border border-blue-200 shadow-sm flex flex-col justify-between">
             <div className="flex justify-between items-start mb-2">
               <span className="text-xs font-bold text-blue-500 uppercase">PVC Toplamı</span>
@@ -1218,7 +1222,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
           </div>
       </div>
 
-      <div className="bg-teal-50 p-4 rounded-xl border border-teal-200 shadow-sm flex items-center justify-between mt-6">
+      <div className="bg-teal-50 p-4 rounded-xl border border-teal-200 shadow-sm flex items-center justify-between mt-6 w-full">
          <div>
             <span className="text-xs font-bold text-teal-600 uppercase block mb-1">Toplam Cam (Isıcam)</span>
             <span className="text-xs text-teal-500">Poz No: 15.470.1010</span>
@@ -1230,12 +1234,12 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       </div>
 
       {/* Pencere Aksesuarları */}
-      <div className="mt-8">
+      <div className="mt-8 w-full">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
           <Settings className="w-5 h-5 mr-2 text-indigo-500" />
           Pencere Aksesuarları (Listeye Aktarılacak)
         </h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 w-full">
           <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
             <div className="p-3 bg-purple-50 rounded-full mb-3 text-purple-600">
               <MousePointer className="w-6 h-6" />
@@ -1710,8 +1714,8 @@ export default function App() {
       <ProjectInfoModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} onSave={handleSaveProjectInfo} initialData={projectInfo} />
       
       {/* Header */}
-      <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800 w-full">
-        <div className="w-full px-4 h-20 flex items-center justify-between">
+      <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-900/50">
               <Hammer className="w-8 h-8 text-white" />
@@ -1738,7 +1742,7 @@ export default function App() {
                  {/* Project Info Button */}
                  <button 
                   onClick={() => setIsProjectModalOpen(true)}
-                  className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
+                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
                   title="Proje Bilgileri Düzenle"
                  >
                    <Info className="w-4 h-4" /> <span className="hidden lg:inline">Proje Bilgisi</span>
@@ -1784,16 +1788,16 @@ export default function App() {
       </header>
 
       {/* Main Content - Blurred if not logged in */}
-      <main className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
+      <main className={`w-full px-4 sm:px-6 lg:px-8 py-10 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10 w-full">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
           <SummaryCard title="Statik İmalatlar" value={staticTotal} icon={Building} colorClass="text-orange-500" iconBgClass="bg-orange-50"/>
           <SummaryCard title="Mimari İmalatlar" value={architecturalTotal} icon={Ruler} colorClass="text-blue-500" iconBgClass="bg-blue-50"/>
           <SummaryCard title="GENEL TOPLAM MALİYET" value={grandTotal} icon={Calculator} colorClass="text-green-600" iconBgClass="bg-green-50"/>
         </div>
 
-        <div className="flex flex-col space-y-0 w-full">
-          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full">
+        <div className="flex flex-col space-y-0">
+          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1">
             <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
             <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
             <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
@@ -1804,7 +1808,7 @@ export default function App() {
             {activeTab === 'static' && (
               <>
                 <GroupedTable data={staticItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Statik genel toplamı gösterilmektedir.
@@ -1820,7 +1824,7 @@ export default function App() {
             {activeTab === 'architectural' && (
               <>
                 <GroupedTable data={architecturalItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Mimari genel toplamı gösterilmektedir.
