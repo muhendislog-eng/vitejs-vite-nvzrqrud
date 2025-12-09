@@ -121,7 +121,7 @@ const initialArchitecturalData = [
   { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0 },
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0 },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
   { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Kompozit alüminyum levha cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
 ];
 
@@ -156,7 +156,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
     className={`flex items-center px-8 py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
       active
         ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-t-4 border-transparent'
+        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
     }`}
   >
     <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
@@ -165,7 +165,7 @@ const TabButton = ({ active, onClick, icon: Icon, label }) => (
 );
 
 const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
-  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group w-full">
+  <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group w-full">
     <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 ${colorClass}`}>
        <Icon className="w-24 h-24" />
     </div>
@@ -587,7 +587,7 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
         
         return (
           <div key={category} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
-            <div className="bg-slate-50/80 px-6 py-4 border-b border-slate-200 flex justify-between items-center backdrop-blur-sm">
+            <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center backdrop-blur-sm">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
                   <CategoryIcon className="w-5 h-5 text-slate-700" />
@@ -610,7 +610,7 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
             
             <div className="overflow-x-auto">
               <table className="w-full text-left">
-                <thead className="bg-slate-100 text-slate-500 text-xs font-bold uppercase tracking-wider border-b border-slate-200">
+                <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
                   <tr>
                     <th className="px-6 py-4 w-32">Poz No</th>
                     <th className="px-6 py-4">İmalat Adı</th>
@@ -623,7 +623,7 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {items.map((item) => (
-                    <tr key={item.id} className="hover:bg-slate-50/80 transition-colors group">
+                    <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
                       <td className="px-6 py-4">
                         <span className="font-mono text-xs font-bold text-slate-600 bg-slate-200/50 px-2 py-1 rounded">
                           {item.pos}
@@ -827,7 +827,7 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
           <thead className="bg-slate-100 text-slate-500 font-bold uppercase">
             <tr>
               <th className="px-6 py-3">Tip</th>
-              <th className="px-6 py-3">Ebat</th>
+              <th className="px-6 py-3">Ebat (En/Boy)</th>
               <th className="px-6 py-3 text-center">Adet</th>
               <th className="px-6 py-3 text-right">Kapı Kanadı (m²)</th>
               <th className="px-6 py-3 text-right">Kasa+Pervaz (m²)</th>
@@ -981,8 +981,8 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
     } else if (item.type === 'alu') {
        // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
-         // Orta Kayıt VARSA (Eski Formül - Kullanıcı Formülü)
-         // [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
+         // Orta Kayıt VARSA (Eski Formül)
+         // Term1 = (En * Boy) * 2 * 1.596 
          const term1 = (widthM * heightM) * 2 * 1.596;
          const term2 = (heightM - 0.2) * 2.038;
          const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
@@ -1711,7 +1711,7 @@ export default function App() {
       
       {/* Header */}
       <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
-        <div className="max-w-full mx-auto px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+        <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-900/50">
               <Hammer className="w-8 h-8 text-white" />
