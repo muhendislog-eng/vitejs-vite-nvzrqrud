@@ -121,7 +121,7 @@ const initialArchitecturalData = [
   { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0 },
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0 },
   { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
 ];
 
@@ -153,10 +153,10 @@ const loadScript = (src) => {
 const TabButton = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center px-8 py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
+    className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
       active
         ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-t-4 border-transparent'
+        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
     }`}
   >
     <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
@@ -586,7 +586,7 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
         if (category.includes("Beton")) CategoryIcon = Building;
         
         return (
-          <div key={category} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md">
+          <div key={category} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md w-full">
             <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center backdrop-blur-sm">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
@@ -608,17 +608,17 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
               </div>
             </div>
             
-            <div className="overflow-x-auto">
-              <table className="w-full text-left">
+            <div className="overflow-x-auto w-full">
+              <table className="w-full text-left table-fixed min-w-[800px]">
                 <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
                   <tr>
                     <th className="px-6 py-4 w-32">Poz No</th>
-                    <th className="px-6 py-4">İmalat Adı</th>
+                    <th className="px-6 py-4 w-auto">İmalat Adı</th>
                     <th className="px-6 py-4 w-24 text-center">Birim</th>
-                    <th className="px-6 py-4 w-40 text-right">Birim Fiyat</th>
-                    <th className="px-6 py-4 w-32 text-center">İşlem</th>
-                    <th className="px-6 py-4 w-36 text-center">Miktar</th>
-                    <th className="px-6 py-4 w-40 text-right">Tutar</th>
+                    <th className="px-6 py-4 w-32 text-right">Birim Fiyat</th>
+                    <th className="px-6 py-4 w-28 text-center">İşlem</th>
+                    <th className="px-6 py-4 w-32 text-center">Miktar</th>
+                    <th className="px-6 py-4 w-36 text-right">Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -981,8 +981,8 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
     } else if (item.type === 'alu') {
        // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
-         // Orta Kayıt VARSA (Eski Formül)
-         // Term1 = (En * Boy) * 2 * 1.596 
+         // Orta Kayıt VARSA (Eski Formül - Kullanıcı Formülü)
+         // [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
          const term1 = (widthM * heightM) * 2 * 1.596;
          const term2 = (heightM - 0.2) * 2.038;
          const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
@@ -1705,13 +1705,13 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative w-full">
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleLogin} />
       <ProjectInfoModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} onSave={handleSaveProjectInfo} initialData={projectInfo} />
       
       {/* Header */}
-      <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
-        <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
+      <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800 w-full">
+        <div className="w-full px-4 h-20 flex items-center justify-between">
           <div className="flex items-center space-x-4">
             <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-900/50">
               <Hammer className="w-8 h-8 text-white" />
@@ -1738,7 +1738,7 @@ export default function App() {
                  {/* Project Info Button */}
                  <button 
                   onClick={() => setIsProjectModalOpen(true)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
+                  className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
                   title="Proje Bilgileri Düzenle"
                  >
                    <Info className="w-4 h-4" /> <span className="hidden lg:inline">Proje Bilgisi</span>
@@ -1784,16 +1784,16 @@ export default function App() {
       </header>
 
       {/* Main Content - Blurred if not logged in */}
-      <main className={`w-full px-4 sm:px-6 lg:px-8 py-10 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
+      <main className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10 w-full">
           <SummaryCard title="Statik İmalatlar" value={staticTotal} icon={Building} colorClass="text-orange-500" iconBgClass="bg-orange-50"/>
           <SummaryCard title="Mimari İmalatlar" value={architecturalTotal} icon={Ruler} colorClass="text-blue-500" iconBgClass="bg-blue-50"/>
           <SummaryCard title="GENEL TOPLAM MALİYET" value={grandTotal} icon={Calculator} colorClass="text-green-600" iconBgClass="bg-green-50"/>
         </div>
 
-        <div className="flex flex-col space-y-0">
-          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1">
+        <div className="flex flex-col space-y-0 w-full">
+          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full">
             <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
             <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
             <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
@@ -1804,7 +1804,7 @@ export default function App() {
             {activeTab === 'static' && (
               <>
                 <GroupedTable data={staticItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Statik genel toplamı gösterilmektedir.
@@ -1820,7 +1820,7 @@ export default function App() {
             {activeTab === 'architectural' && (
               <>
                 <GroupedTable data={architecturalItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Mimari genel toplamı gösterilmektedir.
