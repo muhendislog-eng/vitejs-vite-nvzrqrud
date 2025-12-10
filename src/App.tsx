@@ -126,7 +126,7 @@ const initialArchitecturalData = [
   { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0, mahal: "" },
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0, mahal: "" },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0, mahal: "" },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0, mahal: "" },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0, mahal: "" },
   { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0, mahal: "" },
 ];
 
@@ -410,7 +410,7 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
   };
 
   return (
-    <div className="w-full space-y-6 dashboard-container">
+    <div className="w-full space-y-6 dashboard-container animate-in fade-in duration-500">
         <style>
           {`
             @media print {
@@ -433,7 +433,7 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
           `}
         </style>
         <div className="green-book-container w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
-            <div className="flex justify-between items-center mb-6 print-hidden">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print-hidden">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center">
                     <Book className="w-6 h-6 mr-2 text-green-600"/> Yeşil Defter
                 </h2>
@@ -483,8 +483,8 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
                         ) : (
                             data.map((row, index) => (
                                 <tr key={index} className="hover:bg-slate-50 break-inside-avoid">
-                                    <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold sticky left-0 bg-white z-10">{row.pos}</td>
-                                    <td className="border border-slate-300 px-4 py-2 whitespace-normal min-w-[300px]">{row.desc}</td>
+                                    <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold">{row.pos}</td>
+                                    <td className="border border-slate-300 px-4 py-2">{row.desc}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center">{row.unit}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.width}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.height}</td>
@@ -536,7 +536,7 @@ const DashboardModule = ({ staticItems, architecturalItems }) => {
   };
 
   return (
-    <div className="w-full space-y-6 dashboard-container">
+    <div className="w-full space-y-6 dashboard-container animate-in fade-in duration-500">
         <style>
           {`
             @media print {
@@ -559,104 +559,103 @@ const DashboardModule = ({ staticItems, architecturalItems }) => {
           `}
         </style>
         
-        <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full">
-            <div className="flex justify-between items-center mb-8 print-hidden">
-                 <h2 className="text-2xl font-bold text-slate-800 flex items-center">
-                    <LayoutDashboard className="w-6 h-6 mr-2 text-indigo-600"/> Proje Özeti (Dashboard)
-                </h2>
-                <button 
-                    onClick={handlePrintDashboard} 
-                    className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-md"
-                >
-                    <Printer className="w-4 h-4 mr-2"/> PDF / Yazdır
-                </button>
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6 print-hidden">
+             <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+                <LayoutDashboard className="w-6 h-6 mr-2 text-indigo-600"/> Proje Özeti (Dashboard)
+            </h2>
+            <button 
+                onClick={handlePrintDashboard} 
+                className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-md"
+            >
+                <Printer className="w-4 h-4 mr-2"/> PDF / Yazdır
+            </button>
+        </div>
+
+        {/* Top Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
+            <div className="p-5 rounded-xl border border-orange-100 bg-orange-50">
+                <span className="text-xs font-bold text-orange-600 uppercase">Kaba İnşaat (%35)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(staticTotal)}</div>
             </div>
-
-            {/* Top Summary Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8 w-full">
-                <div className="p-5 rounded-xl border border-orange-100 bg-orange-50/50">
-                    <span className="text-xs font-bold text-orange-600 uppercase">Kaba İnşaat (%35)</span>
-                    <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(staticTotal)}</div>
-                </div>
-                <div className="p-5 rounded-xl border border-blue-100 bg-blue-50/50">
-                    <span className="text-xs font-bold text-blue-600 uppercase">Mimari İmalat (%45)</span>
-                    <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(archTotal)}</div>
-                </div>
-                <div className="p-5 rounded-xl border border-yellow-100 bg-yellow-50/50">
-                    <span className="text-xs font-bold text-yellow-600 uppercase">Elektrik (%10 - Tahmini)</span>
-                    <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(electricTotal)}</div>
-                </div>
-                <div className="p-5 rounded-xl border border-indigo-100 bg-indigo-50/50">
-                    <span className="text-xs font-bold text-indigo-600 uppercase">Mekanik (%10 - Tahmini)</span>
-                    <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(mechanicalTotal)}</div>
-                </div>
+            <div className="p-5 rounded-xl border border-blue-100 bg-blue-50">
+                <span className="text-xs font-bold text-blue-600 uppercase">Mimari İmalat (%45)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(archTotal)}</div>
             </div>
+            <div className="p-5 rounded-xl border border-yellow-100 bg-yellow-50">
+                <span className="text-xs font-bold text-yellow-600 uppercase">Elektrik (%10 - Tahmini)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(electricTotal)}</div>
+            </div>
+            <div className="p-5 rounded-xl border border-indigo-100 bg-indigo-50">
+                <span className="text-xs font-bold text-indigo-600 uppercase">Mekanik (%10 - Tahmini)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(mechanicalTotal)}</div>
+            </div>
+        </div>
 
-            {/* Main Chart Area */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 w-full">
-                {/* Pie Chart Section */}
-                <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center">
-                    <h3 className="text-lg font-bold text-slate-700 mb-6 w-full border-b pb-2">Maliyet Dağılımı</h3>
-                    <div className="w-full h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                                <Pie
-                                    data={pieData}
-                                    cx="50%"
-                                    cy="50%"
-                                    innerRadius={80}
-                                    outerRadius={120}
-                                    fill="#8884d8"
-                                    paddingAngle={5}
-                                    dataKey="value"
-                                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                                >
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Pie>
-                                <Tooltip formatter={(value) => formatCurrency(value)} />
-                                <Legend />
-                            </PieChart>
-                        </ResponsiveContainer>
-                    </div>
-                </div>
-
-                {/* Bar Chart Section */}
-                 <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center">
-                    <h3 className="text-lg font-bold text-slate-700 mb-6 w-full border-b pb-2">Bütçe Analizi</h3>
-                     <div className="w-full h-[400px]">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <BarChart
+        {/* Main Chart Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
+            {/* Pie Chart Section */}
+            <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col items-center">
+                <h3 className="text-lg font-bold text-slate-700 mb-4 w-full border-b border-slate-200 pb-2">Maliyet Dağılımı</h3>
+                <div className="w-full h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
                                 data={pieData}
-                                layout="vertical"
-                                margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={70}
+                                outerRadius={110}
+                                fill="#8884d8"
+                                paddingAngle={5}
+                                dataKey="value"
+                                label={({ name, percent }) => `${(percent * 100).toFixed(0)}%`}
                             >
-                                <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false}/>
-                                <XAxis type="number" tickFormatter={(val) => `₺${(val/1000000).toFixed(1)}M`} />
-                                <YAxis type="category" dataKey="name" width={100} style={{fontSize: '12px', fontWeight:'bold'}} />
-                                <Tooltip formatter={(value) => formatCurrency(value)} cursor={{fill: '#f3f4f6'}}/>
-                                <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={40}>
-                                    {pieData.map((entry, index) => (
-                                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                                    ))}
-                                </Bar>
-                            </BarChart>
-                        </ResponsiveContainer>
-                    </div>
-                 </div>
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
             </div>
 
-            {/* Total Project Summary */}
-            <div className="mt-8 p-6 bg-slate-900 rounded-xl text-white flex justify-between items-center">
-                 <div>
-                    <h4 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Toplam Proje Bütçesi</h4>
-                    <p className="text-xs text-slate-500">Statik + Mimari + Elektrik + Mekanik Dahil</p>
-                 </div>
-                 <div className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400">
-                    {formatCurrency(estimatedGrandTotal)}
-                 </div>
-            </div>
+            {/* Bar Chart Section */}
+             <div className="bg-slate-50 border border-slate-200 rounded-xl p-6 flex flex-col items-center">
+                <h3 className="text-lg font-bold text-slate-700 mb-4 w-full border-b border-slate-200 pb-2">Bütçe Analizi</h3>
+                 <div className="w-full h-[350px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={pieData}
+                            layout="vertical"
+                            margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false}/>
+                            <XAxis type="number" tickFormatter={(val) => `₺${(val/1000000).toFixed(1)}M`} />
+                            <YAxis type="category" dataKey="name" width={100} style={{fontSize: '11px', fontWeight:'bold'}} />
+                            <Tooltip formatter={(value) => formatCurrency(value)} cursor={{fill: '#e5e7eb'}}/>
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={35}>
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+             </div>
+        </div>
+
+        {/* Total Project Summary */}
+        <div className="mt-4 p-6 bg-slate-900 rounded-xl text-white flex flex-col sm:flex-row justify-between items-center text-center sm:text-left gap-4">
+             <div>
+                <h4 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Toplam Proje Bütçesi</h4>
+                <p className="text-xs text-slate-500">Statik + Mimari + Elektrik + Mekanik Dahil</p>
+             </div>
+             <div className="text-3xl sm:text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400">
+                {formatCurrency(estimatedGrandTotal)}
+             </div>
         </div>
     </div>
   );
@@ -1617,20 +1616,20 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         <table className="w-full text-left text-sm table-fixed min-w-[800px]">
           <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-4 w-32">Poz No</th>
-              <th className="px-6 py-4">Tip</th>
-              <th className="px-6 py-4">Çeşit</th>
-              <th className="px-6 py-4">Ebat</th>
-              <th className="px-6 py-4 text-center">Adet</th>
-              <th className="px-6 py-4 text-right">
+              <th className="px-6 py-3 w-32">Poz No</th>
+              <th className="px-6 py-3">Tip</th>
+              <th className="px-6 py-3">Çeşit</th>
+              <th className="px-6 py-3">Ebat</th>
+              <th className="px-6 py-3 text-center">Adet</th>
+              <th className="px-6 py-3 text-right">
                 {windowType === 'pvc' ? 'PVC Profil (kg)' : 'Alüminyum Profil (kg)'}
               </th>
-              <th className="px-6 py-4 text-right">İşlem</th>
+              <th className="px-6 py-3 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
             {items.length === 0 ? (
-              <tr><td colSpan="7" className="px-6 py-8 text-center text-slate-400">Veri yok.</td></tr>
+              <tr><td colSpan="7" className="px-6 py-4 text-center text-slate-400">Veri yok.</td></tr>
             ) : items.map((item) => {
                 const weight = calculateWindowValues(item);
                 const posNo = item.type === 'pvc' ? '15.455.1001' : '15.460.1010';
@@ -1656,7 +1655,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
                     <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
                       <Pencil className="w-4 h-4" />
                     </button>
-                    <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
+                    <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 hover:text-red-600 p-1 hover:bg-red-50 rounded">
                       <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
@@ -2227,7 +2226,7 @@ export default function App() {
                  {/* Project Info Button */}
                  <button 
                   onClick={() => setIsProjectModalOpen(true)}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
+                  className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
                   title="Proje Bilgileri Düzenle"
                  >
                    <Info className="w-4 h-4" /> <span className="hidden lg:inline">Proje Bilgisi</span>
@@ -2273,16 +2272,16 @@ export default function App() {
       </header>
 
       {/* Main Content - Blurred if not logged in */}
-      <main className={`w-full px-4 sm:px-6 lg:px-8 py-10 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
+      <main className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 mb-10 w-full">
           <SummaryCard title="Statik İmalatlar" value={staticTotal} icon={Building} colorClass="text-orange-500" iconBgClass="bg-orange-50"/>
           <SummaryCard title="Mimari İmalatlar" value={architecturalTotal} icon={Ruler} colorClass="text-blue-500" iconBgClass="bg-blue-50"/>
           <SummaryCard title="GENEL TOPLAM MALİYET" value={grandTotal} icon={Calculator} colorClass="text-green-600" iconBgClass="bg-green-50"/>
         </div>
 
-        <div className="flex flex-col space-y-0">
-          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1">
+        <div className="flex flex-col space-y-0 w-full">
+          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full">
              <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
              <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
              <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
@@ -2300,7 +2299,7 @@ export default function App() {
                   onOpenSelector={handleOpenSelector} 
                   onAddNewItem={handleAddNewItem} 
                 />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Statik genel toplamı gösterilmektedir.
@@ -2321,7 +2320,7 @@ export default function App() {
                   onOpenSelector={handleOpenSelector} 
                   onAddNewItem={handleAddNewItem} 
                 />
-                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
+                <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700 w-full">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
                     Mimari genel toplamı gösterilmektedir.
