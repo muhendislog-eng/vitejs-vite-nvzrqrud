@@ -3,25 +3,6 @@ import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, R
 // Recharts
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-// --- FIREBASE IMPORTS ---
-// 1. Firebase kütüphanesini çağır
-import { initializeApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
-
-// Your web app's Firebase configuration
-const firebaseConfig = {
-  apiKey: "AIzaSyAaT7u0STUs6_wFfekz6L43_2H9jUtA_XY",
-  authDomain: "gkmetraj.firebaseapp.com",
-  projectId: "gkmetraj",
-  storageBucket: "gkmetraj.firebasestorage.app",
-  messagingSenderId: "584839256310",
-  appId: "1:584839256310:web:c88f5c4ca11a8f8c40b4d7"
-};
-
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
 
 // --- SABİTLER VE VERİ SETLERİ ---
 
