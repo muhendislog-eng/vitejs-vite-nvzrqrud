@@ -1,5 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Download, Upload, FileSpreadsheet, BookOpen, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin } from 'lucide-react';
+import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, RefreshCw, Search, X, Check, Download, Upload, FileSpreadsheet, BookOpen, Ruler, ArrowRight, Trash2, Grid, MousePointer, Lock, Settings, RefreshCcw, Pencil, Maximize, Box, LogIn, LogOut, ShieldCheck, Info, MapPin, PieChart as PieChartIcon, Book, Printer, LayoutDashboard, Cloud, CloudOff } from 'lucide-react';
+// Recharts
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
+
+// --- FIREBASE IMPORTS ---
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
+import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
+import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
 // --- SABİTLER VE VERİ SETLERİ ---
 
@@ -69,7 +76,7 @@ const INITIAL_POS_LIBRARY = {
     { pos: "15.465.1101", desc: "Pencere kolu (İspanyolet) takılması", unit: "Adet", price: 145.50 },
     { pos: "15.465.1116", desc: "Pencere menteşesi takılması", unit: "Adet", price: 35.40 },
     { pos: "15.460.1010", desc: "Isı yalıtımlı alüminyum doğrama imalatı", unit: "kg", price: 350.00 },
-    { pos: "15.470.1010", desc: "4+12+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55 }, // CAM POZU
+    { pos: "15.470.1010", desc: "4+12+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55 },
   ],
   "Hafriyat ve Zemin İşleri": [
     { pos: "15.120.1101", desc: "Makine ile her derinlik ve her genişlikte yumuşak ve sert toprak kazılması (Derin kazı)", unit: "m³", price: 65.95 },
@@ -80,50 +87,53 @@ const INITIAL_POS_LIBRARY = {
 };
 
 const initialStaticData = [
-  { id: 1, category: "Hafriyat ve Zemin İşleri", pos: "15.120.1101", desc: "Makine ile her derinlik ve her genişlikte yumuşak ve sert toprak kazılması (Derin kazı)", unit: "m³", price: 65.95, quantity: 0 },
-  { id: 2, category: "Hafriyat ve Zemin İşleri", pos: "15.125.1010", desc: "63mm'ye kadar kırmataş temin edilerek, makine ile serme, sulama ve sıkıştırma yapılması", unit: "m³", price: 564.94, quantity: 0 },
-  { id: 9, category: "Hafriyat ve Zemin İşleri", pos: "15.204.1001", desc: "Ø 100 mm anma çaplı, PVC esaslı koruge drenaj borusunun temini ve yerine döşenmesi", unit: "m", price: 55.29, quantity: 0 },
-  { id: 3, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1003", desc: "C 16/20 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3150.44, quantity: 0 },
-  { id: 4, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1006", desc: "C 30/37 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3553.73, quantity: 0 },
-  { id: 5, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1003", desc: "Ø 8- Ø 12 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 45954.91, quantity: 0 },
-  { id: 6, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1004", desc: "Ø 14- Ø 28 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 44180.65, quantity: 0 },
-  { id: 7, category: "Betonarme ve Kalıp İşleri", pos: "15.180.1003", desc: "Plywood ile düz yüzeyli betonarme kalıbı yapılması", unit: "m²", price: 1011.06, quantity: 0 },
-  { id: 8, category: "Betonarme ve Kalıp İşleri", pos: "15.185.1005", desc: "Çelik borudan kalıp iskelesi yapılması (0-4m)", unit: "m³", price: 124.89, quantity: 0 },
-  { id: 10, category: "Temel Yalıtım İşleri", pos: "15.255.1008", desc: "Polimer bitümlü örtüler ile iki kat su yalıtımı yapılması", unit: "m²", price: 618.30, quantity: 0 },
-  { id: 11, category: "Temel Yalıtım İşleri", pos: "15.270.1008", desc: "Çimento esaslı polimer modifiyeli yalıtım harcı ile su yalıtımı yapılması", unit: "m²", price: 610.66, quantity: 0 },
+  { id: 1, category: "Hafriyat ve Zemin İşleri", pos: "15.120.1101", desc: "Makine ile her derinlik ve her genişlikte yumuşak ve sert toprak kazılması (Derin kazı)", unit: "m³", price: 65.95, quantity: 0, mahal: "" },
+  { id: 2, category: "Hafriyat ve Zemin İşleri", pos: "15.125.1010", desc: "63mm'ye kadar kırmataş temin edilerek, makine ile serme, sulama ve sıkıştırma yapılması", unit: "m³", price: 564.94, quantity: 0, mahal: "" },
+  { id: 9, category: "Hafriyat ve Zemin İşleri", pos: "15.204.1001", desc: "Ø 100 mm anma çaplı, PVC esaslı koruge drenaj borusunun temini ve yerine döşenmesi", unit: "m", price: 55.29, quantity: 0, mahal: "" },
+  { id: 3, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1003", desc: "C 16/20 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3150.44, quantity: 0, mahal: "" },
+  { id: 4, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1006", desc: "C 30/37 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3553.73, quantity: 0, mahal: "" },
+  { id: 5, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1003", desc: "Ø 8- Ø 12 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 45954.91, quantity: 0, mahal: "" },
+  { id: 6, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1004", desc: "Ø 14- Ø 28 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 44180.65, quantity: 0, mahal: "" },
+  { id: 7, category: "Betonarme ve Kalıp İşleri", pos: "15.180.1003", desc: "Plywood ile düz yüzeyli betonarme kalıbı yapılması", unit: "m²", price: 1011.06, quantity: 0, mahal: "" },
+  { id: 8, category: "Betonarme ve Kalıp İşleri", pos: "15.185.1005", desc: "Çelik borudan kalıp iskelesi yapılması (0-4m)", unit: "m³", price: 124.89, quantity: 0, mahal: "" },
+  { id: 10, category: "Temel Yalıtım İşleri", pos: "15.255.1008", desc: "Polimer bitümlü örtüler ile iki kat su yalıtımı yapılması", unit: "m²", price: 618.30, quantity: 0, mahal: "" },
+  { id: 11, category: "Temel Yalıtım İşleri", pos: "15.270.1008", desc: "Çimento esaslı polimer modifiyeli yalıtım harcı ile su yalıtımı yapılması", unit: "m²", price: 610.66, quantity: 0, mahal: "" },
 ];
 
 const initialArchitecturalData = [
-  { id: 3, category: "Duvar ve Kaba Yapı", pos: "15.220.1012", desc: "100 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 741.66, quantity: 0 },
-  { id: 4, category: "Duvar ve Kaba Yapı", pos: "15.220.1014", desc: "135 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 794.93, quantity: 0 },
-  { id: 5, category: "Duvar ve Kaba Yapı", pos: "15.220.1015", desc: "190 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 907.18, quantity: 0 },
-  { id: 10, category: "Çatı İşleri", pos: "15.300.1002", desc: "Ahşaptan oturtma çatı (OSB/3 kaplamalı)", unit: "m²", price: 1544.23, quantity: 0 },
-  { id: 11, category: "Çatı İşleri", pos: "15.305.1001", desc: "Alaturka kiremit çatı örtüsü (3 Latalı)", unit: "m²", price: 1560.74, quantity: 0 },
-  { id: 12, category: "Çatı İşleri", pos: "15.310.1201", desc: "14 no.lu çinko levhadan eğimli çatı deresi", unit: "m", price: 1226.74, quantity: 0 },
-  { id: 13, category: "Çatı İşleri", pos: "15.315.1002", desc: "Ø 100 mm PVC yağmur borusu", unit: "m", price: 260.23, quantity: 0 },
-  { id: 17, category: "Kapı ve Pencere Doğramaları", pos: "15.455.1001", desc: "PVC doğrama imalatı", unit: "kg", price: 247.96, quantity: 0 },
-  { id: 18, category: "Kapı ve Pencere Doğramaları", pos: "15.470.1010", desc: "4+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55, quantity: 0 },
-  { id: 20, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1103", desc: "Laminat kaplamalı, kraft dolgulu iç kapı kanadı", unit: "m²", price: 3165.60, quantity: 0 },
-  { id: 33, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1001", desc: "Ahşaptan masif tablalı iç kapı kasa ve pervazı", unit: "m²", price: 2332.99, quantity: 0 },
-  { id: 25, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1002", desc: "Gömme iç kapı kilidinin yerine takılması (Dar Tip)", unit: "Adet", price: 126.25, quantity: 0 },
-  { id: 26, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1008", desc: "Kapı kolu ve aynalarının yerine takılması (Kromajlı)", unit: "Adet", price: 126.25, quantity: 0 },
-  { id: 27, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1010", desc: "Menteşenin yerine takılması", unit: "Adet", price: 22.28, quantity: 0 },
-  { id: 42, category: "Kapı ve Pencere Doğramaları", pos: "77.170.1009", desc: "120 Dk Dayanımlı Panik Barlı Yangın Kapısı", unit: "Adet", price: 21770.84, quantity: 0 },
-  { id: 6, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.250.1111", desc: "2.5 cm kalınlığında 400 kg dozlu şap", unit: "m²", price: 443.59, quantity: 0 },
-  { id: 7, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.275.1116", desc: "250 kg çimento dozlu kaba sıva", unit: "m²", price: 437.11, quantity: 0 },
-  { id: 8, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1009", desc: "Perlitli sıva ve saten alçı kaplama", unit: "m²", price: 682.90, quantity: 0 },
-  { id: 9, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1012", desc: "Makina alçısı ile tavanlara tek kat alçı sıva", unit: "m²", price: 459.11, quantity: 0 },
-  { id: 21, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.540.1520", desc: "Su bazlı Silikonlu Mat İç Cephe Boyası", unit: "m²", price: 212.05, quantity: 0 },
-  { id: 15, category: "Zemin ve Duvar Kaplamaları", pos: "15.385.1008", desc: "60x60 cm anma ebatlarında, I.kalite, beyaz, sırlı porselen karo döşeme kaplaması", unit: "m²", price: 850.53, quantity: 0 },
-  { id: 24, category: "Zemin ve Duvar Kaplamaları", pos: "OZL.60X120", desc: "60x120 Parlak Granit Seramik", unit: "m²", price: 1503.43, quantity: 0 },
-  { id: 19, category: "Zemin ve Duvar Kaplamaları", pos: "15.490.1003", desc: "Laminat parke döşeme kaplaması (AC4)", unit: "m²", price: 685.88, quantity: 0 },
-  { id: 16, category: "Zemin ve Duvar Kaplamaları", pos: "15.410.1413", desc: "3 cm renkli mermer denizlik", unit: "m²", price: 3604.93, quantity: 0 },
-  { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0 },
-  { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
-  { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
-  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+  { id: 3, category: "Duvar ve Kaba Yapı", pos: "15.220.1012", desc: "100 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 741.66, quantity: 0, mahal: "" },
+  { id: 4, category: "Duvar ve Kaba Yapı", pos: "15.220.1014", desc: "135 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 794.93, quantity: 0, mahal: "" },
+  { id: 5, category: "Duvar ve Kaba Yapı", pos: "15.220.1015", desc: "190 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 907.18, quantity: 0, mahal: "" },
+  { id: 10, category: "Çatı İşleri", pos: "15.300.1002", desc: "Ahşaptan oturtma çatı (OSB/3 kaplamalı)", unit: "m²", price: 1544.23, quantity: 0, mahal: "" },
+  { id: 11, category: "Çatı İşleri", pos: "15.305.1001", desc: "Alaturka kiremit çatı örtüsü (3 Latalı)", unit: "m²", price: 1560.74, quantity: 0, mahal: "" },
+  { id: 12, category: "Çatı İşleri", pos: "15.310.1201", desc: "14 no.lu çinko levhadan eğimli çatı deresi", unit: "m", price: 1226.74, quantity: 0, mahal: "" },
+  { id: 13, category: "Çatı İşleri", pos: "15.315.1002", desc: "Ø 100 mm PVC yağmur borusu", unit: "m", price: 260.23, quantity: 0, mahal: "" },
+  { id: 17, category: "Kapı ve Pencere Doğramaları", pos: "15.455.1001", desc: "PVC doğrama imalatı", unit: "kg", price: 247.96, quantity: 0, mahal: "" },
+  { id: 18, category: "Kapı ve Pencere Doğramaları", pos: "15.470.1010", desc: "4+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55, quantity: 0, mahal: "" },
+  { id: 20, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1103", desc: "Laminat kaplamalı, kraft dolgulu iç kapı kanadı", unit: "m²", price: 3165.60, quantity: 0, mahal: "" },
+  { id: 33, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1001", desc: "Ahşaptan masif tablalı iç kapı kasa ve pervazı", unit: "m²", price: 2332.99, quantity: 0, mahal: "" },
+  { id: 25, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1002", desc: "Gömme iç kapı kilidinin yerine takılması (Dar Tip)", unit: "Adet", price: 126.25, quantity: 0, mahal: "" },
+  { id: 26, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1008", desc: "Kapı kolu ve aynalarının yerine takılması (Kromajlı)", unit: "Adet", price: 126.25, quantity: 0, mahal: "" },
+  { id: 27, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1010", desc: "Menteşenin yerine takılması", unit: "Adet", price: 22.28, quantity: 0, mahal: "" },
+  { id: 42, category: "Kapı ve Pencere Doğramaları", pos: "77.170.1009", desc: "120 Dk Dayanımlı Panik Barlı Yangın Kapısı", unit: "Adet", price: 21770.84, quantity: 0, mahal: "" },
+  { id: 6, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.250.1111", desc: "2.5 cm kalınlığında 400 kg dozlu şap", unit: "m²", price: 443.59, quantity: 0, mahal: "" },
+  { id: 7, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.275.1116", desc: "250 kg çimento dozlu kaba sıva", unit: "m²", price: 437.11, quantity: 0, mahal: "" },
+  { id: 8, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1009", desc: "Perlitli sıva ve saten alçı kaplama", unit: "m²", price: 682.90, quantity: 0, mahal: "" },
+  { id: 9, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1012", desc: "Makina alçısı ile tavanlara tek kat alçı sıva", unit: "m²", price: 459.11, quantity: 0, mahal: "" },
+  { id: 21, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.540.1520", desc: "Su bazlı Silikonlu Mat İç Cephe Boyası", unit: "m²", price: 212.05, quantity: 0, mahal: "" },
+  { id: 15, category: "Zemin ve Duvar Kaplamaları", pos: "15.385.1008", desc: "60x60 cm anma ebatlarında, I.kalite, beyaz, sırlı porselen karo döşeme kaplaması", unit: "m²", price: 850.53, quantity: 0, mahal: "" },
+  { id: 24, category: "Zemin ve Duvar Kaplamaları", pos: "OZL.60X120", desc: "60x120 Parlak Granit Seramik", unit: "m²", price: 1503.43, quantity: 0, mahal: "" },
+  { id: 19, category: "Zemin ve Duvar Kaplamaları", pos: "15.490.1003", desc: "Laminat parke döşeme kaplaması (AC4)", unit: "m²", price: 685.88, quantity: 0, mahal: "" },
+  { id: 16, category: "Zemin ve Duvar Kaplamaları", pos: "15.410.1413", desc: "3 cm renkli mermer denizlik", unit: "m²", price: 3604.93, quantity: 0, mahal: "" },
+  { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0, mahal: "" },
+  { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0, mahal: "" },
+  { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0, mahal: "" },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0, mahal: "" },
+  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0, mahal: "" },
 ];
+
+
+// --- YARDIMCI FONKSİYONLAR ---
 
 const formatCurrency = (value) => {
   return new Intl.NumberFormat('tr-TR', {
@@ -133,7 +143,6 @@ const formatCurrency = (value) => {
   }).format(value);
 };
 
-// --- Helper Functions to Load External Scripts (CDN Injection) ---
 const loadScript = (src) => {
   return new Promise((resolve, reject) => {
     if (document.querySelector(`script[src="${src}"]`)) {
@@ -153,10 +162,10 @@ const loadScript = (src) => {
 const TabButton = ({ active, onClick, icon: Icon, label }) => (
   <button
     onClick={onClick}
-    className={`flex items-center px-8 py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group ${
+    className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
       active
         ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-700 border-t-4 border-transparent'
+        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
     }`}
   >
     <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
@@ -178,6 +187,327 @@ const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
     </div>
   </div>
 );
+
+// --- Green Book Module ---
+const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowItems }) => {
+  const [data, setData] = useState([]);
+
+  useEffect(() => {
+    // Generate Green Book Data
+    let generatedData = [];
+    
+    // 1. Statik Kalemler
+    staticItems.forEach(item => {
+        if(item.quantity > 0) {
+            generatedData.push({
+                type: 'static',
+                pos: item.pos,
+                desc: item.desc,
+                unit: item.unit,
+                width: '-',
+                height: '-',
+                count: '1',
+                deduction: '-',
+                total: item.quantity
+            });
+        }
+    });
+
+    // 2. Mimari Kalemler
+    architecturalItems.forEach(item => {
+         if(item.quantity > 0) {
+            generatedData.push({
+                type: 'arch',
+                pos: item.pos,
+                desc: item.desc,
+                unit: item.unit,
+                width: '-',
+                height: '-',
+                count: '1',
+                deduction: '-',
+                total: item.quantity
+            });
+        }
+    });
+
+    // 3. Kapılar (Detailed)
+    doorItems.forEach(item => {
+        const widthM = (parseFloat(item.width) || 0) / 100;
+        const heightM = (parseFloat(item.height) || 0) / 100;
+        const count = parseFloat(item.count) || 0;
+        const label = item.label || 'Kapı';
+
+        // 3a. Kapı Kanadı (Alan)
+        const leafArea = widthM * heightM;
+        if (leafArea > 0) {
+             generatedData.push({
+                type: 'door',
+                pos: '15.510.1103',
+                desc: `${label} - Kapı Kanadı`,
+                unit: 'm²',
+                width: widthM.toFixed(2),
+                height: heightM.toFixed(2),
+                count: count,
+                deduction: '-',
+                total: (leafArea * count).toFixed(2)
+            });
+        }
+        
+        // 3b. Kasa+Pervaz (Alan - Formül: ((2*h)+w)*0.34)
+        const frameArea = ((2 * heightM) + widthM) * 0.34;
+        if (frameArea > 0) {
+             generatedData.push({
+                type: 'door',
+                pos: '15.510.1001',
+                desc: `${label} - Kasa+Pervaz`,
+                unit: 'm²',
+                width: '-',
+                height: '-',
+                count: count,
+                deduction: '-',
+                total: (frameArea * count).toFixed(2)
+            });
+        }
+
+        // 3c. Kilit
+         generatedData.push({
+                type: 'door',
+                pos: '15.465.1002',
+                desc: `${label} - Kilit`,
+                unit: 'Adet',
+                width: '-',
+                height: '-',
+                count: count,
+                deduction: '-',
+                total: count
+         });
+    });
+    
+    // 4. Pencereler (Detailed)
+    windowItems.forEach(item => {
+        const widthM = (parseFloat(item.width) || 0) / 100;
+        const heightM = (parseFloat(item.height) || 0) / 100;
+        const count = parseFloat(item.count) || 0;
+        const label = item.label || 'Pencere';
+        const midReg = parseFloat(item.middleRegister) || 0;
+        
+        // 4a. Profil Ağırlığı
+        let weight = 0;
+        let pos = '';
+        let desc = '';
+
+        if (item.type === 'pvc') {
+            pos = '15.455.1001';
+            desc = `${label} - PVC Doğrama`;
+            // PVC: 2 * (En + Boy) * 1.1 * 2 * Adet
+            weight = 2 * (widthM + heightM) * 1.1 * 2;
+        } else {
+            pos = '15.460.1010';
+            desc = `${label} - Alüminyum Doğrama`;
+             if (midReg > 0) {
+                // Orta Kayıtlı
+                const term1 = (widthM * heightM) * 2 * 1.596;
+                const term2 = (heightM - 0.2) * 2.038;
+                const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
+                weight = term1 + term2 + term3;
+            } else {
+                 // Orta Kayıtsız
+                const term1 = (widthM + heightM) * 2 * 1.596;
+                const term2 = ((widthM - 0.16) + (heightM - 0.16)) * 2 * 2.186;
+                weight = term1 + term2;
+            }
+        }
+
+        if (weight > 0) {
+             generatedData.push({
+                type: 'window',
+                pos: pos,
+                desc: desc,
+                unit: 'kg',
+                width: widthM.toFixed(2),
+                height: heightM.toFixed(2),
+                count: count,
+                deduction: '-',
+                total: (weight * count).toFixed(2)
+            });
+        }
+        
+        // 4b. Cam
+        const glassArea = Math.max(0, (widthM - 0.2) * (heightM - 0.2));
+        if (glassArea > 0) {
+            generatedData.push({
+                type: 'window',
+                pos: '15.470.1010',
+                desc: `${label} - Isıcam`,
+                unit: 'm²',
+                width: (widthM - 0.2).toFixed(2),
+                height: (heightM - 0.2).toFixed(2),
+                count: count,
+                deduction: '-',
+                total: (glassArea * count).toFixed(2)
+            });
+        }
+        
+        // 4c. Kol ve Menteşe
+        generatedData.push({
+             type: 'window',
+             pos: '15.465.1101',
+             desc: `${label} - Kol`,
+             unit: 'Adet',
+             width: '-',
+             height: '-',
+             count: count,
+             deduction: '-',
+             total: count * 1
+        });
+        generatedData.push({
+             type: 'window',
+             pos: '15.465.1116',
+             desc: `${label} - Menteşe`,
+             unit: 'Adet',
+             width: '-',
+             height: '-',
+             count: count,
+             deduction: '-',
+             total: count * 3
+        });
+    });
+
+    setData(generatedData);
+
+  }, [staticItems, architecturalItems, doorItems, windowItems]);
+
+  const handlePrint = () => {
+    window.print();
+  };
+
+  const handleExportToExcel = () => {
+      if (!window.XLSX) {
+        alert("Excel modülü henüz yüklenmedi.");
+        return;
+      }
+
+      const excelData = data.map(item => ({
+        "Poz No": item.pos,
+        "İmalatın Cinsi / Açıklama": item.desc,
+        "Birim": item.unit,
+        "En": item.width,
+        "Boy": item.height,
+        "Yükseklik": "-",
+        "Adet": item.count,
+        "Azı (Tenhilat)": item.deduction,
+        "Çoğu (Toplam)": item.total
+      }));
+
+      const wb = window.XLSX.utils.book_new();
+      const ws = window.XLSX.utils.json_to_sheet(excelData);
+      
+      // Column widths
+      ws['!cols'] = [
+        {wch: 15}, {wch: 50}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 15}
+      ];
+
+      window.XLSX.utils.book_append_sheet(wb, ws, "Yeşil Defter");
+      window.XLSX.writeFile(wb, "Yesil_Defter.xlsx");
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full dashboard-container">
+        <style>
+          {`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .green-book-container, .green-book-container * {
+                visibility: visible;
+              }
+              .green-book-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+              }
+              .print-hidden {
+                display: none !important;
+              }
+            }
+          `}
+        </style>
+        <div className="green-book-container w-full">
+            <div className="flex justify-between items-center mb-6 print-hidden">
+                <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+                    <Book className="w-6 h-6 mr-2 text-green-600"/> Yeşil Defter
+                </h2>
+                <div className="flex space-x-2">
+                    <button 
+                        onClick={handleExportToExcel} 
+                        className="flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors shadow-md"
+                    >
+                        <FileSpreadsheet className="w-4 h-4 mr-2"/> Excel İndir
+                    </button>
+                    <button 
+                        onClick={handlePrint} 
+                        className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-md"
+                    >
+                        <Printer className="w-4 h-4 mr-2"/> Yazdır / PDF
+                    </button>
+                </div>
+            </div>
+
+            {/* Print Header */}
+            <div className="hidden print:block mb-8 text-center">
+                <h1 className="text-2xl font-bold border-b-2 border-black pb-2 mb-2">YEŞİL DEFTER (METRAJ CETVELİ)</h1>
+                <div className="flex justify-between text-sm">
+                    <span>Tarih: {new Date().toLocaleDateString()}</span>
+                    <span>Sayfa No: 1</span>
+                </div>
+            </div>
+
+            <div className="overflow-x-auto w-full">
+                <table className="w-full text-left border-collapse border border-slate-300 text-sm">
+                    <thead>
+                        <tr className="bg-slate-100 text-slate-700">
+                            <th className="border border-slate-300 px-4 py-2 w-24">Poz No</th>
+                            <th className="border border-slate-300 px-4 py-2">İmalatın Cinsi / Açıklama</th>
+                            <th className="border border-slate-300 px-2 py-2 w-16 text-center">Birim</th>
+                            <th className="border border-slate-300 px-2 py-2 w-16 text-center">En</th>
+                            <th className="border border-slate-300 px-2 py-2 w-16 text-center">Boy</th>
+                            <th className="border border-slate-300 px-2 py-2 w-16 text-center">Yük.</th>
+                            <th className="border border-slate-300 px-2 py-2 w-16 text-center">Adet</th>
+                            <th className="border border-slate-300 px-4 py-2 w-24 text-right">Azı (Tenhilat)</th>
+                            <th className="border border-slate-300 px-4 py-2 w-24 text-right bg-green-50">Çoğu (Toplam)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {data.length === 0 ? (
+                            <tr><td colSpan="9" className="text-center py-8 text-slate-400">Veri bulunamadı.</td></tr>
+                        ) : (
+                            data.map((row, index) => (
+                                <tr key={index} className="hover:bg-slate-50 break-inside-avoid">
+                                    <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold">{row.pos}</td>
+                                    <td className="border border-slate-300 px-4 py-2">{row.desc}</td>
+                                    <td className="border border-slate-300 px-2 py-2 text-center">{row.unit}</td>
+                                    <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.width}</td>
+                                    <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.height}</td>
+                                    <td className="border border-slate-300 px-2 py-2 text-center font-mono">-</td>
+                                    <td className="border border-slate-300 px-2 py-2 text-center font-bold">{row.count}</td>
+                                    <td className="border border-slate-300 px-4 py-2 text-right font-mono text-red-600">{row.deduction !== '-' ? row.deduction : ''}</td>
+                                    <td className="border border-slate-300 px-4 py-2 text-right font-bold bg-green-50 font-mono">{formatCurrency(row.total).replace('₺', '')}</td>
+                                </tr>
+                            ))
+                        )}
+                    </tbody>
+                </table>
+            </div>
+            
+            <div className="mt-8 text-sm text-slate-500 hidden print:block text-center">
+                Bu belge otomatik olarak oluşturulmuştur.
+            </div>
+        </div>
+    </div>
+  );
+};
 
 const LoginModal = ({ isOpen, onClose, onLogin }) => {
   const [username, setUsername] = useState('');
@@ -299,7 +629,7 @@ const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }) => {
              <div>
                 <label className="block text-sm font-bold text-slate-700 mb-1">Kapalı Alan (m²)</label>
                 <div className="relative">
-                   <Grid className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
+                   <PieChart className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
                    <input 
                     type="number" 
                     name="area"
@@ -564,6 +894,162 @@ const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos, is
   );
 };
 
+// --- Dashboard Module ---
+const DashboardModule = ({ staticItems, architecturalItems }) => {
+  
+  // Calculate Totals
+  const staticTotal = staticItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const archTotal = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  
+  // Logic: Static + Arch = 80% of total. 
+  // Electric = 10%, Mechanical = 10%
+  const knownTotal = staticTotal + archTotal;
+  const estimatedGrandTotal = knownTotal > 0 ? knownTotal / 0.8 : 0;
+  const electricTotal = estimatedGrandTotal * 0.1;
+  const mechanicalTotal = estimatedGrandTotal * 0.1;
+
+  // Chart Data
+  const pieData = [
+    { name: 'Kaba İnşaat', value: staticTotal },
+    { name: 'Mimari İmalat', value: archTotal },
+    { name: 'Elektrik', value: electricTotal },
+    { name: 'Mekanik', value: mechanicalTotal },
+  ];
+  
+  const COLORS = ['#F97316', '#3B82F6', '#EAB308', '#6366F1'];
+
+  const handlePrintDashboard = () => {
+    window.print();
+  };
+
+  return (
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full dashboard-container">
+        <style>
+          {`
+            @media print {
+              body * {
+                visibility: hidden;
+              }
+              .dashboard-container, .dashboard-container * {
+                visibility: visible;
+              }
+              .dashboard-container {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+              }
+              .print-hidden {
+                display: none !important;
+              }
+            }
+          `}
+        </style>
+        
+        <div className="flex justify-between items-center mb-8 print-hidden">
+             <h2 className="text-2xl font-bold text-slate-800 flex items-center">
+                <LayoutDashboard className="w-6 h-6 mr-2 text-indigo-600"/> Proje Özeti (Dashboard)
+            </h2>
+            <button 
+                onClick={handlePrintDashboard} 
+                className="flex items-center px-4 py-2 bg-slate-800 text-white rounded-lg hover:bg-slate-700 transition-colors shadow-md"
+            >
+                <Printer className="w-4 h-4 mr-2"/> PDF / Yazdır
+            </button>
+        </div>
+
+        {/* Top Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div className="p-5 rounded-xl border border-orange-100 bg-orange-50/50">
+                <span className="text-xs font-bold text-orange-600 uppercase">Kaba İnşaat (%35)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(staticTotal)}</div>
+            </div>
+            <div className="p-5 rounded-xl border border-blue-100 bg-blue-50/50">
+                <span className="text-xs font-bold text-blue-600 uppercase">Mimari İmalat (%45)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(archTotal)}</div>
+            </div>
+            <div className="p-5 rounded-xl border border-yellow-100 bg-yellow-50/50">
+                <span className="text-xs font-bold text-yellow-600 uppercase">Elektrik (%10 - Tahmini)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(electricTotal)}</div>
+            </div>
+            <div className="p-5 rounded-xl border border-indigo-100 bg-indigo-50/50">
+                <span className="text-xs font-bold text-indigo-600 uppercase">Mekanik (%10 - Tahmini)</span>
+                <div className="text-2xl font-black text-slate-800 mt-2">{formatCurrency(mechanicalTotal)}</div>
+            </div>
+        </div>
+
+        {/* Main Chart Area */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* Pie Chart Section */}
+            <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center">
+                <h3 className="text-lg font-bold text-slate-700 mb-6 w-full border-b pb-2">Maliyet Dağılımı</h3>
+                <div className="w-full h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius={80}
+                                outerRadius={120}
+                                fill="#8884d8"
+                                paddingAngle={5}
+                                dataKey="value"
+                                label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                            >
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Pie>
+                            <Tooltip formatter={(value) => formatCurrency(value)} />
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                </div>
+            </div>
+
+            {/* Bar Chart Section */}
+             <div className="bg-white border border-slate-200 rounded-xl p-6 flex flex-col items-center">
+                <h3 className="text-lg font-bold text-slate-700 mb-6 w-full border-b pb-2">Bütçe Analizi</h3>
+                 <div className="w-full h-[400px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <BarChart
+                            data={pieData}
+                            layout="vertical"
+                            margin={{ top: 20, right: 30, left: 40, bottom: 5 }}
+                        >
+                            <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false}/>
+                            <XAxis type="number" tickFormatter={(val) => `₺${(val/1000000).toFixed(1)}M`} />
+                            <YAxis type="category" dataKey="name" width={100} style={{fontSize: '12px', fontWeight:'bold'}} />
+                            <Tooltip formatter={(value) => formatCurrency(value)} cursor={{fill: '#f3f4f6'}}/>
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={40}>
+                                {pieData.map((entry, index) => (
+                                    <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                                ))}
+                            </Bar>
+                        </BarChart>
+                    </ResponsiveContainer>
+                </div>
+             </div>
+        </div>
+
+        {/* Total Project Summary */}
+        <div className="mt-8 p-6 bg-slate-900 rounded-xl text-white flex justify-between items-center">
+             <div>
+                <h4 className="text-slate-400 text-sm font-medium uppercase tracking-wider mb-1">Toplam Proje Bütçesi</h4>
+                <p className="text-xs text-slate-500">Statik + Mimari + Elektrik + Mekanik Dahil</p>
+             </div>
+             <div className="text-4xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-orange-400 to-yellow-400">
+                {formatCurrency(estimatedGrandTotal)}
+             </div>
+        </div>
+
+    </div>
+  );
+};
+
+
+// --- Grouped Table ---
 const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) => {
   const groupedData = data.reduce((acc, item) => {
     const cat = item.category || "Genel";
@@ -826,12 +1312,12 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         <table className="w-full text-left text-sm table-fixed min-w-[800px]">
           <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-4 w-32">Tip</th>
-              <th className="px-6 py-4 w-32">Ebat (En/Boy)</th>
-              <th className="px-6 py-4 w-24 text-center">Adet</th>
-              <th className="px-6 py-4 w-40 text-right">Kapı Kanadı (m²)</th>
-              <th className="px-6 py-4 w-40 text-right">Kasa+Pervaz (m²)</th>
-              <th className="px-6 py-4 w-32 text-right">İşlem</th>
+              <th className="px-6 py-3">Tip</th>
+              <th className="px-6 py-3">Ebat (En/Boy)</th>
+              <th className="px-6 py-3 text-center">Adet</th>
+              <th className="px-6 py-3 text-right">Kapı Kanadı (m²)</th>
+              <th className="px-6 py-3 text-right">Kasa+Pervaz (m²)</th>
+              <th className="px-6 py-3 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -881,7 +1367,7 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       </div>
 
       {/* Summary Cards (Hırdavat Hesabı) */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 w-full">
         <div className="bg-white p-5 rounded-xl border border-slate-200 shadow-sm flex flex-col items-center text-center hover:shadow-md transition-shadow">
           <div className="p-3 bg-blue-50 rounded-full mb-3 text-blue-600">
             <Lock className="w-6 h-6" />
@@ -981,8 +1467,8 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
     } else if (item.type === 'alu') {
        // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
-         // Orta Kayıt VARSA (Eski Formül)
-         // Term1 = (En * Boy) * 2 * 1.596 
+         // Orta Kayıt VARSA (Eski Formül - Kullanıcı Formülü)
+         // [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
          const term1 = (widthM * heightM) * 2 * 1.596;
          const term2 = (heightM - 0.2) * 2.038;
          const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
@@ -1798,16 +2284,23 @@ export default function App() {
 
         <div className="flex flex-col space-y-0">
           <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1">
-            <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
-            <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
-            <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
+             <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
+             <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
+             <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
              <TabButton active={activeTab === 'window_calculation'} onClick={() => setActiveTab('window_calculation')} icon={Maximize} label="Pencere Metrajı" />
+             <TabButton active={activeTab === 'green_book'} onClick={() => setActiveTab('green_book')} icon={Book} label="Yeşil Defter" />
+             <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={LayoutDashboard} label="Proje Özeti" />
           </div>
 
           <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[500px] p-8 relative z-10 w-full">
             {activeTab === 'static' && (
               <>
-                <GroupedTable data={staticItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
+                <GroupedTable 
+                  data={staticItems} 
+                  onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} 
+                  onOpenSelector={handleOpenSelector} 
+                  onAddNewItem={handleAddNewItem} 
+                />
                 <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
@@ -1823,7 +2316,12 @@ export default function App() {
 
             {activeTab === 'architectural' && (
               <>
-                <GroupedTable data={architecturalItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} />
+                <GroupedTable 
+                  data={architecturalItems} 
+                  onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} 
+                  onOpenSelector={handleOpenSelector} 
+                  onAddNewItem={handleAddNewItem} 
+                />
                 <div className="mt-8 p-6 bg-slate-900 text-white rounded-xl shadow-lg flex justify-between items-center sticky bottom-4 z-20 border border-slate-700">
                   <span className="text-slate-400 text-sm font-medium flex items-center">
                     <div className="w-2 h-2 rounded-full bg-orange-500 mr-2 animate-pulse"></div>
@@ -1843,6 +2341,21 @@ export default function App() {
 
              {activeTab === 'window_calculation' && (
               <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} />
+            )}
+
+             {activeTab === 'green_book' && (
+              <GreenBookModule 
+                  staticItems={staticItems} 
+                  architecturalItems={architecturalItems} 
+                  doorItems={doorItems} 
+                  windowItems={windowItems} 
+              />
+            )}
+             {activeTab === 'dashboard' && (
+              <DashboardModule 
+                  staticItems={staticItems} 
+                  architecturalItems={architecturalItems} 
+              />
             )}
           </div>
         </div>
