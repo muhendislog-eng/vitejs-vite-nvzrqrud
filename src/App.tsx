@@ -122,7 +122,7 @@ const initialArchitecturalData = [
   { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
   { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
   { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
-  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Kompozit alüminyum levha cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
 ];
 
 const formatCurrency = (value) => {
@@ -419,7 +419,7 @@ const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos, is
             <div className="p-6 bg-white rounded-xl border border-orange-200 shadow-md">
               <h4 className="font-bold text-slate-800 mb-6 flex items-center text-lg">
                 <div className="p-2 bg-orange-100 rounded-lg mr-3">
-                  <Edit3 className="w-5 h-5 text-orange-600" />
+                  <Pencil className="w-5 h-5 text-orange-600" />
                 </div>
                 Manuel Poz Ekleme
               </h4>
@@ -554,7 +554,7 @@ const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos, is
                onClick={() => setShowManualForm(true)}
                className="text-xs text-orange-600 hover:text-orange-700 font-bold flex items-center transition-colors px-3 py-1 hover:bg-orange-50 rounded-lg"
              >
-               <Edit3 className="w-3 h-3 mr-1" />
+               <Pencil className="w-3 h-3 mr-1" />
                Manuel Ekleme Formunu Aç
              </button>
            )}
@@ -766,7 +766,7 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
       {/* Input Section */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 w-full">
         <h3 className="text-sm font-bold text-slate-500 uppercase mb-4 tracking-wider flex items-center">
-             {editingId ? <Edit3 className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+             {editingId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
              {editingId ? 'Kapı Düzenle' : 'Yeni Kapı Ekle'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 items-end">
@@ -981,8 +981,8 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
     } else if (item.type === 'alu') {
        // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
-         // Orta Kayıt VARSA (Eski Formül - Kullanıcı Formülü)
-         // [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
+         // Orta Kayıt VARSA (Eski Formül)
+         // Term1 = (En * Boy) * 2 * 1.596 
          const term1 = (widthM * heightM) * 2 * 1.596;
          const term2 = (heightM - 0.2) * 2.038;
          const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
@@ -1063,7 +1063,7 @@ const WindowCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
             <Box className="w-32 h-32" />
         </div>
         <h3 className="text-sm font-bold text-slate-500 uppercase mb-4 tracking-wider flex items-center">
-            {editingId ? <Edit3 className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
+            {editingId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {editingId ? 'Pencere Düzenle' : `Yeni ${windowType === 'pvc' ? 'PVC' : 'Alüminyum'} Pencere Ekle`}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end relative z-10">
