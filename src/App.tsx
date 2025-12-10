@@ -3,7 +3,6 @@ import { FileText, Building, Calculator, Save, Plus, Layers, DoorOpen, Hammer, R
 // Recharts
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 
-
 // --- SABİTLER VE VERİ SETLERİ ---
 
 const INITIAL_POS_LIBRARY = {
@@ -83,50 +82,54 @@ const INITIAL_POS_LIBRARY = {
 };
 
 const initialStaticData = [
-  { id: 1, category: "Hafriyat ve Zemin İşleri", pos: "15.120.1101", desc: "Makine ile her derinlik ve her genişlikte yumuşak ve sert toprak kazılması (Derin kazı)", unit: "m³", price: 65.95, quantity: 0 },
-  { id: 2, category: "Hafriyat ve Zemin İşleri", pos: "15.125.1010", desc: "63mm'ye kadar kırmataş temin edilerek, makine ile serme, sulama ve sıkıştırma yapılması", unit: "m³", price: 564.94, quantity: 0 },
-  { id: 9, category: "Hafriyat ve Zemin İşleri", pos: "15.204.1001", desc: "Ø 100 mm anma çaplı, PVC esaslı koruge drenaj borusunun temini ve yerine döşenmesi", unit: "m", price: 55.29, quantity: 0 },
-  { id: 3, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1003", desc: "C 16/20 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3150.44, quantity: 0 },
-  { id: 4, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1006", desc: "C 30/37 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3553.73, quantity: 0 },
-  { id: 5, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1003", desc: "Ø 8- Ø 12 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 45954.91, quantity: 0 },
-  { id: 6, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1004", desc: "Ø 14- Ø 28 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 44180.65, quantity: 0 },
-  { id: 7, category: "Betonarme ve Kalıp İşleri", pos: "15.180.1003", desc: "Plywood ile düz yüzeyli betonarme kalıbı yapılması", unit: "m²", price: 1011.06, quantity: 0 },
-  { id: 8, category: "Betonarme ve Kalıp İşleri", pos: "15.185.1005", desc: "Çelik borudan kalıp iskelesi yapılması (0-4m)", unit: "m³", price: 124.89, quantity: 0 },
-  { id: 10, category: "Temel Yalıtım İşleri", pos: "15.255.1008", desc: "Polimer bitümlü örtüler ile iki kat su yalıtımı yapılması", unit: "m²", price: 618.30, quantity: 0 },
-  { id: 11, category: "Temel Yalıtım İşleri", pos: "15.270.1008", desc: "Çimento esaslı polimer modifiyeli yalıtım harcı ile su yalıtımı yapılması", unit: "m²", price: 610.66, quantity: 0 },
+  { id: 1, category: "Hafriyat ve Zemin İşleri", pos: "15.120.1101", desc: "Makine ile her derinlik ve her genişlikte yumuşak ve sert toprak kazılması (Derin kazı)", unit: "m³", price: 65.95, quantity: 0, mahal: "" },
+  { id: 2, category: "Hafriyat ve Zemin İşleri", pos: "15.125.1010", desc: "63mm'ye kadar kırmataş temin edilerek, makine ile serme, sulama ve sıkıştırma yapılması", unit: "m³", price: 564.94, quantity: 0, mahal: "" },
+  { id: 9, category: "Hafriyat ve Zemin İşleri", pos: "15.204.1001", desc: "Ø 100 mm anma çaplı, PVC esaslı koruge drenaj borusunun temini ve yerine döşenmesi", unit: "m", price: 55.29, quantity: 0, mahal: "" },
+  { id: 3, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1003", desc: "C 16/20 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3150.44, quantity: 0, mahal: "" },
+  { id: 4, category: "Betonarme ve Kalıp İşleri", pos: "15.150.1006", desc: "C 30/37 basınç dayanım sınıfında, gri renkte, normal hazır beton dökülmesi", unit: "m³", price: 3553.73, quantity: 0, mahal: "" },
+  { id: 5, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1003", desc: "Ø 8- Ø 12 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 45954.91, quantity: 0, mahal: "" },
+  { id: 6, category: "Betonarme ve Kalıp İşleri", pos: "15.160.1004", desc: "Ø 14- Ø 28 mm nervürlü beton çelik çubuğu, kesilmesi, bükülmesi ve yerine konulması", unit: "Ton", price: 44180.65, quantity: 0, mahal: "" },
+  { id: 7, category: "Betonarme ve Kalıp İşleri", pos: "15.180.1003", desc: "Plywood ile düz yüzeyli betonarme kalıbı yapılması", unit: "m²", price: 1011.06, quantity: 0, mahal: "" },
+  { id: 8, category: "Betonarme ve Kalıp İşleri", pos: "15.185.1005", desc: "Çelik borudan kalıp iskelesi yapılması (0-4m)", unit: "m³", price: 124.89, quantity: 0, mahal: "" },
+  { id: 10, category: "Temel Yalıtım İşleri", pos: "15.255.1008", desc: "Polimer bitümlü örtüler ile iki kat su yalıtımı yapılması", unit: "m²", price: 618.30, quantity: 0, mahal: "" },
+  { id: 11, category: "Temel Yalıtım İşleri", pos: "15.270.1008", desc: "Çimento esaslı polimer modifiyeli yalıtım harcı ile su yalıtımı yapılması", unit: "m²", price: 610.66, quantity: 0, mahal: "" },
 ];
 
 const initialArchitecturalData = [
-  { id: 3, category: "Duvar ve Kaba Yapı", pos: "15.220.1012", desc: "100 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 741.66, quantity: 0 },
-  { id: 4, category: "Duvar ve Kaba Yapı", pos: "15.220.1014", desc: "135 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 794.93, quantity: 0 },
-  { id: 5, category: "Duvar ve Kaba Yapı", pos: "15.220.1015", desc: "190 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 907.18, quantity: 0 },
-  { id: 10, category: "Çatı İşleri", pos: "15.300.1002", desc: "Ahşaptan oturtma çatı (OSB/3 kaplamalı)", unit: "m²", price: 1544.23, quantity: 0 },
-  { id: 11, category: "Çatı İşleri", pos: "15.305.1001", desc: "Alaturka kiremit çatı örtüsü (3 Latalı)", unit: "m²", price: 1560.74, quantity: 0 },
-  { id: 12, category: "Çatı İşleri", pos: "15.310.1201", desc: "14 no.lu çinko levhadan eğimli çatı deresi", unit: "m", price: 1226.74, quantity: 0 },
-  { id: 13, category: "Çatı İşleri", pos: "15.315.1002", desc: "Ø 100 mm PVC yağmur borusu", unit: "m", price: 260.23, quantity: 0 },
-  { id: 17, category: "Kapı ve Pencere Doğramaları", pos: "15.455.1001", desc: "PVC doğrama imalatı", unit: "kg", price: 247.96, quantity: 0 },
-  { id: 18, category: "Kapı ve Pencere Doğramaları", pos: "15.470.1010", desc: "4+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55, quantity: 0 },
-  { id: 20, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1103", desc: "Laminat kaplamalı, kraft dolgulu iç kapı kanadı", unit: "m²", price: 3165.60, quantity: 0 },
-  { id: 33, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1001", desc: "Ahşaptan masif tablalı iç kapı kasa ve pervazı", unit: "m²", price: 2332.99, quantity: 0 },
-  { id: 25, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1002", desc: "Gömme iç kapı kilidinin yerine takılması (Dar Tip)", unit: "Adet", price: 126.25, quantity: 0 },
-  { id: 26, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1008", desc: "Kapı kolu ve aynalarının yerine takılması (Kromajlı)", unit: "Adet", price: 126.25, quantity: 0 },
-  { id: 27, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1010", desc: "Menteşenin yerine takılması", unit: "Adet", price: 22.28, quantity: 0 },
-  { id: 42, category: "Kapı ve Pencere Doğramaları", pos: "77.170.1009", desc: "120 Dk Dayanımlı Panik Barlı Yangın Kapısı", unit: "Adet", price: 21770.84, quantity: 0 },
-  { id: 6, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.250.1111", desc: "2.5 cm kalınlığında 400 kg dozlu şap", unit: "m²", price: 443.59, quantity: 0 },
-  { id: 7, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.275.1116", desc: "250 kg çimento dozlu kaba sıva", unit: "m²", price: 437.11, quantity: 0 },
-  { id: 8, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1009", desc: "Perlitli sıva ve saten alçı kaplama", unit: "m²", price: 682.90, quantity: 0 },
-  { id: 9, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1012", desc: "Makina alçısı ile tavanlara tek kat alçı sıva", unit: "m²", price: 459.11, quantity: 0 },
-  { id: 21, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.540.1520", desc: "Su bazlı Silikonlu Mat İç Cephe Boyası", unit: "m²", price: 212.05, quantity: 0 },
-  { id: 15, category: "Zemin ve Duvar Kaplamaları", pos: "15.385.1008", desc: "60x60 cm anma ebatlarında, I.kalite, beyaz, sırlı porselen karo döşeme kaplaması", unit: "m²", price: 850.53, quantity: 0 },
-  { id: 24, category: "Zemin ve Duvar Kaplamaları", pos: "OZL.60X120", desc: "60x120 Parlak Granit Seramik", unit: "m²", price: 1503.43, quantity: 0 },
-  { id: 19, category: "Zemin ve Duvar Kaplamaları", pos: "15.490.1003", desc: "Laminat parke döşeme kaplaması (AC4)", unit: "m²", price: 685.88, quantity: 0 },
-  { id: 16, category: "Zemin ve Duvar Kaplamaları", pos: "15.410.1413", desc: "3 cm renkli mermer denizlik", unit: "m²", price: 3604.93, quantity: 0 },
-  { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0 },
-  { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0 },
-  { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0 },
-  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası", unit: "m²", price: 378.53, quantity: 0 },
-  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0 },
+  { id: 3, category: "Duvar ve Kaba Yapı", pos: "15.220.1012", desc: "100 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 741.66, quantity: 0, mahal: "" },
+  { id: 4, category: "Duvar ve Kaba Yapı", pos: "15.220.1014", desc: "135 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 794.93, quantity: 0, mahal: "" },
+  { id: 5, category: "Duvar ve Kaba Yapı", pos: "15.220.1015", desc: "190 mm yatay delikli tuğla duvar yapılması", unit: "m²", price: 907.18, quantity: 0, mahal: "" },
+  { id: 10, category: "Çatı İşleri", pos: "15.300.1002", desc: "Ahşaptan oturtma çatı (OSB/3 kaplamalı)", unit: "m²", price: 1544.23, quantity: 0, mahal: "" },
+  { id: 11, category: "Çatı İşleri", pos: "15.305.1001", desc: "Alaturka kiremit çatı örtüsü (3 Latalı)", unit: "m²", price: 1560.74, quantity: 0, mahal: "" },
+  { id: 12, category: "Çatı İşleri", pos: "15.310.1201", desc: "14 no.lu çinko levhadan eğimli çatı deresi", unit: "m", price: 1226.74, quantity: 0, mahal: "" },
+  { id: 13, category: "Çatı İşleri", pos: "15.315.1002", desc: "Ø 100 mm PVC yağmur borusu", unit: "m", price: 260.23, quantity: 0, mahal: "" },
+  { id: 17, category: "Kapı ve Pencere Doğramaları", pos: "15.455.1001", desc: "PVC doğrama imalatı", unit: "kg", price: 247.96, quantity: 0, mahal: "" },
+  { id: 18, category: "Kapı ve Pencere Doğramaları", pos: "15.470.1010", desc: "4+4 mm çift camlı pencere ünitesi", unit: "m²", price: 1692.55, quantity: 0, mahal: "" },
+  { id: 20, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1103", desc: "Laminat kaplamalı, kraft dolgulu iç kapı kanadı", unit: "m²", price: 3165.60, quantity: 0, mahal: "" },
+  { id: 33, category: "Kapı ve Pencere Doğramaları", pos: "15.510.1001", desc: "Ahşaptan masif tablalı iç kapı kasa ve pervazı", unit: "m²", price: 2332.99, quantity: 0, mahal: "" },
+  { id: 25, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1002", desc: "Gömme iç kapı kilidinin yerine takılması (Dar Tip)", unit: "Adet", price: 126.25, quantity: 0, mahal: "" },
+  { id: 26, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1008", desc: "Kapı kolu ve aynalarının yerine takılması (Kromajlı)", unit: "Adet", price: 126.25, quantity: 0, mahal: "" },
+  { id: 27, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1010", desc: "Menteşenin yerine takılması", unit: "Adet", price: 22.28, quantity: 0, mahal: "" },
+  { id: 42, category: "Kapı ve Pencere Doğramaları", pos: "77.170.1009", desc: "120 Dk Dayanımlı Panik Barlı Yangın Kapısı", unit: "Adet", price: 21770.84, quantity: 0, mahal: "" },
+  { id: 43, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1101", desc: "Pencere kolu (İspanyolet) takılması", unit: "Adet", price: 145.50, quantity: 0, mahal: "" },
+  { id: 44, category: "Kapı ve Pencere Doğramaları", pos: "15.465.1116", desc: "Pencere menteşesi takılması", unit: "Adet", price: 35.40, quantity: 0, mahal: "" },
+  { id: 45, category: "Kapı ve Pencere Doğramaları", pos: "15.460.1010", desc: "Isı yalıtımlı alüminyum doğrama imalatı", unit: "kg", price: 350.00, quantity: 0, mahal: "" },
+  { id: 6, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.250.1111", desc: "2.5 cm kalınlığında 400 kg dozlu şap", unit: "m²", price: 443.59, quantity: 0, mahal: "" },
+  { id: 7, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.275.1116", desc: "250 kg çimento dozlu kaba sıva", unit: "m²", price: 437.11, quantity: 0, mahal: "" },
+  { id: 8, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1009", desc: "Perlitli sıva ve saten alçı kaplama", unit: "m²", price: 682.90, quantity: 0, mahal: "" },
+  { id: 9, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.280.1012", desc: "Makina alçısı ile tavanlara tek kat alçı sıva", unit: "m²", price: 459.11, quantity: 0, mahal: "" },
+  { id: 21, category: "İnce İşler (Sıva, Şap, Boya)", pos: "15.540.1520", desc: "Su bazlı Silikonlu Mat İç Cephe Boyası", unit: "m²", price: 212.05, quantity: 0, mahal: "" },
+  { id: 15, category: "Zemin ve Duvar Kaplamaları", pos: "15.385.1008", desc: "60x60 cm anma ebatlarında, I.kalite, beyaz, sırlı porselen karo döşeme kaplaması", unit: "m²", price: 850.53, quantity: 0, mahal: "" },
+  { id: 24, category: "Zemin ve Duvar Kaplamaları", pos: "OZL.60X120", desc: "60x120 Parlak Granit Seramik", unit: "m²", price: 1503.43, quantity: 0, mahal: "" },
+  { id: 19, category: "Zemin ve Duvar Kaplamaları", pos: "15.490.1003", desc: "Laminat parke döşeme kaplaması (AC4)", unit: "m²", price: 685.88, quantity: 0, mahal: "" },
+  { id: 16, category: "Zemin ve Duvar Kaplamaları", pos: "15.410.1413", desc: "3 cm renkli mermer denizlik", unit: "m²", price: 3604.93, quantity: 0, mahal: "" },
+  { id: 1, category: "Cephe İşleri", pos: "15.185.1013", desc: "Ön yapımlı tam güvenlikli dış cephe iş iskelesi yapılması (0-51,50m)", unit: "m²", price: 217.18, quantity: 0, mahal: "" },
+  { id: 2, category: "Cephe İşleri", pos: "15.185.1014", desc: "Ön yapımlı tam güvenlikli tavan iş iskelesi (0-21,50m)", unit: "m³", price: 176.29, quantity: 0, mahal: "" },
+  { id: 14, category: "Cephe İşleri", pos: "15.341.1004", desc: "10 cm EPS Mantolama", unit: "m²", price: 1065.70, quantity: 0, mahal: "" },
+  { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0, mahal: "" },
+  { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0, mahal: "" },
 ];
+
 
 // --- YARDIMCI FONKSİYONLAR ---
 
@@ -183,7 +186,7 @@ const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }) => (
   </div>
 );
 
-// --- Green Book Module ---
+// --- Green Book Module (Updated Layout) ---
 const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowItems }) => {
   const [data, setData] = useState([]);
 
@@ -407,7 +410,7 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full dashboard-container">
+    <div className="w-full space-y-6 dashboard-container">
         <style>
           {`
             @media print {
@@ -429,7 +432,7 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
             }
           `}
         </style>
-        <div className="green-book-container w-full">
+        <div className="green-book-container w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
             <div className="flex justify-between items-center mb-6 print-hidden">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center">
                     <Book className="w-6 h-6 mr-2 text-green-600"/> Yeşil Defter
@@ -480,8 +483,8 @@ const GreenBookModule = ({ staticItems, architecturalItems, doorItems, windowIte
                         ) : (
                             data.map((row, index) => (
                                 <tr key={index} className="hover:bg-slate-50 break-inside-avoid">
-                                    <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold">{row.pos}</td>
-                                    <td className="border border-slate-300 px-4 py-2">{row.desc}</td>
+                                    <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold sticky left-0 bg-white z-10">{row.pos}</td>
+                                    <td className="border border-slate-300 px-4 py-2 whitespace-normal min-w-[300px]">{row.desc}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center">{row.unit}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.width}</td>
                                     <td className="border border-slate-300 px-2 py-2 text-center font-mono">{row.height}</td>
@@ -1091,11 +1094,11 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
             </div>
             
             <div className="overflow-x-auto w-full">
-              <table className="w-full text-left table-fixed min-w-[800px]">
+              <table className="w-full text-left table-fixed min-w-[1000px]">
                 <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
                   <tr>
-                    <th className="px-6 py-4 w-32">Poz No</th>
-                    <th className="px-6 py-4 w-auto">İmalat Adı</th>
+                    <th className="px-6 py-4 w-28 sticky left-0 bg-slate-200 z-20">Poz No</th>
+                    <th className="px-6 py-4 w-auto min-w-[300px]">İmalat Adı</th>
                     <th className="px-6 py-4 w-24 text-center">Birim</th>
                     <th className="px-6 py-4 w-32 text-right">Birim Fiyat</th>
                     <th className="px-6 py-4 w-28 text-center">İşlem</th>
@@ -1106,13 +1109,13 @@ const GroupedTable = ({ data, onUpdateQuantity, onOpenSelector, onAddNewItem }) 
                 <tbody className="divide-y divide-slate-100">
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4">
+                      <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
                         <span className="font-mono text-xs font-bold text-slate-600 bg-slate-200/50 px-2 py-1 rounded">
                           {item.pos}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-700 line-clamp-2" title={item.desc}>
+                      <td className="px-6 py-4 whitespace-normal min-w-[300px]">
+                        <div className="text-sm font-medium text-slate-700 leading-relaxed">
                           {item.desc}
                         </div>
                       </td>
@@ -1308,12 +1311,12 @@ const DoorCalculationArea = ({ items, setItems, onUpdateQuantities }) => {
         <table className="w-full text-left text-sm table-fixed min-w-[800px]">
           <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-4 w-32">Tip</th>
-              <th className="px-6 py-4 w-32">Ebat (En/Boy)</th>
-              <th className="px-6 py-4 w-24 text-center">Adet</th>
-              <th className="px-6 py-4 w-40 text-right">Kapı Kanadı (m²)</th>
-              <th className="px-6 py-4 w-40 text-right">Kasa+Pervaz (m²)</th>
-              <th className="px-6 py-4 w-32 text-right">İşlem</th>
+              <th className="px-6 py-3 w-32">Tip</th>
+              <th className="px-6 py-3 w-32">Ebat (En/Boy)</th>
+              <th className="px-6 py-3 w-24 text-center">Adet</th>
+              <th className="px-6 py-3 w-40 text-right">Kapı Kanadı (m²)</th>
+              <th className="px-6 py-3 w-40 text-right">Kasa+Pervaz (m²)</th>
+              <th className="px-6 py-3 w-32 text-right">İşlem</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
