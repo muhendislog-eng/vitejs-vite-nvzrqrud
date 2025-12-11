@@ -313,7 +313,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
                         <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
                           <Pencil className="w-4 h-4" />
                         </button>
-                        <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
+                        <button onClick={() => handleRemoveItem(item.id)} className="text-red-500 hover:text-red-600 p-1 hover:bg-red-50 rounded">
                           <Trash2 className="w-4 h-4" />
                         </button>
                       </div>
