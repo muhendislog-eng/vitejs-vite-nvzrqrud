@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, BookOpen, AlertCircle, Loader, Filter } from 'lucide-react';
-import { searchPoses } from '../db/database'; // SQL Motoru bağlantısı
+import { searchPoses } from '../db/dtabase'; // SQL Motoru bağlantısı
 import { formatCurrency } from '../utils/helpers';
 
 interface PozAramaMotoruProps {
