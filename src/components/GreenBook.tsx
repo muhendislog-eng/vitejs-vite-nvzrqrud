@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Book, 
-  FileSpreadsheet, 
-  Printer 
-} from 'lucide-react';
+import { Book, FileSpreadsheet, Printer } from 'lucide-react';
+import { formatCurrency } from '../utils/helpers';
+import { tr } from 'framer-motion/client';
 
-// Tip tanımları (Diğer dosyalarla uyumlu olması için)
+// Tip tanımları
 interface MetrajItem {
   id?: number | string;
   pos: string;
@@ -50,11 +48,11 @@ const GreenBook: React.FC<GreenBookProps> = ({
   const [data, setData] = useState<any[]>([]);
 
   useEffect(() => {
-    // Generate Green Book Data
+    // Verileri Yeşil Defter formatına dönüştürme
     let generatedData: any[] = [];
     
     // 1. Statik Kalemler
-    staticItems.forEach(item => {
+    staticItems.forEach((item: any) => {
         if(item.quantity > 0) {
             generatedData.push({
                 type: 'static',
@@ -71,7 +69,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
     });
 
     // 2. Mimari Kalemler
-    architecturalItems.forEach(item => {
+    architecturalItems.forEach((item: any) => {
          if(item.quantity > 0) {
             generatedData.push({
                 type: 'arch',
@@ -87,8 +85,8 @@ const GreenBook: React.FC<GreenBookProps> = ({
         }
     });
 
-    // 3. Kapılar (Detailed)
-    doorItems.forEach(item => {
+    // 3. Kapılar (Detaylı Hesap)
+    doorItems.forEach((item: any) => {
         const widthM = (parseFloat(item.width) || 0) / 100;
         const heightM = (parseFloat(item.height) || 0) / 100;
         const count = parseFloat(item.count) || 0;
@@ -109,27 +107,44 @@ const GreenBook: React.FC<GreenBookProps> = ({
                 total: (leafArea * count).toFixed(2)
             });
         }
-        // ... (Diğer kapı hesaplamaları)
-         // 3c. Kilit (Basitleştirilmiş örnek için)
+        
+        // 3b. Kasa+Pervaz (Alan - Formül: ((2*h)+w)*0.34)
+        const frameArea = ((2 * heightM) + widthM) * 0.34;
+        if (frameArea > 0) {
+             generatedData.push({
+                type: 'door',
+                pos: '15.510.1001',
+                desc: `${label} - Kasa+Pervaz`,
+                unit: 'm²',
+                width: '-',
+                height: '-',
+                count: count,
+                deduction: '-',
+                total: (frameArea * count).toFixed(2)
+            });
+        }
+
+        // 3c. Kilit
          generatedData.push({
-            type: 'door',
-            pos: '15.465.1002',
-            desc: `${label} - Kilit`,
-            unit: 'Adet',
-            width: '-',
-            height: '-',
-            count: count,
-            deduction: '-',
-            total: count
+                type: 'door',
+                pos: '15.465.1002',
+                desc: `${label} - Kilit`,
+                unit: 'Adet',
+                width: '-',
+                height: '-',
+                count: count,
+                deduction: '-',
+                total: count
          });
     });
     
-    // 4. Pencereler (Detailed)
-    windowItems.forEach(item => {
+    // 4. Pencereler (Detaylı Hesap)
+    windowItems.forEach((item: any) => {
         const widthM = (parseFloat(item.width) || 0) / 100;
         const heightM = (parseFloat(item.height) || 0) / 100;
         const count = parseFloat(item.count) || 0;
         const label = item.label || 'Pencere';
+        const midReg = parseFloat(item.middleRegister) || 0;
         
         let weight = 0;
         let pos = '';
@@ -138,14 +153,24 @@ const GreenBook: React.FC<GreenBookProps> = ({
         if (item.type === 'pvc') {
             pos = '15.455.1001';
             desc = `${label} - PVC Doğrama`;
+            // PVC Formülü: 2 * (En + Boy) * 1.1 * 2 * Adet
             weight = 2 * (widthM + heightM) * 1.1 * 2;
         } else {
             pos = '15.460.1010';
             desc = `${label} - Alüminyum Doğrama`;
-            // Basitleştirilmiş Alüminyum hesabı (Detaylar App.tsx'deki lojik ile aynı olmalı)
-            const term1 = (widthM * heightM) * 2 * 1.596;
-            const term2 = ((widthM - 0.16) + (heightM - 0.16)) * 2 * 2.186;
-            weight = term1 + term2;
+             // Alüminyum Formülü
+             if (midReg > 0) {
+                // Orta Kayıtlı: [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
+                const term1 = (widthM * heightM) * 2 * 1.596;
+                const term2 = (heightM - 0.2) * 2.038;
+                const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
+                weight = term1 + term2 + term3;
+            } else {
+                 // Orta Kayıtsız: [(En+Boy)*2*1.596] + [((En-0.16)+(Boy-0.16))*2*2.186]
+                const term1 = (widthM + heightM) * 2 * 1.596;
+                const term2 = ((widthM - 0.16) + (heightM - 0.16)) * 2 * 2.186;
+                weight = term1 + term2;
+            }
         }
 
         if (weight > 0) {
@@ -161,6 +186,46 @@ const GreenBook: React.FC<GreenBookProps> = ({
                 total: (weight * count).toFixed(2)
             });
         }
+        
+        // 4b. Cam Alanı
+        const glassArea = Math.max(0, (widthM - 0.2) * (heightM - 0.2));
+        if (glassArea > 0) {
+            generatedData.push({
+                type: 'window',
+                pos: '15.470.1010',
+                desc: `${label} - Isıcam`,
+                unit: 'm²',
+                width: (widthM - 0.2).toFixed(2),
+                height: (heightM - 0.2).toFixed(2),
+                count: count,
+                deduction: '-',
+                total: (glassArea * count).toFixed(2)
+            });
+        }
+        
+        // 4c. Kol ve Menteşe
+        generatedData.push({
+             type: 'window',
+             pos: '15.465.1101',
+             desc: `${label} - Kol`,
+             unit: 'Adet',
+             width: '-',
+             height: '-',
+             count: count,
+             deduction: '-',
+             total: count * 1
+        });
+        generatedData.push({
+             type: 'window',
+             pos: '15.465.1116',
+             desc: `${label} - Menteşe`,
+             unit: 'Adet',
+             width: '-',
+             height: '-',
+             count: count,
+             deduction: '-',
+             total: count * 3
+        });
     });
 
     setData(generatedData);
@@ -174,10 +239,11 @@ const GreenBook: React.FC<GreenBookProps> = ({
   const handleExportToExcel = () => {
       // @ts-ignore
       if (!window.XLSX) {
-        alert("Excel modülü henüz yüklenmedi.");
+        alert("Excel modülü henüz yüklenmedi. Lütfen sayfayı yenileyip tekrar deneyin.");
         return;
       }
 
+      // Excel için veriyi hazırla
       const excelData = data.map(item => ({
         "Poz No": item.pos,
         "İmalatın Cinsi / Açıklama": item.desc,
@@ -195,6 +261,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
       // @ts-ignore
       const ws = window.XLSX.utils.json_to_sheet(excelData);
       
+      // Sütun genişliklerini ayarla
       ws['!cols'] = [
         {wch: 15}, {wch: 50}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 10}, {wch: 15}, {wch: 15}
       ];
@@ -206,7 +273,8 @@ const GreenBook: React.FC<GreenBookProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full print:border-none print:shadow-none print:w-full print:p-0 dashboard-container">
+    <div className="bg-white rounded-2xl shadow-sm border border-slate-200 p-8 w-full print:border-none print:shadow-none print:w-full print:p-0 dashboard-container animate-in fade-in duration-500">
+        {/* Yazdırma Stilleri */}
         <style>
           {`
             @media print {
@@ -217,6 +285,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
             }
           `}
         </style>
+        
         <div className="green-book-container w-full">
             <div className="flex justify-between items-center mb-6 print-hidden">
                 <h2 className="text-2xl font-bold text-slate-800 flex items-center">
@@ -238,7 +307,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
                 </div>
             </div>
 
-            {/* Print Header */}
+            {/* Yazdırma Başlığı */}
             <div className="hidden print:block mb-8 text-center">
                 <h1 className="text-2xl font-bold border-b-2 border-black pb-2 mb-2">YEŞİL DEFTER (METRAJ CETVELİ)</h1>
                 <div className="flex justify-between text-sm">
@@ -266,7 +335,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
                         {data.length === 0 ? (
                             <tr><td colSpan={9} className="text-center py-8 text-slate-400">Veri bulunamadı.</td></tr>
                         ) : (
-                            data.map((row, index) => (
+                            data.map((row: any, index: number) => (
                                 <tr key={index} className="hover:bg-slate-50 break-inside-avoid">
                                     <td className="border border-slate-300 px-4 py-2 font-mono text-xs font-bold">{row.pos}</td>
                                     <td className="border border-slate-300 px-4 py-2">{row.desc}</td>

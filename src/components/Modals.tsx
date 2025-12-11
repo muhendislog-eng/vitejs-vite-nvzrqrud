@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogIn, X, Info, PieChart as PieChartIcon, Grid, MapPin, Pencil, RefreshCw, Plus } from 'lucide-react';
+import { Lock, LogIn, X, Info, PieChart as PieChartIcon, Grid, MapPin, Pencil, RefreshCw, Plus, Search, Check, ArrowRight } from 'lucide-react';
 
+// --- GİRİŞ MODALI ---
 export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -65,6 +66,7 @@ export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
   );
 };
 
+// --- PROJE BİLGİSİ MODALI ---
 export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) => {
   const [info, setInfo] = useState({ name: '', area: '', floors: '', city: '' });
 
@@ -130,6 +132,7 @@ export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) 
   );
 };
 
+// --- POZ SEÇİM MODALI ---
 export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos, isAddingNew, posLibrary }: any) => {
   const [searchTerm, setSearchTerm] = useState("");
   const [showManualForm, setShowManualForm] = useState(false);
@@ -197,6 +200,9 @@ export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, current
                           <p className="text-slate-700 text-sm leading-relaxed">{item.desc}</p>
                         </div>
                         <div className="text-right min-w-[100px]"><span className="block text-xs font-bold text-slate-400 uppercase mb-1">{item.unit} Fiyatı</span><span className="font-bold text-slate-900 text-lg tracking-tight">{formatCurrency(item.price)}</span></div>
+                      </div>
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity transform translate-x-2 group-hover:translate-x-0">
+                         <ArrowRight className="w-5 h-5 text-orange-400" />
                       </div>
                   </div>
                )) : (

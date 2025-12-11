@@ -7,68 +7,19 @@ import {
   Plus, 
   RefreshCw 
 } from 'lucide-react';
+import { formatCurrency, getFlattenedLocations } from '../utils/helpers';
 
-// Gerekli veri tipleri
-interface MetrajItem {
-  id: number | string;
-  category?: string;
-  pos: string;
-  desc: string;
-  unit: string;
-  price: number;
-  quantity: number;
-  mahal?: string;
-  [key: string]: any;
-}
-
-interface Location {
-  id: number;
-  name: string;
-  type: string;
-  children?: Location[];
-}
-
-interface MetrajTableProps {
-  data: MetrajItem[];
-  onUpdateQuantity: (id: number | string, quantity: number) => void;
-  onOpenSelector: (item: MetrajItem) => void;
-  onAddNewItem: (category: string) => void;
-  locations: Location[];
-  onUpdateLocation: (id: number | string, locationName: string) => void;
-}
-
-// Yardımcı fonksiyon (Dosya içinde kullanmak için)
-const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat('tr-TR', {
-    style: 'currency',
-    currency: 'TRY',
-    minimumFractionDigits: 2
-  }).format(value);
-};
-
-// Helper to flatten locations for dropdown
-const getFlattenedLocations = (nodes: Location[], prefix = ''): { id: number; name: string; type: string }[] => {
-  let options: { id: number; name: string; type: string }[] = [];
-  nodes.forEach(node => {
-    const currentName = prefix ? `${prefix} > ${node.name}` : node.name;
-    options.push({ id: node.id, name: currentName, type: node.type });
-    if (node.children) {
-      options.push(...getFlattenedLocations(node.children, currentName));
-    }
-  });
-  return options;
-};
-
-const MetrajTable: React.FC<MetrajTableProps> = ({ 
+const MetrajTable = ({ 
   data, 
   onUpdateQuantity, 
   onOpenSelector, 
   onAddNewItem,
   locations,
   onUpdateLocation
-}) => {
-  // Veriyi kategorilere göre grupla
-  const groupedData = data.reduce((acc: Record<string, MetrajItem[]>, item) => {
+}: any) => {
+  
+  // 1. Verileri Kategorilere Göre Gruplama
+  const groupedData = data.reduce((acc: any, item: any) => {
     const cat = item.category || "Genel";
     if (!acc[cat]) {
       acc[cat] = [];
@@ -77,15 +28,17 @@ const MetrajTable: React.FC<MetrajTableProps> = ({
     return acc;
   }, {});
 
+  // 2. Lokasyon Listesini Düzleştirme (Select kutusu için)
   const locationOptions = getFlattenedLocations(locations);
 
   return (
-    <div className="space-y-8 w-full">
+    <div className="space-y-8 w-full animate-in fade-in duration-500">
       {Object.keys(groupedData).map((category) => {
         const items = groupedData[category];
-        const categoryTotal = items.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+        // Kategori Ara Toplamı
+        const categoryTotal = items.reduce((sum: number, item: any) => sum + (item.price * item.quantity), 0);
         
-        // Kategoriye göre ikon seçimi
+        // Kategoriye Göre İkon Seçimi
         let CategoryIcon = Layers;
         if (category.includes("Hafriyat")) CategoryIcon = Hammer;
         if (category.includes("Kapı")) CategoryIcon = DoorOpen;
@@ -93,7 +46,8 @@ const MetrajTable: React.FC<MetrajTableProps> = ({
         
         return (
           <div key={category} className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md w-full">
-            {/* Kategori Başlığı ve Ara Toplam */}
+            
+            {/* --- KATEGORİ BAŞLIĞI --- */}
             <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center backdrop-blur-sm">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
@@ -109,62 +63,74 @@ const MetrajTable: React.FC<MetrajTableProps> = ({
                    <Plus className="w-3 h-3 mr-1.5" />
                    Poz Ekle
                  </button>
-                 <div className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm shadow-md">
+                 <div className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm shadow-md hidden sm:block">
                    Ara Toplam: <span className="font-bold text-orange-400 ml-2">{formatCurrency(categoryTotal)}</span>
                  </div>
               </div>
             </div>
             
-            {/* Tablo */}
+            {/* --- TABLO ALANI (Responsive Wrapper) --- */}
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left table-fixed min-w-[1000px]">
                 <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
                   <tr>
-                    <th className="px-6 py-4 w-28">Poz No</th>
-                    <th className="px-6 py-4 w-auto">İmalat Adı</th>
+                    <th className="px-6 py-4 w-28 sticky left-0 bg-slate-200 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Poz No</th>
+                    <th className="px-6 py-4 w-auto min-w-[300px]">İmalat Adı</th>
                     <th className="px-6 py-4 w-48">Mahal</th>
                     <th className="px-6 py-4 w-20 text-center">Birim</th>
                     <th className="px-6 py-4 w-28 text-right">Birim Fiyat</th>
                     <th className="px-6 py-4 w-24 text-center">İşlem</th>
                     <th className="px-6 py-4 w-28 text-center">Miktar</th>
-                    <th className="px-6 py-4 w-32 text-right">Tutar</th>
+                    <th className="px-6 py-4 w-36 text-right">Tutar</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {items.map((item) => (
+                  {items.map((item: any) => (
                     <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-6 py-4">
+                      
+                      {/* 1. Poz No (Yapışkan Sütun) */}
+                      <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-slate-100">
                         <span className="font-mono text-xs font-bold text-slate-600 bg-slate-200/50 px-2 py-1 rounded">
                           {item.pos}
                         </span>
                       </td>
-                      <td className="px-6 py-4">
-                        <div className="text-sm font-medium text-slate-700 line-clamp-2" title={item.desc}>
+
+                      {/* 2. Açıklama (Text Wrap) */}
+                      <td className="px-6 py-4 whitespace-normal min-w-[300px]">
+                        <div className="text-sm font-medium text-slate-700 leading-relaxed">
                           {item.desc}
                         </div>
                       </td>
+
+                      {/* 3. Mahal Seçimi */}
                       <td className="px-6 py-4">
                          <select 
-                           className="w-full p-1 text-xs border border-slate-200 rounded bg-white"
+                           className="w-full p-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer"
                            value={item.mahal || ''}
                            onChange={(e) => onUpdateLocation(item.id, e.target.value)}
                          >
                            <option value="">Genel</option>
-                           {locationOptions.map(loc => (
+                           {locationOptions.map((loc: any) => (
                              <option key={loc.id} value={loc.name}>{loc.name}</option>
                            ))}
                          </select>
                       </td>
+
+                      {/* 4. Birim */}
                       <td className="px-6 py-4 text-center">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
                           {item.unit}
                         </span>
                       </td>
+
+                      {/* 5. Birim Fiyat */}
                       <td className="px-6 py-4 text-right">
                         <span className="font-mono text-sm text-slate-600 font-medium">
                           {formatCurrency(item.price)}
                         </span>
                       </td>
+
+                      {/* 6. İşlem (Değiştir) */}
                       <td className="px-6 py-4 text-center">
                         <button 
                           onClick={() => onOpenSelector(item)}
@@ -174,6 +140,8 @@ const MetrajTable: React.FC<MetrajTableProps> = ({
                           <RefreshCw className="w-4 h-4" />
                         </button>
                       </td>
+
+                      {/* 7. Miktar Girişi */}
                       <td className="px-6 py-4">
                         <div className="relative">
                           <input
@@ -187,6 +155,8 @@ const MetrajTable: React.FC<MetrajTableProps> = ({
                           />
                         </div>
                       </td>
+
+                      {/* 8. Toplam Tutar */}
                       <td className="px-6 py-4 text-right">
                         <span className="font-bold text-slate-900">
                           {formatCurrency(item.price * item.quantity)}

@@ -11,7 +11,7 @@ import {
   LogIn 
 } from 'lucide-react';
 
-// Header'ın alacağı veri tiplerini tanımlıyoruz
+// Header'ın dışarıdan beklediği veri tiplerini tanımlıyoruz
 interface ProjectInfo {
   name: string;
   area: string;
@@ -25,7 +25,7 @@ interface HeaderProps {
   isPDFLoaded: boolean;
   isXLSXLoaded: boolean;
   isLoadingScripts: boolean;
-  // Aksiyonlar (Parent componentten gelecek fonksiyonlar)
+  // Aksiyonlar (Ana dosyadan tetiklenecek fonksiyonlar)
   onOpenProjectModal: () => void;
   onLoginClick: () => void;
   onLogoutClick: () => void;
@@ -51,14 +51,15 @@ const Header: React.FC<HeaderProps> = ({
   onImportExcel,
   onUpdatePDF
 }) => {
-  // Dosya yükleme inputları için yerel referanslar
+  // Dosya yükleme inputları için referanslar
   const pdfInputRef = useRef<HTMLInputElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   return (
     <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between">
-        {/* Logo ve Proje İsmi Alanı */}
+        
+        {/* SOL TARAF: Logo ve Proje Bilgisi */}
         <div className="flex items-center space-x-4">
           <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-900/50">
             <Hammer className="w-8 h-8 text-white" />
@@ -89,11 +90,11 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Sağ Taraf: Butonlar ve İşlemler */}
+        {/* SAĞ TARAF: Butonlar */}
         <div className="flex items-center space-x-3">
           {isLoggedIn && (
             <>
-              {/* Proje Bilgisi Butonu */}
+              {/* Proje Bilgisi Düzenle */}
               <button
                 onClick={onOpenProjectModal}
                 className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
@@ -104,7 +105,7 @@ const Header: React.FC<HeaderProps> = ({
 
               <div className="h-8 w-px bg-slate-700 mx-1 hidden md:block"></div>
 
-              {/* PDF Güncelle Butonu */}
+              {/* PDF Yükleme */}
               <div className="relative group hidden md:block">
                 <input
                   type="file"
@@ -121,6 +122,7 @@ const Header: React.FC<HeaderProps> = ({
                       ? 'bg-indigo-600 hover:bg-indigo-500 text-white border-indigo-500 shadow-lg shadow-indigo-900/20 active:scale-95'
                       : 'bg-slate-800 text-slate-500 border-slate-700 cursor-not-allowed'
                   }`}
+                  title="PDF'ten Birim Fiyat Güncelle"
                 >
                   <RefreshCw className={`w-3 h-3 ${isLoadingScripts ? 'animate-spin' : ''}`} />
                   <span className="hidden lg:inline">PDF Fiyat Güncelle</span>
@@ -129,13 +131,13 @@ const Header: React.FC<HeaderProps> = ({
 
               <div className="h-8 w-px bg-slate-700 mx-2 hidden md:block"></div>
 
-              {/* Excel İşlemleri Grubu */}
+              {/* Excel İşlemleri */}
               <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700 hidden md:flex">
                 <button
                   onClick={onDownloadDescriptions}
                   disabled={!isXLSXLoaded}
                   className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors"
-                  title="Poz Tarifleri"
+                  title="Poz Tarifleri İndir"
                 >
                   <BookOpen className="w-4 h-4" />
                 </button>
