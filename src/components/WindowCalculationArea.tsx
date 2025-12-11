@@ -1,5 +1,16 @@
 import React, { useState } from 'react';
-import { RefreshCcw, Maximize, Plus, Pencil, Trash2, Box, Grid, Settings, MousePointer, RefreshCw } from 'lucide-react';
+import { 
+  RefreshCcw, 
+  Maximize, 
+  Plus, 
+  Pencil, 
+  Trash2, 
+  Box, 
+  Grid, 
+  Settings, 
+  MousePointer, 
+  RefreshCw 
+} from 'lucide-react';
 import { getFlattenedLocations } from '../utils/helpers';
 
 // Veri Tipleri
@@ -90,6 +101,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
        // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
          // Orta Kayıt VARSA (Eski Formül)
+         // [(En*Boy)*2*1.596] + [(Boy-0.2)*2.038] + [(((En/2)-0.16)+(Boy-0.16))*2*2.186)]
          const term1 = (widthM * heightM) * 2 * 1.596;
          const term2 = (heightM - 0.2) * 2.038;
          const term3 = (((widthM / 2) - 0.16) + (heightM - 0.16)) * 2 * 2.186;
@@ -177,6 +189,8 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
             {editingId ? <Pencil className="w-4 h-4 mr-2" /> : <Plus className="w-4 h-4 mr-2" />}
             {editingId ? 'Pencere Düzenle' : `Yeni ${windowType === 'pvc' ? 'PVC' : 'Alüminyum'} Pencere Ekle`}
         </h3>
+        
+        {/* RESPONSIVE GRID DÜZENİ: Mobilde 1, Tablette 2, Masaüstünde 6 sütun */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end relative z-10">
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1">Mahal</label>
@@ -252,61 +266,63 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
         </div>
       </div>
 
-      {/* --- TABLO --- */}
+      {/* --- TABLO (Responsive Kaydırma Özelliği ile) --- */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden w-full">
-        <table className="w-full text-left text-sm table-fixed min-w-[800px]">
-          <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
-            <tr>
-              <th className="px-6 py-3 w-32">Poz No</th>
-              <th className="px-6 py-3 w-32">Mahal</th>
-              <th className="px-6 py-3">Tip</th>
-              <th className="px-6 py-3">Çeşit</th>
-              <th className="px-6 py-3">Ebat</th>
-              <th className="px-6 py-3 text-center">Adet</th>
-              <th className="px-6 py-3 text-right">
-                {windowType === 'pvc' ? 'PVC Profil (kg)' : 'Alüminyum Profil (kg)'}
-              </th>
-              <th className="px-6 py-3 text-right">İşlem</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {items.length === 0 ? (
-              <tr><td colSpan={8} className="px-6 py-8 text-center text-slate-400">Veri yok.</td></tr>
-            ) : items.map((item) => {
-                const weight = calculateWindowValues(item);
-                const posNo = item.type === 'pvc' ? '15.455.1001' : '15.460.1010';
-                
-                return (
-              <tr key={item.id} className={`hover:bg-slate-50 ${editingId === item.id ? 'bg-orange-50' : ''}`}>
-                <td className="px-6 py-4 font-mono text-xs font-bold text-slate-500">
-                   {posNo}
-                </td>
-                <td className="px-6 py-4 text-slate-500 text-xs font-mono">{item.mahal || '-'}</td>
-                <td className="px-6 py-4 font-bold text-blue-700">{item.label}</td>
-                <td className="px-6 py-4">
-                  <span className={`text-xs px-2 py-1 rounded-full font-bold ${item.type === 'pvc' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
-                    {item.type === 'pvc' ? 'PVC' : 'Alüminyum'}
-                  </span>
-                </td>
-                <td className="px-6 py-4">{item.width} / {item.height}</td>
-                <td className="px-6 py-4 text-center font-bold">{item.count}</td>
-                <td className="px-6 py-4 text-right font-mono text-slate-700">
-                  {weight.weight.toFixed(2)} kg
-                </td>
-                <td className="px-6 py-4 text-right">
-                  <div className="flex justify-end space-x-2">
-                    <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
-                      <Pencil className="w-4 h-4" />
-                    </button>
-                    <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )})}
-          </tbody>
-        </table>
+        <div className="overflow-x-auto w-full">
+            <table className="w-full text-left text-sm table-fixed min-w-[1000px]">
+              <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
+                <tr>
+                  <th className="px-6 py-3 w-32 sticky left-0 bg-slate-200 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Poz No</th>
+                  <th className="px-6 py-3 w-32">Mahal</th>
+                  <th className="px-6 py-3">Tip</th>
+                  <th className="px-6 py-3">Çeşit</th>
+                  <th className="px-6 py-3">Ebat</th>
+                  <th className="px-6 py-3 text-center">Adet</th>
+                  <th className="px-6 py-3 text-right">
+                    {windowType === 'pvc' ? 'PVC Profil (kg)' : 'Alüminyum Profil (kg)'}
+                  </th>
+                  <th className="px-6 py-3 text-right">İşlem</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {items.length === 0 ? (
+                  <tr><td colSpan={8} className="px-6 py-8 text-center text-slate-400">Veri yok.</td></tr>
+                ) : items.map((item) => {
+                    const weight = calculateWindowValues(item);
+                    const posNo = item.type === 'pvc' ? '15.455.1001' : '15.460.1010';
+                    
+                    return (
+                  <tr key={item.id} className={`hover:bg-slate-50 ${editingId === item.id ? 'bg-orange-50' : ''}`}>
+                    <td className="px-6 py-4 font-mono text-xs font-bold text-slate-500 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                      {posNo}
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 text-xs font-mono">{item.mahal || '-'}</td>
+                    <td className="px-6 py-4 font-bold text-blue-700">{item.label}</td>
+                    <td className="px-6 py-4">
+                      <span className={`text-xs px-2 py-1 rounded-full font-bold ${item.type === 'pvc' ? 'bg-blue-100 text-blue-700' : 'bg-gray-100 text-gray-700'}`}>
+                        {item.type === 'pvc' ? 'PVC' : 'Alüminyum'}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">{item.width} / {item.height}</td>
+                    <td className="px-6 py-4 text-center font-bold">{item.count}</td>
+                    <td className="px-6 py-4 text-right font-mono text-slate-700">
+                      {weight.weight.toFixed(2)} kg
+                    </td>
+                    <td className="px-6 py-4 text-right">
+                      <div className="flex justify-end space-x-2">
+                        <button onClick={() => handleEditItem(item)} className="text-blue-500 hover:text-blue-700 p-1 hover:bg-blue-50 rounded">
+                          <Pencil className="w-4 h-4" />
+                        </button>
+                        <button onClick={() => handleRemoveItem(item.id)} className="text-red-400 hover:text-red-600 p-1 hover:bg-red-50 rounded">
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                )})}
+              </tbody>
+            </table>
+        </div>
       </div>
 
       {/* --- ÖZET KARTLARI --- */}
@@ -361,6 +377,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
          </div>
       </div>
 
+      {/* Pencere Aksesuarları */}
       <div className="mt-8 w-full">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
           <Settings className="w-5 h-5 mr-2 text-indigo-500" />
