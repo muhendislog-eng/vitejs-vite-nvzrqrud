@@ -67,7 +67,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   };
 
   return (
-    <div className="w-full space-y-6 dashboard-container animate-in fade-in duration-500">
+    <div className="w-full max-w-full space-y-6 dashboard-container animate-in fade-in duration-500 overflow-hidden">
         
         {/* Yazdırma Stilleri */}
         <style>
@@ -82,7 +82,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         </style>
         
         {/* --- BAŞLIK ALANI --- */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-end border-b border-slate-200 pb-4 gap-4 print-hidden w-full">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4 print-hidden w-full">
              <div className="flex flex-col">
                 <h2 className="text-xl font-bold text-slate-800 flex items-center">
                     <LayoutDashboard className="w-6 h-6 mr-2 text-indigo-600"/> 
@@ -94,7 +94,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
             <button 
                 onClick={handlePrintDashboard} 
-                className="flex items-center justify-center w-full sm:w-auto px-6 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors shadow-lg shadow-slate-900/20 active:scale-95 font-medium"
+                className="flex items-center justify-center w-full md:w-auto px-6 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-colors shadow-lg shadow-slate-900/20 active:scale-95 font-medium"
             >
                 <Printer className="w-4 h-4 mr-2"/> PDF / Yazdır
             </button>
@@ -103,68 +103,76 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         {/* --- ÖZET KARTLARI (Responsive Grid) --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
             {/* Statik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
                 <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Building className="w-16 h-16 text-orange-600" />
                 </div>
-                <div className="relative z-10">
-                    <span className="flex items-center text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
-                        <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
-                        Kaba İnşaat
-                    </span>
-                    <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(staticTotal)}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium bg-orange-50 inline-block px-2 py-0.5 rounded-full">
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div>
+                        <span className="flex items-center text-xs font-bold text-orange-600 uppercase tracking-wider mb-2">
+                            <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
+                            Kaba İnşaat
+                        </span>
+                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(staticTotal)}</div>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-3 font-medium bg-orange-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Pay: %{chartData[0].percent.toFixed(1)}
                     </div>
                 </div>
             </div>
 
             {/* Mimari Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Ruler className="w-16 h-16 text-blue-600" />
                 </div>
-                <div className="relative z-10">
-                    <span className="flex items-center text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
-                        Mimari İmalat
-                    </span>
-                    <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(archTotal)}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium bg-blue-50 inline-block px-2 py-0.5 rounded-full">
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div>
+                        <span className="flex items-center text-xs font-bold text-blue-600 uppercase tracking-wider mb-2">
+                            <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
+                            Mimari İmalat
+                        </span>
+                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(archTotal)}</div>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-3 font-medium bg-blue-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Pay: %{chartData[1].percent.toFixed(1)}
                     </div>
                 </div>
             </div>
 
             {/* Elektrik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Zap className="w-16 h-16 text-yellow-600" />
                 </div>
-                <div className="relative z-10">
-                    <span className="flex items-center text-xs font-bold text-yellow-600 uppercase tracking-wider mb-2">
-                        <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
-                        Elektrik (Tahmini)
-                    </span>
-                    <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(electricTotal)}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium bg-yellow-50 inline-block px-2 py-0.5 rounded-full">
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div>
+                        <span className="flex items-center text-xs font-bold text-yellow-600 uppercase tracking-wider mb-2">
+                            <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
+                            Elektrik (Tahmini)
+                        </span>
+                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(electricTotal)}</div>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-3 font-medium bg-yellow-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Sabit Oran: %10
                     </div>
                 </div>
             </div>
 
             {/* Mekanik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Settings className="w-16 h-16 text-indigo-600" />
                 </div>
-                <div className="relative z-10">
-                    <span className="flex items-center text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">
-                        <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></div>
-                        Mekanik (Tahmini)
-                    </span>
-                    <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(mechanicalTotal)}</div>
-                    <div className="text-xs text-slate-400 mt-1 font-medium bg-indigo-50 inline-block px-2 py-0.5 rounded-full">
+                <div className="relative z-10 flex flex-col justify-between h-full">
+                    <div>
+                        <span className="flex items-center text-xs font-bold text-indigo-600 uppercase tracking-wider mb-2">
+                            <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></div>
+                            Mekanik (Tahmini)
+                        </span>
+                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(mechanicalTotal)}</div>
+                    </div>
+                    <div className="text-xs text-slate-400 mt-3 font-medium bg-indigo-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Sabit Oran: %10
                     </div>
                 </div>
@@ -175,21 +183,21 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full mb-8">
             
             {/* Pasta Grafik */}
-            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full h-[450px]">
                 <div className="flex items-center justify-between w-full border-b border-slate-100 pb-4 mb-4">
                     <h3 className="text-lg font-bold text-slate-700 flex items-center">
                         <PieChartIcon className="w-5 h-5 mr-2 text-slate-400"/> Maliyet Dağılımı
                     </h3>
                 </div>
-                <div className="w-full h-[300px] sm:h-[400px]">
+                <div className="w-full h-full flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
                                 data={chartData}
                                 cx="50%"
                                 cy="50%"
-                                innerRadius={60}
-                                outerRadius={80}
+                                innerRadius={70}
+                                outerRadius={100}
                                 paddingAngle={5}
                                 dataKey="value"
                             >
@@ -208,13 +216,13 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
 
             {/* Sütun Grafik */}
-             <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full">
+             <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full h-[450px]">
                 <div className="flex items-center justify-between w-full border-b border-slate-100 pb-4 mb-4">
                     <h3 className="text-lg font-bold text-slate-700 flex items-center">
                         <TrendingUp className="w-5 h-5 mr-2 text-slate-400"/> Bütçe Analizi
                     </h3>
                 </div>
-                 <div className="w-full h-[300px] sm:h-[400px]">
+                 <div className="w-full h-full flex-1 min-h-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <BarChart
                             data={chartData}
@@ -229,7 +237,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                                 cursor={{fill: '#f8fafc'}}
                                 contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)' }}
                             />
-                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
+                            <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={28}>
                                 {chartData.map((entry, index) => (
                                     <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                 ))}
@@ -241,9 +249,9 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         </div>
 
         {/* --- GENEL TOPLAM ÇUBUĞU --- */}
-        <div className="mt-8 p-6 md:p-8 bg-slate-900 rounded-2xl text-white flex flex-col md:flex-row justify-between items-center shadow-xl shadow-slate-900/10 w-full">
+        <div className="mt-8 p-6 md:p-8 bg-slate-900 rounded-2xl text-white flex flex-col md:flex-row justify-between items-center shadow-xl shadow-slate-900/10 w-full mb-8">
              <div className="mb-4 md:mb-0 flex items-center">
-                <div className="p-3 bg-white/10 rounded-full mr-4">
+                <div className="p-4 bg-white/10 rounded-full mr-5">
                     <Wallet className="w-8 h-8 text-green-400" />
                 </div>
                 <div>
