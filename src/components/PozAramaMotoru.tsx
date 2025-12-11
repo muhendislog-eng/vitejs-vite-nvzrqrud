@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, BookOpen, AlertCircle, Loader, Filter } from 'lucide-react';
-import initSqlJs from 'sql.js'; 
+import initSqlJs from 'sql.js';
 
 // Yardımcı Fonksiyon: Para Formatı
 const formatCurrency = (amount: number) => {
@@ -35,7 +35,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
           locateFile: file => `https://sql.js.org/dist/${file}`
         });
         
-        // DİKKAT: Public klasöründeki dosya adı kullanılmalı!
+        // DİKKAT: Dosya adı database.db olarak sabitlenmiştir.
         const response = await fetch('/database.db'); 
         if (!response.ok) throw new Error("database.db dosyası bulunamadı! Public klasörünü kontrol edin.");
         
@@ -67,17 +67,17 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, category, dbReady]);
 
-  // --- 3. ADIM: Arama Mantığı (TRIM Fonksiyonu Eklenmiş Hali) ---
+  // --- 3. ADIM: Arama Mantığı (TRIM ve CAST Uygulandı) ---
   const performSearch = (term: string) => {
     if (!db) return;
     setLoading(true);
     
     setTimeout(() => {
       try {
-        // SQL Sorgusu: TRIM() fonksiyonu ile poz ve tanım sütunlarındaki boşluklar temizlenir!
+        // SORGU GÜNCELLENDİ: CAST AS TEXT ve TRIM uygulandı.
         const query = `
             SELECT * FROM pozlar 
-            WHERE TRIM(poz_no) LIKE :term OR TRIM(tanim) LIKE :term
+            WHERE TRIM(CAST(poz_no AS TEXT)) LIKE :term OR TRIM(tanim) LIKE :term
             ORDER BY poz_no ASC
         `;
         
@@ -89,10 +89,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
         while (stmt.step()) {
             const row: any = stmt.getAsObject();
             results.push({
-                // Sütun adları: poz_no, tanim, birim, birim_fiyat
+                // Sütun Adları: poz_no, tanim, birim, birim_fiyat (Küçük harf olarak teyit edildi)
                 pos: row.poz_no,
                 desc: row.tanim,
                 unit: row.birim,
+                // price: DB'de fiyat zaten TEXT gibi görünüyor, bu yüzden parseFloat ile güvene aldık
                 price: parseFloat(row.birim_fiyat), 
                 category: "İnşaat" 
             });
