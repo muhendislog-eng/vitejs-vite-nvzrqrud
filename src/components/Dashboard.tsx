@@ -44,9 +44,13 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   const staticTotal = staticItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const archTotal = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   
-  // İş Mantığı
+  // İş Mantığı: (Statik + Mimari) = Toplam Bütçenin %80'i
   const knownTotal = staticTotal + archTotal;
+  
+  // Eğer hiç veri yoksa 0'a bölme hatasını önle
   const estimatedGrandTotal = knownTotal > 0 ? knownTotal / 0.8 : 0;
+  
+  // Geriye kalan %20'yi Elektrik (%10) ve Mekanik (%10) olarak dağıt
   const electricTotal = estimatedGrandTotal * 0.1;
   const mechanicalTotal = estimatedGrandTotal * 0.1;
 
@@ -65,21 +69,22 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
         
-        {/* Yazdırma Stilleri - Sayfa yapısını bozmaması için */}
+        {/* Yazdırma Stilleri */}
         <style>
           {`
             @media print {
               body * { visibility: hidden; }
-              .dashboard-print-area, .dashboard-print-area * { visibility: visible; }
-              .dashboard-print-area { position: absolute; left: 0; top: 0; width: 100%; }
+              .dashboard-content, .dashboard-content * { visibility: visible; }
+              .dashboard-content { position: absolute; left: 0; top: 0; width: 100%; }
               .print-hidden { display: none !important; }
             }
           `}
         </style>
         
-        <div className="dashboard-print-area w-full">
+        <div className="dashboard-content w-full flex flex-col gap-6">
+            
             {/* --- BAŞLIK ALANI --- */}
-            <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4 print-hidden w-full">
+            <div className="flex flex-col md:flex-row justify-between items-start md:items-end border-b border-slate-200 pb-4 gap-4 w-full print-hidden">
                 <div className="flex flex-col">
                     <h2 className="text-xl font-bold text-slate-800 flex items-center">
                         <LayoutDashboard className="w-6 h-6 mr-2 text-indigo-600"/> 
@@ -97,12 +102,11 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </button>
             </div>
 
-            {/* --- ÖZET KARTLARI (Tam Genişlik - Grid) --- */}
-            {/* Burada div'i direkt grid olarak başlatıyoruz, ekstra wrapper yok */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 w-full mt-6">
+            {/* --- ÖZET KARTLARI (Responsive Grid) --- */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 w-full">
                 {/* Statik Kart */}
-                <div className="bg-white p-6 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white p-6 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full min-w-0">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Building className="w-16 h-16 text-orange-600" />
                     </div>
                     <div className="relative z-10 flex flex-col justify-between h-full">
@@ -120,8 +124,8 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
 
                 {/* Mimari Kart */}
-                <div className="bg-white p-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white p-6 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full min-w-0">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Ruler className="w-16 h-16 text-blue-600" />
                     </div>
                     <div className="relative z-10 flex flex-col justify-between h-full">
@@ -139,8 +143,8 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
 
                 {/* Elektrik Kart */}
-                <div className="bg-white p-6 rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white p-6 rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full min-w-0">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Zap className="w-16 h-16 text-yellow-600" />
                     </div>
                     <div className="relative z-10 flex flex-col justify-between h-full">
@@ -158,8 +162,8 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
 
                 {/* Mekanik Kart */}
-                <div className="bg-white p-6 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
-                    <div className="absolute right-0 top-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+                <div className="bg-white p-6 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full min-w-0">
+                    <div className="absolute right-0 top-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
                         <Settings className="w-16 h-16 text-indigo-600" />
                     </div>
                     <div className="relative z-10 flex flex-col justify-between h-full">
@@ -177,17 +181,17 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
             </div>
 
-            {/* --- GRAFİKLER ALANI (Tam Genişlik) --- */}
-            <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full mt-6">
+            {/* --- GRAFİKLER ALANI (Tam Genişlik - Grid) --- */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 w-full">
                 
                 {/* Pasta Grafik */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full min-w-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full min-w-0 h-[450px]">
                     <div className="flex items-center justify-between w-full border-b border-slate-100 pb-4 mb-4">
                         <h3 className="text-lg font-bold text-slate-700 flex items-center">
                             <PieChartIcon className="w-5 h-5 mr-2 text-slate-400"/> Maliyet Dağılımı
                         </h3>
                     </div>
-                    <div className="w-full h-[350px]">
+                    <div className="w-full h-full flex-1 min-h-0">
                         <ResponsiveContainer width="99%" height="100%">
                             <PieChart>
                                 <Pie
@@ -214,13 +218,13 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
 
                 {/* Sütun Grafik */}
-                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full min-w-0">
+                <div className="bg-white border border-slate-200 rounded-2xl p-6 flex flex-col items-center shadow-sm w-full min-w-0 h-[450px]">
                     <div className="flex items-center justify-between w-full border-b border-slate-100 pb-4 mb-4">
                         <h3 className="text-lg font-bold text-slate-700 flex items-center">
                             <TrendingUp className="w-5 h-5 mr-2 text-slate-400"/> Bütçe Analizi
                         </h3>
                     </div>
-                    <div className="w-full h-[350px]">
+                    <div className="w-full h-full flex-1 min-h-0">
                         <ResponsiveContainer width="99%" height="100%">
                             <BarChart
                                 data={chartData}
@@ -247,7 +251,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
 
             {/* --- GENEL TOPLAM ÇUBUĞU --- */}
-            <div className="mt-6 p-6 md:p-8 bg-slate-900 rounded-2xl text-white flex flex-col md:flex-row justify-between items-center shadow-xl shadow-slate-900/10 w-full mb-8">
+            <div className="p-6 md:p-8 bg-slate-900 rounded-2xl text-white flex flex-col md:flex-row justify-between items-center shadow-xl shadow-slate-900/10 w-full">
                 <div className="mb-4 md:mb-0 flex items-center">
                     <div className="p-4 bg-white/10 rounded-full mr-5">
                         <Wallet className="w-8 h-8 text-green-400" />
