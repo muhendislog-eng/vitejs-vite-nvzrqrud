@@ -1,28 +1,25 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, BookOpen, AlertCircle, Loader, Filter } from 'lucide-react';
-import initSqlJs from 'sql.js'; // SQL Motoru entegre edildi
+import initSqlJs from 'sql.js'; 
 
-// --- YARDIMCI FONKSİYON ---
-// PozAramaMotoru dışında bir dosyaya bağımlı kalmamak için buraya taşıdık.
+// Yardımcı Fonksiyon: Para Formatı
 const formatCurrency = (amount: number) => {
-  // NaN veya null gelirse 0 göster
   const safeAmount = isNaN(amount) || amount === null ? 0 : amount;
   return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(safeAmount);
 };
 
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
-  category?: string; // Opsiyonel kategori filtresi
+  category?: string; 
 }
 
-const ITEMS_PER_PAGE = 20; // Altın Kural A: Her seferde kaç satır yüklenecek?
+const ITEMS_PER_PAGE = 20;
 
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) => {
-  // --- YENİ STATE'LER ---
+  // --- STATE TANIMLARI ---
   const [db, setDb] = useState<any>(null);
   const [dbReady, setDbReady] = useState(false);
   
-  // --- ORİJİNAL STATE'LER ---
   const [searchTerm, setSearchTerm] = useState('');
   const [allResults, setAllResults] = useState<any[]>([]);
   const [displayedResults, setDisplayedResults] = useState<any[]>([]);
@@ -38,7 +35,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
           locateFile: file => `https://sql.js.org/dist/${file}`
         });
         
-        // DİKKAT: Public klasöründeki dosya adını kontrol et!
+        // DİKKAT: Public klasöründeki dosya adı kullanılmalı!
         const response = await fetch('/database.db'); 
         if (!response.ok) throw new Error("database.db dosyası bulunamadı! Public klasörünü kontrol edin.");
         
@@ -70,22 +67,23 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, category, dbReady]);
 
-  // --- 3. ADIM: Arama Mantığı ---
+  // --- 3. ADIM: Arama Mantığı (TRIM Fonksiyonu Eklenmiş Hali) ---
   const performSearch = (term: string) => {
     if (!db) return;
     setLoading(true);
     
     setTimeout(() => {
       try {
-        // SQL Sorgusu: pozlar tablosunu sorguluyoruz
+        // SQL Sorgusu: TRIM() fonksiyonu ile poz ve tanım sütunlarındaki boşluklar temizlenir!
         const query = `
             SELECT * FROM pozlar 
-            WHERE poz_no LIKE :term OR tanim LIKE :term
+            WHERE TRIM(poz_no) LIKE :term OR TRIM(tanim) LIKE :term
             ORDER BY poz_no ASC
         `;
         
         const stmt = db.prepare(query);
-        stmt.bind({ ':term': `%${term}%` });
+        // Arama teriminin başındaki/sonundaki boşlukları da temizliyoruz
+        stmt.bind({ ':term': `%${term.trim()}%` }); 
         
         const results = [];
         while (stmt.step()) {
@@ -95,7 +93,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
                 pos: row.poz_no,
                 desc: row.tanim,
                 unit: row.birim,
-                price: parseFloat(row.birim_fiyat), // Fiyatı sayıya çevirdik
+                price: parseFloat(row.birim_fiyat), 
                 category: "İnşaat" 
             });
         }
