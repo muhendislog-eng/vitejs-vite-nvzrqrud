@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 
 // --- BİLEŞEN IMPORTLARI ---
+// Bu dosyaların src/components/ altında olduğundan emin olun
 import Header from './components/Header';
 import Dashboard from './components/Dashboard';
 import MetrajTable from './components/MetrajTable';
@@ -28,7 +29,7 @@ import {
   INITIAL_LOCATIONS, 
   initialStaticData, 
   initialArchitecturalData 
-} from './data/constants';
+} from './data/constants'; 
 
 import { loadScript } from './utils/helpers';
 
@@ -36,28 +37,6 @@ import { loadScript } from './utils/helpers';
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
-
-// Global değişkenler (Firebase config için)
-declare const __firebase_config: string;
-declare const __app_id: string;
-declare const __initial_auth_token: string;
-
-let db: any;
-let auth: any;
-let appId: string;
-
-try {
-  // Eğer ortamda firebase config varsa başlat
-  if (typeof __firebase_config !== 'undefined') {
-    const firebaseConfig = JSON.parse(__firebase_config);
-    const app = initializeApp(firebaseConfig);
-    auth = getAuth(app);
-    db = getFirestore(app);
-    appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-  }
-} catch (e) {
-  console.log("Firebase başlatılamadı (Demo modunda çalışıyor):", e);
-}
 
 export default function App() {
   // --- STATE TANIMLARI ---
@@ -70,10 +49,12 @@ export default function App() {
   const [architecturalItems, setArchitecturalItems] = useState(initialArchitecturalData);
   const [doorItems, setDoorItems] = useState<any[]>([]);
   const [windowItems, setWindowItems] = useState<any[]>([]);
-  const [locations, setLocations] = useState(INITIAL_LOCATIONS);
+  
+  // Mahal/Lokasyon Verileri (Dropdownlar için gerekli)
+  const [locations, setLocations] = useState(INITIAL_LOCATIONS); 
+
   const [projectInfo, setProjectInfo] = useState({ name: '', area: '', floors: '', city: '' });
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [user, setUser] = useState<any>(null);
   
   // Kütüphane ve Yükleme Durumları
   const [posLibrary, setPosLibrary] = useState(INITIAL_POS_LIBRARY);
@@ -88,6 +69,7 @@ export default function App() {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [targetCategory, setTargetCategory] = useState("");
 
+  // Refs (Script yükleme ve dosya işlemleri için)
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
@@ -97,6 +79,7 @@ export default function App() {
       try {
         await loadScript("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
         setIsXLSXLoaded(true);
+        
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
         // @ts-ignore
         if (window.pdfjsLib) { 
@@ -104,6 +87,7 @@ export default function App() {
           window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; 
           setIsPDFLoaded(true); 
         }
+        
         setIsLoadingScripts(false);
       } catch (error) { 
         console.error("Kütüphane hatası:", error); 
@@ -112,69 +96,43 @@ export default function App() {
     };
     loadLibraries();
 
-    // Firebase Auth
-    if (auth) {
-      const initAuth = async () => {
-        try {
-          if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-            await signInWithCustomToken(auth, __initial_auth_token);
-          } else {
-            await signInAnonymously(auth);
-          }
-        } catch (error) {
-          console.error("Giriş hatası:", error);
-        }
-      };
-      initAuth();
-      const unsubscribe = onAuthStateChanged(auth, (u: any) => setUser(u));
-      return () => unsubscribe();
+    // LocalStorage'dan kayıtlı veriyi çek
+    const savedData = localStorage.getItem('gkmetraj_data');
+    if (savedData) {
+      try {
+        const parsed = JSON.parse(savedData);
+        if (parsed.staticItems) setStaticItems(parsed.staticItems);
+        if (parsed.architecturalItems) setArchitecturalItems(parsed.architecturalItems);
+        if (parsed.doorItems) setDoorItems(parsed.doorItems);
+        if (parsed.windowItems) setWindowItems(parsed.windowItems);
+        if (parsed.projectInfo) setProjectInfo(parsed.projectInfo);
+        // Locations verisi varsa onu da yükleyebiliriz
+        if (parsed.locations) setLocations(parsed.locations);
+      } catch (e) { console.error("Veri okuma hatası", e); }
     }
-  }, []);
-
-  // Firebase Veri Senkronizasyonu
-  useEffect(() => {
-    if (!user || !db) return;
-    const projectDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'projects', 'main_project');
     
-    const unsubscribe = onSnapshot(projectDocRef, (docSnap: any) => {
-      if (docSnap.exists()) {
-        const data = docSnap.data();
-        if (data.staticItems) setStaticItems(data.staticItems);
-        if (data.architecturalItems) setArchitecturalItems(data.architecturalItems);
-        if (data.doorItems) setDoorItems(data.doorItems);
-        if (data.windowItems) setWindowItems(data.windowItems);
-        if (data.projectInfo) setProjectInfo(data.projectInfo);
-        if (data.locations) setLocations(data.locations);
-      }
-    });
-    return () => unsubscribe();
-  }, [user]);
+    // Oturum kontrolü
+    const session = localStorage.getItem('gkmetraj_session');
+    if (session === 'active') setIsLoggedIn(true);
+  }, []);
 
   // --- HANDLER FONKSİYONLARI ---
 
-  const handleLogin = () => { setIsLoggedIn(true); };
-  const handleLogout = () => { setIsLoggedIn(false); };
+  const handleLogin = () => { setIsLoggedIn(true); localStorage.setItem('gkmetraj_session', 'active'); };
+  const handleLogout = () => { setIsLoggedIn(false); localStorage.removeItem('gkmetraj_session'); };
 
-  const handleSave = async () => {
+  const handleSave = () => {
     const dataToSave = { 
-      staticItems, architecturalItems, doorItems, windowItems, projectInfo, locations, 
+      staticItems, 
+      architecturalItems, 
+      doorItems, 
+      windowItems, 
+      projectInfo, 
+      locations,
       lastSaved: new Date().toLocaleTimeString() 
     };
-
-    if (user && db) {
-      try {
-        const projectDocRef = doc(db, 'artifacts', appId, 'public', 'data', 'projects', 'main_project');
-        await setDoc(projectDocRef, dataToSave);
-        alert("Proje başarıyla BULUTA kaydedildi!");
-      } catch (e) {
-        console.error("Bulut kayıt hatası:", e);
-        alert("Buluta kaydedilemedi, yerel kayıt yapılıyor.");
-        localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
-      }
-    } else {
-      localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
-      alert("Proje yerel hafızaya kaydedildi!");
-    }
+    localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
+    alert("Proje başarıyla kaydedildi!");
   };
 
   const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
@@ -187,6 +145,7 @@ export default function App() {
     else setArchitecturalItems(prev => prev.map(item => item.id === id ? { ...item, mahal: locationName } : item));
   };
 
+  // Kapı/Pencere hesaplamalarından gelen verileri ana tabloya aktarma
   const handleBatchUpdateQuantities = (updates: any) => {
     const updateList = (list: any[]) => list.map(item => {
       if (updates[item.pos] !== undefined) {
@@ -194,10 +153,12 @@ export default function App() {
       }
       return item;
     });
+
     setStaticItems(prev => updateList(prev));
     setArchitecturalItems(prev => updateList(prev));
   };
 
+  // Metraj Tablosu - Modal İşlemleri
   const handleOpenSelector = (item: any) => { setEditingItem(item); setIsAddingNew(false); setIsModalOpen(true); };
   const handleAddNewItem = (category: string) => { setTargetCategory(category); setIsAddingNew(true); setEditingItem(null); setIsModalOpen(true); };
   
@@ -228,6 +189,7 @@ export default function App() {
   const handleUpdateFromPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !isPDFLoaded) return;
+
     try {
       const arrayBuffer = await file.arrayBuffer();
       // @ts-ignore
@@ -240,6 +202,7 @@ export default function App() {
         const pageText = textContent.items.map((item: any) => item.str).join(" ");
         fullText += pageText + "\n";
       }
+
       let updatedCount = 0;
       const newPricesMap: any = {};
       const regex = /(\d{2}\.\d{3}\.\d{4})\s+(.+?)\s+(m³|m²|m|Ton|kg|Adet|sa|km)\s+(\d{1,3}(?:\.\d{3})*(?:,\d{2}))/gi;
@@ -250,6 +213,7 @@ export default function App() {
           newPricesMap[match[1]] = { price, desc: match[2].trim(), unit: match[3] };
         }
       }
+
       const updateList = (list: any[]) => list.map(item => {
         if (newPricesMap[item.pos]) {
            updatedCount++;
@@ -257,6 +221,7 @@ export default function App() {
         }
         return item;
       });
+
       setStaticItems(prev => updateList(prev));
       setArchitecturalItems(prev => updateList(prev));
       alert(`PDF Tarandı: ${updatedCount} adet poz güncellendi.`);
@@ -267,32 +232,77 @@ export default function App() {
     e.target.value = "";
   };
 
-  // Excel Import
+  // Excel Import Mantığı
   const handleImportFromXLSX = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file || !isXLSXLoaded) return;
+
     const reader = new FileReader();
     reader.onload = (evt) => {
       // @ts-ignore
       const wb = window.XLSX.read(evt.target?.result, { type: 'binary' });
+      const wsname = wb.SheetNames[0];
+      // @ts-ignore
+      const data = window.XLSX.utils.sheet_to_json(wb.Sheets[wsname]);
       alert("Excel yükleme özelliği şu an demo modundadır.");
     };
     reader.readAsBinaryString(file);
     e.target.value = "";
   };
 
-  const handleDownloadDescriptions = () => { if (!isXLSXLoaded) return; alert("Poz listesi indiriliyor..."); };
-  const handleExportToXLSX = () => { if (!isXLSXLoaded) return; alert("Metraj cetveli indiriliyor..."); };
+  // Pozları İndirme
+  const handleDownloadDescriptions = () => {
+    if (!isXLSXLoaded) return;
+    let flatLibrary: any[] = [];
+    Object.keys(posLibrary).forEach(category => {
+      // @ts-ignore
+      posLibrary[category].forEach((item: any) => flatLibrary.push({ ...item, Kategori: category }));
+    });
+    // @ts-ignore
+    const wb = window.XLSX.utils.book_new();
+    // @ts-ignore
+    const ws = window.XLSX.utils.json_to_sheet(flatLibrary);
+    // @ts-ignore
+    window.XLSX.utils.book_append_sheet(wb, ws, "Pozlar");
+    // @ts-ignore
+    window.XLSX.writeFile(wb, "Poz_Listesi.xlsx");
+  };
 
-  // Yerel Tab Buton Helper
+  // Metraj İndirme (Header'daki buton için)
+  const handleExportToXLSX = () => {
+    if (!isXLSXLoaded) return;
+    // @ts-ignore
+    const wb = window.XLSX.utils.book_new();
+    // @ts-ignore
+    const wsStatic = window.XLSX.utils.json_to_sheet(staticItems);
+    // @ts-ignore
+    window.XLSX.utils.book_append_sheet(wb, wsStatic, "Statik");
+    // @ts-ignore
+    const wsArch = window.XLSX.utils.json_to_sheet(architecturalItems);
+    // @ts-ignore
+    window.XLSX.utils.book_append_sheet(wb, wsArch, "Mimari");
+    // @ts-ignore
+    window.XLSX.writeFile(wb, "Proje_Metraj.xlsx");
+  };
+
+  // Tab Buton Bileşeni (Yerel)
   const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
-    <button onClick={onClick} className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${active ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'}`}>
-      <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} /> {label}
+    <button 
+      onClick={onClick} 
+      className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
+        active 
+        ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500' 
+        : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
+      }`}
+    >
+      <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} /> 
+      {label}
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative w-full">
+    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative w-full overflow-x-hidden">
+      {/* Modallar */}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleLogin} />
       <ProjectInfoModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} onSave={setProjectInfo} initialData={projectInfo} />
       
@@ -308,6 +318,7 @@ export default function App() {
         />
       )}
 
+      {/* Header */}
       <Header 
         isLoggedIn={isLoggedIn}
         projectInfo={projectInfo}
@@ -324,7 +335,10 @@ export default function App() {
         onUpdatePDF={handleUpdateFromPDF}
       />
 
+      {/* Ana İçerik */}
       <main className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
+        
+        {/* Sekme Butonları */}
         <div className="flex flex-col space-y-0 w-full">
           <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full no-scrollbar">
              <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
@@ -337,6 +351,8 @@ export default function App() {
 
           <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[500px] p-8 relative z-10 w-full">
             
+            {/* --- SEKME İÇERİKLERİ --- */}
+
             {activeTab === 'static' && (
               <MetrajTable 
                 data={staticItems} 
@@ -385,6 +401,8 @@ export default function App() {
                   windowItems={windowItems} 
               />
             )}
+
+             {/* DASHBOARD MODÜLÜ - TAM EKRAN VE RESPONSIVE OLARAK EKLENDİ */}
              {activeTab === 'dashboard' && (
               <Dashboard 
                   staticItems={staticItems} 
@@ -395,13 +413,16 @@ export default function App() {
         </div>
       </main>
 
+      {/* Kilit Ekranı */}
       {!isLoggedIn && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div className="bg-slate-900/90 text-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md text-center pointer-events-auto border border-slate-700">
             <ShieldCheck className="w-16 h-16 text-orange-500 mb-4" />
             <h2 className="text-2xl font-bold mb-2">Sistem Kilitli</h2>
             <p className="text-slate-400 mb-6">Verilere erişmek ve işlem yapmak için lütfen yetkili girişi yapınız.</p>
-            <button onClick={() => setIsLoginModalOpen(true)} className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-orange-900/50 w-full">Giriş Yap</button>
+            <button onClick={() => setIsLoginModalOpen(true)} className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-orange-900/50 w-full">
+              Giriş Yap
+            </button>
           </div>
         </div>
       )}
