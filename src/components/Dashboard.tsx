@@ -100,8 +100,8 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </button>
         </div>
 
-        {/* --- ÖZET KARTLARI (Responsive Grid) --- */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
+        {/* --- ÖZET KARTLARI (Full Width Grid) --- */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full">
             {/* Statik Kart */}
             <div className="bg-white p-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
                 <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
@@ -113,7 +113,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             <div className="w-2 h-2 rounded-full bg-orange-500 mr-2"></div>
                             Kaba İnşaat
                         </span>
-                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(staticTotal)}</div>
+                        <div className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(staticTotal)}</div>
                     </div>
                     <div className="text-xs text-slate-400 mt-3 font-medium bg-orange-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Pay: %{chartData[0].percent.toFixed(1)}
@@ -132,7 +132,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2"></div>
                             Mimari İmalat
                         </span>
-                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(archTotal)}</div>
+                        <div className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(archTotal)}</div>
                     </div>
                     <div className="text-xs text-slate-400 mt-3 font-medium bg-blue-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Pay: %{chartData[1].percent.toFixed(1)}
@@ -151,7 +151,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             <div className="w-2 h-2 rounded-full bg-yellow-500 mr-2"></div>
                             Elektrik (Tahmini)
                         </span>
-                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(electricTotal)}</div>
+                        <div className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(electricTotal)}</div>
                     </div>
                     <div className="text-xs text-slate-400 mt-3 font-medium bg-yellow-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Sabit Oran: %10
@@ -170,7 +170,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             <div className="w-2 h-2 rounded-full bg-indigo-500 mr-2"></div>
                             Mekanik (Tahmini)
                         </span>
-                        <div className="text-2xl font-black text-slate-800 tracking-tight">{formatCurrency(mechanicalTotal)}</div>
+                        <div className="text-3xl font-black text-slate-800 tracking-tight">{formatCurrency(mechanicalTotal)}</div>
                     </div>
                     <div className="text-xs text-slate-400 mt-3 font-medium bg-indigo-50 inline-block px-2 py-0.5 rounded-full w-fit">
                         Sabit Oran: %10
@@ -179,7 +179,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
         </div>
 
-        {/* --- GRAFİKLER ALANI (Tam Genişlik) --- */}
+        {/* --- GRAFİKLER ALANI (Tam Genişlik - 2 Kolon) --- */}
         <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full mb-8">
             
             {/* Pasta Grafik */}
@@ -230,7 +230,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                         >
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0"/>
-                            <XAxis type="number" tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} stroke="#94a3b8" fontSize={12} />
+                            <XAxis type="number" tickFormatter={(val) => `₺${(val/1000000).toFixed(1)}M`} stroke="#94a3b8" fontSize={12} />
                             <YAxis type="category" dataKey="name" width={110} stroke="#64748b" fontSize={11} fontWeight={600} />
                             <Tooltip 
                                 formatter={(value: number) => formatCurrency(value)} 
@@ -248,7 +248,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
              </div>
         </div>
 
-        {/* --- GENEL TOPLAM ÇUBUĞU --- */}
+        {/* --- GENEL TOPLAM ÇUBUĞU (Tam Genişlik) --- */}
         <div className="mt-8 p-6 md:p-8 bg-slate-900 rounded-2xl text-white flex flex-col md:flex-row justify-between items-center shadow-xl shadow-slate-900/10 w-full mb-8">
              <div className="mb-4 md:mb-0 flex items-center">
                 <div className="p-4 bg-white/10 rounded-full mr-5">
