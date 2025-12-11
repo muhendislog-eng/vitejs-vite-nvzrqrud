@@ -65,6 +65,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   return (
     <div className="w-full space-y-8 animate-in fade-in duration-500">
         
+        {/* Yazdırma Stilleri - Sayfa yapısını bozmaması için */}
         <style>
           {`
             @media print {
@@ -96,7 +97,8 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </button>
             </div>
 
-            {/* --- ÖZET KARTLARI (Full Width Grid) --- */}
+            {/* --- ÖZET KARTLARI (Tam Genişlik - Grid) --- */}
+            {/* Burada div'i direkt grid olarak başlatıyoruz, ekstra wrapper yok */}
             <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-6 w-full mt-6">
                 {/* Statik Kart */}
                 <div className="bg-white p-6 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all h-full">
@@ -175,7 +177,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                 </div>
             </div>
 
-            {/* --- GRAFİKLER ALANI --- */}
+            {/* --- GRAFİKLER ALANI (Tam Genişlik) --- */}
             <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 w-full mt-6">
                 
                 {/* Pasta Grafik */}
