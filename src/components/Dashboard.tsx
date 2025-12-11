@@ -103,7 +103,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         {/* --- ÖZET KARTLARI (Responsive Grid) --- */}
         <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 w-full">
             {/* Statik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-orange-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-orange-100 bg-gradient-to-br from-orange-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                 <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Building className="w-16 h-16 text-orange-600" />
                 </div>
@@ -120,7 +120,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
 
             {/* Mimari Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-blue-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Ruler className="w-16 h-16 text-blue-600" />
                 </div>
@@ -137,7 +137,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
 
             {/* Elektrik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-yellow-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-yellow-100 bg-gradient-to-br from-yellow-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Zap className="w-16 h-16 text-yellow-600" />
                 </div>
@@ -154,7 +154,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
             </div>
 
             {/* Mekanik Kart */}
-            <div className="bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
+            <div className="bg-white p-5 rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white shadow-sm relative overflow-hidden group hover:shadow-md transition-all">
                  <div className="absolute right-0 top-0 p-3 opacity-5 group-hover:opacity-10 transition-opacity">
                     <Settings className="w-16 h-16 text-indigo-600" />
                 </div>
@@ -222,7 +222,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                             margin={{ top: 5, right: 30, left: 40, bottom: 5 }}
                         >
                             <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0"/>
-                            <XAxis type="number" tickFormatter={(val) => `₺${(val/1000000).toFixed(1)}M`} stroke="#94a3b8" fontSize={12} />
+                            <XAxis type="number" tickFormatter={(val) => `${(val/1000000).toFixed(1)}M`} stroke="#94a3b8" fontSize={12} />
                             <YAxis type="category" dataKey="name" width={110} stroke="#64748b" fontSize={11} fontWeight={600} />
                             <Tooltip 
                                 formatter={(value: number) => formatCurrency(value)} 
