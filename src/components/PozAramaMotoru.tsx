@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, BookOpen, AlertCircle, Loader, Filter } from 'lucide-react';
-import { searchPoses } from '../db/dtabase'; // SQL Motoru bağlantısı
-import { formatCurrency } from '../utils/helpers';
+import initSqlJs from 'sql.js'; // SQL Motoru entegre edildi
+
+// --- YARDIMCI FONKSİYON ---
+// PozAramaMotoru dışında bir dosyaya bağımlı kalmamak için buraya taşıdık.
+const formatCurrency = (amount: number) => {
+  // NaN veya null gelirse 0 göster
+  const safeAmount = isNaN(amount) || amount === null ? 0 : amount;
+  return new Intl.NumberFormat('tr-TR', { style: 'currency', currency: 'TRY' }).format(safeAmount);
+};
 
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
@@ -11,66 +18,111 @@ interface PozAramaMotoruProps {
 const ITEMS_PER_PAGE = 20; // Altın Kural A: Her seferde kaç satır yüklenecek?
 
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) => {
+  // --- YENİ STATE'LER ---
+  const [db, setDb] = useState<any>(null);
+  const [dbReady, setDbReady] = useState(false);
+  
+  // --- ORİJİNAL STATE'LER ---
   const [searchTerm, setSearchTerm] = useState('');
-  const [allResults, setAllResults] = useState<any[]>([]); // Tüm arama sonuçları (Veritabanından gelen ham veri)
-  const [displayedResults, setDisplayedResults] = useState<any[]>([]); // Ekrana basılanlar (Pagination uygulanmış)
+  const [allResults, setAllResults] = useState<any[]>([]);
+  const [displayedResults, setDisplayedResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
-  
   const listRef = useRef<HTMLDivElement>(null);
 
-  // --- ALTIN KURAL C: DEBOUNCING (Bekletmeli Arama) ---
+  // --- 1. ADIM: VERİTABANINI YÜKLEME ---
   useEffect(() => {
-    // Kullanıcı yazmayı bıraktıktan 300ms sonra çalışır
+    const loadDatabase = async () => {
+      try {
+        const SQL = await initSqlJs({
+          locateFile: file => `https://sql.js.org/dist/${file}`
+        });
+        
+        // DİKKAT: Public klasöründeki dosya adını kontrol et!
+        const response = await fetch('/database.db'); 
+        if (!response.ok) throw new Error("database.db dosyası bulunamadı! Public klasörünü kontrol edin.");
+        
+        const buffer = await response.arrayBuffer();
+        const database = new SQL.Database(new Uint8Array(buffer));
+        
+        setDb(database);
+        setDbReady(true);
+      } catch (err: any) {
+        console.error("Veritabanı yükleme hatası:", err.message);
+      }
+    };
+    loadDatabase();
+  }, []);
+
+  // --- 2. ADIM: DEBOUNCING (Bekletmeli Arama) ---
+  useEffect(() => {
+    if (!dbReady) return;
+
     const delayDebounceFn = setTimeout(() => {
-      // Eğer arama kutusu boşsa ve kategori yoksa arama yapma
       if (searchTerm.trim().length > 1 || category) { 
         performSearch(searchTerm);
       } else {
-        // Boşsa temizle
         setAllResults([]);
         setDisplayedResults([]);
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, category]);
+  }, [searchTerm, category, dbReady]);
 
-  // --- Arama Mantığı ---
+  // --- 3. ADIM: Arama Mantığı ---
   const performSearch = (term: string) => {
+    if (!db) return;
     setLoading(true);
     
-    // UI'ın kilitlenmesini önlemek için kısa bir gecikme ile işlemi sıraya alıyoruz
     setTimeout(() => {
       try {
-        // Veritabanından sorgula (SQL LIKE işlemi burada çalışır - Altın Kural B)
-        // Eğer arama kutusu boşsa ama kategori seçiliyse, o kategorideki her şeyi getirir.
-        let data = searchPoses(term);
+        // SQL Sorgusu: pozlar tablosunu sorguluyoruz
+        const query = `
+            SELECT * FROM pozlar 
+            WHERE poz_no LIKE :term OR tanim LIKE :term
+            ORDER BY poz_no ASC
+        `;
         
-        // Eğer kategori zorunluluğu varsa filtrele (Örn: Sadece Duvar işleri)
+        const stmt = db.prepare(query);
+        stmt.bind({ ':term': `%${term}%` });
+        
+        const results = [];
+        while (stmt.step()) {
+            const row: any = stmt.getAsObject();
+            results.push({
+                // Sütun adları: poz_no, tanim, birim, birim_fiyat
+                pos: row.poz_no,
+                desc: row.tanim,
+                unit: row.birim,
+                price: parseFloat(row.birim_fiyat), // Fiyatı sayıya çevirdik
+                category: "İnşaat" 
+            });
+        }
+        stmt.free();
+
+        let filteredData = results;
         if (category) {
-          data = data.filter((item: any) => item.category === category);
+          filteredData = results.filter((item: any) => item.category === category);
         }
         
-        setAllResults(data);
-        setPage(1); // Yeni aramada sayfayı başa sar
-        setDisplayedResults(data.slice(0, ITEMS_PER_PAGE)); // İlk partiyi yükle
+        setAllResults(filteredData);
+        setPage(1);
+        setDisplayedResults(filteredData.slice(0, ITEMS_PER_PAGE)); 
       } catch (error) {
-        console.error("Arama hatası:", error);
+        console.error("SQL Arama hatası:", error);
       } finally {
         setLoading(false);
       }
     }, 10); 
   };
 
-  // --- ALTIN KURAL A: LAZY LOADING (Infinite Scroll) ---
+  // --- 4. ADIM: LAZY LOADING ---
   const handleScroll = useCallback(() => {
     if (listRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = listRef.current;
       
-      // Listenin sonuna yaklaşıldı mı? (50px tolerans)
       if (scrollTop + clientHeight >= scrollHeight - 50) {
-        // Tüm sonuçlar zaten gösterilmediyse yeni parti yükle
         if (displayedResults.length < allResults.length) {
           const nextPage = page + 1;
           const nextItems = allResults.slice(0, nextPage * ITEMS_PER_PAGE);
@@ -81,6 +133,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
     }
   }, [displayedResults, allResults, page]);
 
+  // --- JSX / GÖRÜNÜM KISMI ---
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
       
@@ -92,10 +145,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
           </div>
           <input 
             type="text" 
-            placeholder="Poz No, Tanım veya Anahtar Kelime Ara..." 
+            placeholder={dbReady ? "Poz No, Tanım veya Anahtar Kelime Ara..." : "Veritabanı Yükleniyor..."} 
             className="w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none transition-all shadow-inner text-slate-700 placeholder:text-slate-400 font-medium text-lg"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={!dbReady} 
             autoFocus
           />
         </div>
@@ -114,8 +168,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
                 )}
              </div>
              
-             <span className="text-[10px] font-bold text-green-600 flex items-center bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                <BookOpen className="w-3 h-3 mr-1"/> ÇŞB 2025 Veritabanı
+             <span className={`text-[10px] font-bold flex items-center px-2 py-1 rounded-full border ${dbReady ? 'text-green-600 bg-green-50 border-green-100' : 'text-red-600 bg-red-50 border-red-100'}`}>
+                <BookOpen className="w-3 h-3 mr-1"/> {dbReady ? 'ÇŞB 2025 Veritabanı Aktif' : 'Veritabanı Yükleniyor...'}
              </span>
         </div>
       </div>
@@ -144,9 +198,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
                           </span>
                           <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
                               {item.unit}
-                          </span>
-                          <span className="text-[10px] text-slate-400 truncate max-w-[200px] hidden sm:block" title={item.category}>
-                              {item.category}
                           </span>
                       </div>
                       <p className="text-sm text-slate-700 leading-relaxed font-medium group-hover:text-slate-900 line-clamp-2">
@@ -177,7 +228,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
         ) : (
           /* --- BOŞ DURUM --- */
           <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-60 pb-10">
-             {searchTerm ? (
+             {!dbReady ? (
+                <>
+                    <Loader className="w-16 h-16 mb-4 animate-spin text-orange-400"/>
+                    <p className="text-lg font-bold text-slate-500">Veritabanı Yükleniyor...</p>
+                    <p className="text-sm">Lütfen bekleyin. Büyük bir dosya okunuyor.</p>
+                </>
+             ) : searchTerm ? (
                <>
                  <AlertCircle className="w-16 h-16 mb-4 text-slate-300"/>
                  <p className="text-lg font-bold text-slate-500">Sonuç Bulunamadı</p>
@@ -187,7 +244,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category }) =
                <>
                  <Search className="w-16 h-16 mb-4 text-slate-200"/>
                  <p className="text-lg font-bold text-slate-400">Aramaya Başlayın</p>
-                 <p className="text-sm">Poz numarası veya tanım yazarak filtreleyin.</p>
+                 <p className="text-sm">Poz numarası veya tanım yazın.</p>
                </>
              )}
           </div>
