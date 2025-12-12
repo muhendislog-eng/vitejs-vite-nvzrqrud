@@ -11,7 +11,7 @@ import {
   RefreshCcw,
   Box,
   Grid,
-  Calculator // Hesap makinesi ikonu eklendi
+  Calculator
 } from 'lucide-react';
 
 // --- BİLEŞEN IMPORTLARI ---
@@ -26,20 +26,18 @@ import { LoginModal, ProjectInfoModal, PoseSelectorModal } from './components/Mo
 // --- VERİ VE YARDIMCI FONKSİYONLAR ---
 import { 
   INITIAL_POS_LIBRARY, 
-  INITIAL_LOCATIONS, 
   initialStaticData, 
   initialArchitecturalData 
 } from './data/constants'; 
 
-import { loadScript, formatCurrency } from './utils/helpers'; // formatCurrency'yi buradan çekiyoruz veya aşağıda tanımlıyoruz
+import { loadScript, formatCurrency } from './utils/helpers';
 
 // --- FIREBASE (Opsiyonel) ---
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js';
 import { getAuth, signInWithCustomToken, signInAnonymously, onAuthStateChanged, signOut } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js';
 import { getFirestore, doc, setDoc, getDoc, collection, onSnapshot } from 'https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js';
 
-// --- YEREL BİLEŞENLER ---
-// Bu kart sadece App.tsx'te kullanıldığı için burada tanımladım.
+// Yerel Bileşen: Özet Kartı
 const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }: any) => (
   <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 hover:shadow-lg hover:-translate-y-1 transition-all duration-300 relative overflow-hidden group w-full">
     <div className={`absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity transform group-hover:scale-110 ${colorClass}`}>
@@ -56,18 +54,17 @@ const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }: any)
 );
 
 export default function App() {
-  // --- STATE TANIMLARI ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('static');
   
-  // Veriler
   const [staticItems, setStaticItems] = useState(initialStaticData);
   const [architecturalItems, setArchitecturalItems] = useState(initialArchitecturalData);
   const [doorItems, setDoorItems] = useState<any[]>([]);
   const [windowItems, setWindowItems] = useState<any[]>([]);
   
-  const [locations, setLocations] = useState(INITIAL_LOCATIONS); 
+  // Locations (Mahal) state'i kaldırıldı
+
   const [projectInfo, setProjectInfo] = useState({ name: '', area: '', floors: '', city: '' });
   const [lastSaved, setLastSaved] = useState<string | null>(null);
   
@@ -85,12 +82,11 @@ export default function App() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
 
-  // --- HESAPLAMALAR (ÖZET KARTLARI İÇİN) ---
+  // --- TOPLAM HESAPLAMALARI ---
   const totalStaticCost = staticItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const totalArchCost = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const grandTotalCost = totalStaticCost + totalArchCost;
 
-  // --- BAŞLANGIÇ ETKİLERİ ---
   useEffect(() => {
     const loadLibraries = async () => {
       try {
@@ -127,12 +123,19 @@ export default function App() {
     if (session === 'active') setIsLoggedIn(true);
   }, []);
 
-  // --- HANDLER FONKSİYONLARI ---
   const handleLogin = () => { setIsLoggedIn(true); localStorage.setItem('gkmetraj_session', 'active'); };
   const handleLogout = () => { setIsLoggedIn(false); localStorage.removeItem('gkmetraj_session'); };
 
   const handleSave = () => {
-    const dataToSave = { staticItems, architecturalItems, doorItems, windowItems, projectInfo, locations, lastSaved: new Date().toLocaleTimeString() };
+    const dataToSave = { 
+      staticItems, 
+      architecturalItems, 
+      doorItems, 
+      windowItems, 
+      projectInfo, 
+      // locations kaldırıldı
+      lastSaved: new Date().toLocaleTimeString() 
+    };
     localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
     alert("Proje başarıyla kaydedildi!");
   };
@@ -142,10 +145,7 @@ export default function App() {
     else setArchitecturalItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
   };
 
-  const handleUpdateLocation = (id: number | string, locationName: string, type: 'static' | 'architectural') => {
-    if (type === 'static') setStaticItems(prev => prev.map(item => item.id === id ? { ...item, mahal: locationName } : item));
-    else setArchitecturalItems(prev => prev.map(item => item.id === id ? { ...item, mahal: locationName } : item));
-  };
+  // handleUpdateLocation fonksiyonu kaldırıldı
 
   const handleBatchUpdateQuantities = (updates: any) => {
     const updateList = (list: any[]) => list.map(item => {
@@ -154,6 +154,7 @@ export default function App() {
       }
       return item;
     });
+
     setStaticItems(prev => updateList(prev));
     setArchitecturalItems(prev => updateList(prev));
   };
@@ -170,14 +171,14 @@ export default function App() {
       unit: newPoseData.unit,
       price: newPoseData.price,
       quantity: 0,
-      mahal: ""
+      // mahal kaldırıldı
     };
 
     if (isAddingNew) {
       if (activeTab === 'static') setStaticItems(prev => [...prev, newItem]);
       else setArchitecturalItems(prev => [...prev, newItem]);
     } else if (editingItem) {
-      const updateList = (items: any[]) => items.map(item => item.id === editingItem.id ? { ...item, ...newItem, id: item.id, quantity: item.quantity, mahal: item.mahal } : item);
+      const updateList = (items: any[]) => items.map(item => item.id === editingItem.id ? { ...item, ...newItem, id: item.id, quantity: item.quantity } : item);
       if (activeTab === 'static') setStaticItems(prev => updateList(prev));
       else setArchitecturalItems(prev => updateList(prev));
     }
@@ -242,6 +243,7 @@ export default function App() {
   const handleDownloadDescriptions = () => { if (!isXLSXLoaded) return; alert("Poz listesi indiriliyor..."); };
   const handleExportToXLSX = () => { if (!isXLSXLoaded) return; alert("Metraj cetveli indiriliyor..."); };
 
+  // Tab Buton
   const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
     <button onClick={onClick} className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${active ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'}`}>
       <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} /> {label}
@@ -250,7 +252,6 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative w-full overflow-x-hidden">
-      {/* Modallar */}
       <LoginModal isOpen={isLoginModalOpen} onClose={() => setIsLoginModalOpen(false)} onLogin={handleLogin} />
       <ProjectInfoModal isOpen={isProjectModalOpen} onClose={() => setIsProjectModalOpen(false)} onSave={setProjectInfo} initialData={projectInfo} />
       
@@ -258,54 +259,20 @@ export default function App() {
         <PoseSelectorModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} category={isAddingNew ? targetCategory : (editingItem ? editingItem.category : "")} onSelect={handleSelectPose} currentPos={editingItem ? editingItem.pos : ""} isAddingNew={isAddingNew} posLibrary={posLibrary} />
       )}
 
-      {/* Header */}
-      <Header 
-        isLoggedIn={isLoggedIn}
-        projectInfo={projectInfo}
-        isPDFLoaded={isPDFLoaded}
-        isXLSXLoaded={isXLSXLoaded}
-        isLoadingScripts={isLoadingScripts}
-        onOpenProjectModal={() => setIsProjectModalOpen(true)}
-        onLoginClick={() => setIsLoginModalOpen(true)}
-        onLogoutClick={handleLogout}
-        onSave={handleSave}
-        onDownloadDescriptions={handleDownloadDescriptions}
-        onExportToXLSX={handleExportToXLSX}
-        onImportExcel={handleImportFromXLSX}
-        onUpdatePDF={handleUpdateFromPDF}
-      />
+      <Header isLoggedIn={isLoggedIn} projectInfo={projectInfo} isPDFLoaded={isPDFLoaded} isXLSXLoaded={isXLSXLoaded} isLoadingScripts={isLoadingScripts} onOpenProjectModal={() => setIsProjectModalOpen(true)} onLoginClick={() => setIsLoginModalOpen(true)} onLogoutClick={handleLogout} onSave={handleSave} onDownloadDescriptions={handleDownloadDescriptions} onExportToXLSX={handleExportToXLSX} onImportExcel={handleImportFromXLSX} onUpdatePDF={handleUpdateFromPDF} />
 
-      {/* Ana İçerik */}
       <main className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        {/* --- ÖZET KARTLARI (Header Altına Eklendi) --- */}
+        {/* ÖZET KARTLARI */}
         <div className="w-full mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <SummaryCard 
-                    title="Statik İmalatlar" 
-                    value={totalStaticCost} 
-                    icon={Building} 
-                    colorClass="text-orange-500" 
-                    iconBgClass="bg-orange-50"
-                />
-                <SummaryCard 
-                    title="Mimari İmalatlar" 
-                    value={totalArchCost} 
-                    icon={Ruler} 
-                    colorClass="text-blue-500" 
-                    iconBgClass="bg-blue-50"
-                />
-                <SummaryCard 
-                    title="GENEL TOPLAM MALİYET" 
-                    value={grandTotalCost} 
-                    icon={Calculator} 
-                    colorClass="text-green-600" 
-                    iconBgClass="bg-green-50"
-                />
+                <SummaryCard title="Statik İmalatlar" value={totalStaticCost} icon={Building} colorClass="text-orange-500" iconBgClass="bg-orange-50" />
+                <SummaryCard title="Mimari İmalatlar" value={totalArchCost} icon={Ruler} colorClass="text-blue-500" iconBgClass="bg-blue-50" />
+                <SummaryCard title="GENEL TOPLAM MALİYET" value={grandTotalCost} icon={Calculator} colorClass="text-green-600" iconBgClass="bg-green-50" />
             </div>
         </div>
 
-        {/* Sekme Butonları */}
+        {/* Sekmeler */}
         <div className="flex flex-col space-y-0 w-full">
           <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full no-scrollbar">
              <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
@@ -316,17 +283,14 @@ export default function App() {
              <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={LayoutDashboard} label="Proje Özeti" />
           </div>
 
-          {/* Sekme İçerikleri (w-full ile tam ekran) */}
           <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[500px] p-8 relative z-10 w-full">
-            
             {activeTab === 'static' && (
               <MetrajTable 
                 data={staticItems} 
                 onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} 
                 onOpenSelector={handleOpenSelector} 
                 onAddNewItem={handleAddNewItem} 
-                locations={locations}
-                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'static')}
+                // locations prop'u kaldırıldı
               />
             )}
 
@@ -336,47 +300,35 @@ export default function App() {
                 onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} 
                 onOpenSelector={handleOpenSelector} 
                 onAddNewItem={handleAddNewItem} 
-                locations={locations}
-                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'architectural')}
+                // locations prop'u kaldırıldı
               />
             )}
 
             {activeTab === 'door_calculation' && (
-              <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
+              <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} />
             )}
 
              {activeTab === 'window_calculation' && (
-              <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
+              <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} />
             )}
 
              {activeTab === 'green_book' && (
-              <GreenBook 
-                  staticItems={staticItems} 
-                  architecturalItems={architecturalItems} 
-                  doorItems={doorItems} 
-                  windowItems={windowItems} 
-              />
+              <GreenBook staticItems={staticItems} architecturalItems={architecturalItems} doorItems={doorItems} windowItems={windowItems} />
             )}
              {activeTab === 'dashboard' && (
-              <Dashboard 
-                  staticItems={staticItems} 
-                  architecturalItems={architecturalItems} 
-              />
+              <Dashboard staticItems={staticItems} architecturalItems={architecturalItems} />
             )}
           </div>
         </div>
       </main>
 
-      {/* Kilit Ekranı */}
       {!isLoggedIn && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
           <div className="bg-slate-900/90 text-white p-8 rounded-2xl shadow-2xl flex flex-col items-center max-w-md text-center pointer-events-auto border border-slate-700">
             <ShieldCheck className="w-16 h-16 text-orange-500 mb-4" />
             <h2 className="text-2xl font-bold mb-2">Sistem Kilitli</h2>
             <p className="text-slate-400 mb-6">Verilere erişmek ve işlem yapmak için lütfen yetkili girişi yapınız.</p>
-            <button onClick={() => setIsLoginModalOpen(true)} className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-orange-900/50 w-full">
-              Giriş Yap
-            </button>
+            <button onClick={() => setIsLoginModalOpen(true)} className="bg-orange-600 hover:bg-orange-500 text-white px-8 py-3 rounded-xl font-bold transition-all shadow-lg shadow-orange-900/50 w-full">Giriş Yap</button>
           </div>
         </div>
       )}
