@@ -457,7 +457,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       {/* FOOTER */}
       <div className="bg-slate-50 border-t border-slate-200 p-2 text-center">
         <p className="text-[10px] text-slate-400 font-mono">
-          Gösterilen: {displayedResults.length} / {allResults.length} kayıt
+          Gösterilen: {displayedResults.length} / {allResults.length} gösterim
+        
         </p>
       </div>
     </div>
