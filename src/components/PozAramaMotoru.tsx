@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, Plus, BookOpen, AlertCircle, Loader, Filter, ArrowUpDown, Check } from 'lucide-react';
+import { Search, Plus, BookOpen, AlertCircle, Loader, Filter, ArrowUpDown, Check, Database } from 'lucide-react';
 import { formatCurrency, loadScript } from '../utils/helpers';
 
 // SQL.js için tip tanımı
@@ -27,42 +27,48 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [page, setPage] = useState(1);
   const [isNeighborMode, setIsNeighborMode] = useState(false);
   
-  // Veritabanı nesnesini ref içinde tutuyoruz ki re-render'da kaybolmasın
+  // Veritabanı referansları
   const dbRef = useRef<any>(null);
   const listRef = useRef<HTMLDivElement>(null);
+  const tableNameRef = useRef<string>("pozlar"); // Varsayılan tablo adı
 
-  // --- 1. VERİTABANINI YÜKLE (Mount Anında) ---
+  // --- 1. VERİTABANINI YÜKLE VE TABLOYU BUL ---
   useEffect(() => {
-    const loadDB = async () => {
+    const initDB = async () => {
       try {
         setLoading(true);
-        // 1. SQL.js Kütüphanesini CDN'den çek
         if (!window.initSqlJs) {
-            await loadScript("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js");
+          await loadScript("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js");
         }
 
         if (!window.initSqlJs) {
-            console.error("SQL.js yüklenemedi.");
-            return;
+          console.error("SQL.js yüklenemedi.");
+          return;
         }
 
-        // 2. SQL Motorunu Başlat
         const SQL = await window.initSqlJs({
-            locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+          locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
         });
 
-        // 3. public/database.db dosyasını indir
-        // Kanka burası önemli: Dosyanın adı 'database.db' ve public klasöründe olmalı.
+        // database.db dosyasını public klasöründen çek
         const response = await fetch('/database.db');
+        if (!response.ok) throw new Error("database.db bulunamadı!");
         
-        if (!response.ok) {
-            throw new Error("database.db dosyası bulunamadı! Lütfen public klasörüne yükleyin.");
-        }
-
         const buffer = await response.arrayBuffer();
         const db = new SQL.Database(new Uint8Array(buffer));
-        
         dbRef.current = db;
+
+        // Tablo adını otomatik bulmaya çalış (yoksa varsayılanı kullan)
+        try {
+            const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
+            if (tables.length > 0 && tables[0].values.length > 0) {
+                tableNameRef.current = tables[0].values[0][0]; // İlk tabloyu al
+                console.log("Bulunan Tablo:", tableNameRef.current);
+            }
+        } catch (e) {
+            console.warn("Tablo adı bulunamadı, varsayılan kullanılıyor.");
+        }
+
         setDbReady(true);
         setLoading(false);
 
@@ -72,11 +78,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       }
     };
 
-    loadDB();
+    initDB();
   }, []);
 
-
-  // --- YARDIMCI: SQL SONUCUNU JSON'A ÇEVİRME ---
+  // --- YARDIMCI: SQL ÇALIŞTIRMA ---
   const execQuery = useCallback((query: string) => {
     if (!dbRef.current) return [];
     try {
@@ -87,61 +92,62 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       return values.map((row: any) => {
         let obj: any = {};
         columns.forEach((col: string, i: number) => {
-          obj[col] = row[i];
+          // Sütun isimlerini küçük harfe çevirerek eşleştirme kolaylığı sağla
+          obj[col.toLowerCase()] = row[i];
         });
         return obj;
       });
     } catch (e) {
-      console.warn("SQL Hatası:", e);
+      console.warn("Sorgu hatası:", e);
       return [];
     }
   }, []);
 
-
-  // --- 2. SENARYO: KOMŞU POZLARI GETİR (±5 Satır) ---
+  // --- 2. KOMŞU POZLARI GETİR (±5 SATIR) ---
   useEffect(() => {
     if (!dbReady) return;
 
-    // Eğer bir poz düzenleniyorsa (currentPos var) ve arama yapılmadıysa
+    // Eğer düzenleme modundaysak ve arama yapılmadıysa
     if (currentPos && searchTerm === '') {
       setLoading(true);
       setTimeout(() => {
+        const table = tableNameRef.current;
         const safePos = currentPos.replace(/'/g, "''");
         
-        // Önce Pozun ID'sini bul (Tablo adı genelde 'poz_library' veya 'unit_prices' olur. 
-        // Senin db yapına göre buradaki tablo adını kontrol etmelisin. Varsayılan: poz_library)
+        // Hedef pozun satırını bul (poz_no sütununa göre)
+        // Not: Sütun adları poz_no veya pos olabilir, ikisini de dene
+        let targetQuery = `SELECT rowid, * FROM ${table} WHERE poz_no = '${safePos}' LIMIT 1`;
+        let targetRes = execQuery(targetQuery);
         
-        // Not: Eğer tablo adını bilmiyorsan "SELECT name FROM sqlite_master WHERE type='table'" ile bakabiliriz.
-        // Şimdilik standart tablo ismiyle deniyorum.
-        const targetRes = execQuery(`SELECT id FROM poz_no WHERE pos = '${safePos}' LIMIT 1`);
-        
+        // Eğer poz_no ile bulunamazsa pos ile dene (yedek)
+        if (targetRes.length === 0) {
+             targetRes = execQuery(`SELECT rowid, * FROM ${table} WHERE pos = '${safePos}' LIMIT 1`);
+        }
+
         if (targetRes.length > 0) {
-            const targetId = targetRes[0].id;
-            const startId = Math.max(1, targetId - 5);
-            const endId = targetId + 5;
+            const targetRowId = targetRes[0].rowid; // SQLite'ın gizli rowid'si
+            const startId = targetRowId - 5;
+            const endId = targetRowId + 5;
             
-            // Komşuları çek
-            const neighbors = execQuery(`SELECT * FROM poz_no WHERE id BETWEEN ${startId} AND ${endId} ORDER BY id ASC`);
+            // Komşuları getir
+            const neighbors = execQuery(`SELECT * FROM ${table} WHERE rowid BETWEEN ${startId} AND ${endId} ORDER BY rowid ASC`);
             
             setAllResults(neighbors);
             setDisplayedResults(neighbors);
             setIsNeighborMode(true);
         } else {
-            // Poz bulunamazsa kategoriye göre getir (Fallback)
-            if (category) performSearch('');
+             // Poz veritabanında yoksa normal listeleme yap
+             if (category) performSearch('');
         }
         setLoading(false);
-      }, 50);
+      }, 100);
     } 
-    // Düzenleme değilse ve kategori varsa
     else if (!currentPos && category && searchTerm === '') {
         performSearch('');
     }
-
   }, [dbReady, currentPos, category]);
 
-
-  // --- 3. SENARYO: ARAMA YAP (Debounce) ---
+  // --- 3. ARAMA MANTIĞI (poz_no ve tanim) ---
   useEffect(() => {
     if (!dbReady) return;
 
@@ -156,43 +162,46 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             setDisplayedResults([]);
          }
       }
-    }, 300); // 300ms bekle
+    }, 300);
 
     return () => clearTimeout(delayDebounceFn);
   }, [searchTerm, dbReady]);
-
 
   const performSearch = (term: string) => {
     setLoading(true);
     setTimeout(() => {
       const safeTerm = term.toLowerCase().replace(/'/g, "''");
-      let query = "SELECT * FROM poz_no";
+      const table = tableNameRef.current;
       
-      const conditions = [];
-      // Hem Poz No hem Tanım içinde ara
+      // Dinamik sütun kontrolü (poz_no mu pos mu? tanim mi desc mi?)
+      // Genelde kullanıcı 'poz_no' ve 'tanim' dediği için bunları öncelikli kullanıyoruz.
+      // Ancak hata almamak için OR ile alternatifleri de ekliyoruz.
+      
+      let query = `SELECT * FROM ${table} WHERE 1=1`;
+      
       if (safeTerm) {
-        conditions.push(`(lower(pos) LIKE '%${safeTerm}%' OR lower(desc) LIKE '%${safeTerm}%')`);
-      }
-      // Kategori filtresi
-      if (category) {
-        conditions.push(`category = '${category}'`);
+        query += ` AND (
+            lower(poz_no) LIKE '%${safeTerm}%' OR 
+            lower(tanim) LIKE '%${safeTerm}%' OR
+            lower(pos) LIKE '%${safeTerm}%' OR 
+            lower(desc) LIKE '%${safeTerm}%'
+        )`;
       }
 
-      if (conditions.length > 0) {
-        query += " WHERE " + conditions.join(" AND ");
-      }
-      
-      query += " LIMIT 100"; // Performans için limit
+      // Kategori filtresi (Opsiyonel: Eğer veritabanında kategori sütunu varsa)
+      // query += ` AND category = '${category}'` (Veritabanı yapısına göre açılabilir)
+
+      query += " LIMIT 100"; 
 
       const data = execQuery(query);
       setAllResults(data);
       setPage(1);
       setDisplayedResults(data.slice(0, ITEMS_PER_PAGE));
       setLoading(false);
-    }, 10);
+    }, 50);
   };
 
-  // --- 4. SONSUZ KAYDIRMA (Lazy Load) ---
+  // --- 4. SONSUZ KAYDIRMA ---
   const handleScroll = useCallback(() => {
     if (listRef.current) {
       const { scrollTop, scrollHeight, clientHeight } = listRef.current;
@@ -210,7 +219,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
       
-      {/* --- ARAMA ALANI --- */}
+      {/* ÜST ARAMA ALANI */}
       <div className="p-5 bg-white border-b border-slate-200 shadow-sm z-10 flex-shrink-0">
         <div className="relative">
           <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
@@ -242,20 +251,18 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                         <Filter className="w-3 h-3 mr-1"/> {category}
                     </span>
                 )}
-                {!loading && allResults.length > 0 && (
-                    <span className="text-xs font-semibold text-slate-500">
-                        {allResults.length} sonuç
-                    </span>
-                )}
+                <span className="text-xs font-semibold text-slate-500">
+                    {allResults.length} sonuç
+                </span>
              </div>
              
              <span className="text-[10px] font-bold text-green-600 flex items-center bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                <BookOpen className="w-3 h-3 mr-1"/> {dbReady ? "DB Bağlı" : "Yükleniyor..."}
+                <Database className="w-3 h-3 mr-1"/> {dbReady ? "DB Bağlı" : "Yükleniyor..."}
              </span>
         </div>
       </div>
 
-      {/* --- LİSTE ALANI --- */}
+      {/* LİSTE ALANI */}
       <div 
         className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30 custom-scrollbar"
         ref={listRef}
@@ -264,12 +271,18 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         {displayedResults.length > 0 ? (
           <>
             {displayedResults.map((item: any, index: number) => {
-               const isCurrent = currentPos && item.pos === currentPos;
+               // item verisinden doğru alanları al (poz_no yoksa pos, tanim yoksa desc)
+               const posVal = item.poz_no || item.pos || "---";
+               const descVal = item.tanim || item.desc || "Tanımsız";
+               const unitVal = item.birim || item.unit || "adet";
+               const priceVal = item.birim_fiyat || item.price || 0;
+
+               const isCurrent = currentPos && posVal === currentPos;
                
                return (
                 <div 
-                    key={`${item.pos}-${index}`} 
-                    onClick={() => onSelect(item)}
+                    key={`${posVal}-${index}`} 
+                    onClick={() => onSelect({ ...item, pos: posVal, desc: descVal, unit: unitVal, price: priceVal })}
                     className={`p-4 rounded-xl border cursor-pointer transition-all group relative animate-in fade-in slide-in-from-bottom-2 duration-300 ${
                         isCurrent 
                         ? 'bg-blue-50 border-blue-300 shadow-md ring-2 ring-blue-100' 
@@ -280,20 +293,20 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                         <div className="flex-1 min-w-0">
                             <div className="flex items-center flex-wrap gap-2 mb-2">
                                 <span className={`font-mono text-sm font-black px-2.5 py-1 rounded-lg border ${isCurrent ? 'text-blue-700 bg-blue-100 border-blue-200' : 'text-orange-700 bg-orange-50 border-orange-100'}`}>
-                                    {item.pos}
+                                    {posVal}
                                 </span>
                                 <span className="text-[11px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
-                                    {item.unit}
+                                    {unitVal}
                                 </span>
                             </div>
                             <p className="text-sm text-slate-700 leading-relaxed font-medium line-clamp-2">
-                                {item.desc}
+                                {descVal}
                             </p>
                         </div>
                         
                         <div className="text-right flex flex-col items-end justify-between min-h-[60px]">
                             <span className="font-black text-slate-800 text-lg tracking-tight bg-slate-50 px-2 py-1 rounded-lg">
-                                {formatCurrency(item.price)}
+                                {formatCurrency(Number(priceVal))}
                             </span>
                             <span className={`flex items-center text-xs font-bold text-white px-4 py-2 rounded-lg shadow-sm transition-colors mt-2 ${isCurrent ? 'bg-blue-600' : 'bg-green-600 group-hover:bg-green-700'}`}>
                                 {isCurrent ? <Check className="w-3.5 h-3.5 mr-1.5"/> : <Plus className="w-3.5 h-3.5 mr-1.5" />} 
@@ -305,7 +318,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                );
             })}
             
-            {/* Loading Spinner */}
             {displayedResults.length < allResults.length && (
                 <div className="py-4 text-center text-slate-400 text-sm flex items-center justify-center">
                     <Loader className="w-4 h-4 animate-spin mr-2"/> Yükleniyor...
@@ -329,10 +341,18 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                <>
                  <Search className="w-16 h-16 mb-4 text-slate-200"/>
                  <p className="text-lg font-bold text-slate-400">Aramaya Başlayın</p>
+                 <p className="text-sm">Poz numarası veya tanım yazarak filtreleyin.</p>
                </>
              )}
           </div>
         )}
+      </div>
+      
+      {/* Footer */}
+      <div className="bg-slate-50 border-t border-slate-200 p-2 text-center">
+          <p className="text-[10px] text-slate-400 font-mono">
+              Gösterilen: {displayedResults.length} / {allResults.length} kayıt
+          </p>
       </div>
     </div>
   );
