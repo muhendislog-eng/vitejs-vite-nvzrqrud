@@ -1,15 +1,5 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import {
-  Search,
-  Plus,
-  AlertCircle,
-  Loader,
-  Filter,
-  Check,
-  Database,
-  Pencil,
-  ArrowUpDown,
-} from 'lucide-react';
+import { Search, Plus, AlertCircle, Loader, Filter, Check, Database } from 'lucide-react';
 import { formatCurrency, loadScript } from '../utils/helpers';
 
 declare global {
@@ -25,8 +15,7 @@ interface PozAramaMotoruProps {
   currentPos?: string;
 }
 
-const SEARCH_LIMIT = 25;      // normal arama max
-const NEIGHBOR_LIMIT = 11;    // ±5 + kendisi
+const SEARCH_LIMIT = 25;
 
 // TR fiyat parse (DB string döndürürse 0'a düşmesin)
 const toNumberTR = (v: any): number => {
@@ -46,7 +35,7 @@ const toNumberTR = (v: any): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-// Memo: Poz Ekle butonu scroll sırasında repaint olmasın
+// Poz Ekle butonu memo (scroll sırasında repaint maliyeti düşük kalsın)
 const PozEkleButton = React.memo(function PozEkleButton({
   disabled,
   onClick,
@@ -73,31 +62,31 @@ const PozEkleButton = React.memo(function PozEkleButton({
   );
 });
 
-// Kart: memo + content-visibility ile scroll performansı
+// Kartı memo’layıp render izolasyonu
 const PozCard = React.memo(function PozCard({
   item,
   isCurrent,
   onPick,
-  onChange,
 }: {
   item: any;
   isCurrent: boolean;
   onPick: () => void;
-  onChange: () => void;
 }) {
   const posVal = item?.poz_no ?? '---';
   const descVal = item?.tanim ?? 'Tanımsız';
   const unitVal = item?.birim ?? 'Adet';
   const price = toNumberTR(item?.birim_fiyat);
 
+  // formatCurrency maliyetini de azaltmak için memo
   const priceText = useMemo(() => formatCurrency(price), [price]);
 
   return (
     <div
+      // içerik görünürlük optimizasyonu: scroll kasmasını ciddi azaltır (özellikle Chrome)
       style={{
         contentVisibility: 'auto' as any,
         contain: 'content',
-        containIntrinsicSize: '110px',
+        containIntrinsicSize: '96px',
       }}
       className={`p-4 rounded-xl border bg-white ${
         isCurrent ? 'border-blue-300' : 'border-slate-200'
@@ -125,33 +114,21 @@ const PozCard = React.memo(function PozCard({
           </p>
         </div>
 
-        <div className="text-right flex flex-col items-end justify-between min-h-[84px]">
+        <div className="text-right flex flex-col items-end justify-between min-h-[72px]">
           <span className="font-black text-slate-800 text-lg tracking-tight bg-slate-50 px-2 py-1 rounded-lg">
             {priceText}
           </span>
 
-          <div className="flex gap-2 mt-3">
-            <button
-              type="button"
-              onClick={onPick}
-              className={`inline-flex items-center text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors ${
-                isCurrent ? 'bg-blue-600' : 'bg-green-600 hover:bg-green-700'
-              }`}
-            >
-              <Check className="w-3.5 h-3.5 mr-1.5" />
-              {isCurrent ? 'MEVCUT' : 'SEÇ'}
-            </button>
-
-            <button
-              type="button"
-              onClick={onChange}
-              className="inline-flex items-center text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
-              title="Bu pozun ±5 komşusunu göster"
-            >
-              <Pencil className="w-3.5 h-3.5 mr-1.5" />
-              Değiştir
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={onPick}
+            className={`mt-3 inline-flex items-center text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors ${
+              isCurrent ? 'bg-blue-600' : 'bg-green-600 hover:bg-green-700'
+            }`}
+          >
+            <Check className="w-3.5 h-3.5 mr-1.5" />
+            {isCurrent ? 'MEVCUT' : 'SEÇ'}
+          </button>
         </div>
       </div>
     </div>
@@ -164,17 +141,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [loading, setLoading] = useState(true);
   const [dbReady, setDbReady] = useState(false);
 
-  // Komşu modu state (Değiştir için)
-  const [isNeighborMode, setIsNeighborMode] = useState(false);
-  const [neighborAnchor, setNeighborAnchor] = useState<string | null>(null);
-
   const dbRef = useRef<any>(null);
   const tableNameRef = useRef<string>('pozlar');
-
-  const totalCap = useMemo(
-    () => (isNeighborMode ? NEIGHBOR_LIMIT : SEARCH_LIMIT),
-    [isNeighborMode]
-  );
 
   /* ---------------- DB YÜKLE ---------------- */
   useEffect(() => {
@@ -237,7 +205,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- NORMAL ARAMA (max 25) ---------------- */
+  /* ---------------- ARAMA (poz_no + tanim) ---------------- */
   const performSearch = useCallback(
     (term: string) => {
       const table = tableNameRef.current;
@@ -261,114 +229,35 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         q += ` ORDER BY id ASC LIMIT ${SEARCH_LIMIT}`;
 
         const data = execQuery(q);
-
-        setIsNeighborMode(false);
-        setNeighborAnchor(null);
         setResults(data);
-
         setLoading(false);
       }, 40);
     },
     [execQuery]
   );
 
-  /* ---------------- KOMŞU (±5) (max 11) ---------------- */
-  const showNeighbors = useCallback(
-    (pozNo: string) => {
-      const table = tableNameRef.current;
-      const safePos = pozNo.replace(/'/g, "''");
-
-      setLoading(true);
-      setTimeout(() => {
-        // 1) hedef pozun row_number'ını bul (id sırasına göre)
-        const target = execQuery(`
-          SELECT rn
-          FROM (
-            SELECT poz_no, ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
-            FROM ${table}
-          )
-          WHERE poz_no = '${safePos}'
-          LIMIT 1
-        `);
-
-        if (!target.length || target[0].rn == null) {
-          setLoading(false);
-          return;
-        }
-
-        const rn = Number(target[0].rn);
-        const start = rn - 5;
-        const end = rn + 5;
-
-        // 2) rn aralığındaki komşuları çek
-        const neighbors = execQuery(`
-          SELECT id, poz_no, tanim, birim, birim_fiyat, rn
-          FROM (
-            SELECT id, poz_no, tanim, birim, birim_fiyat,
-                   ROW_NUMBER() OVER (ORDER BY id ASC) AS rn
-            FROM ${table}
-          )
-          WHERE rn BETWEEN ${start} AND ${end}
-          ORDER BY rn ASC
-          LIMIT ${NEIGHBOR_LIMIT}
-        `);
-
-        // Komşu modunu aç
-        setIsNeighborMode(true);
-        setNeighborAnchor(pozNo);
-
-        // input'u boş tutuyoruz; önemli: aşağıdaki effect boşken neighbor mode'da arama yapmayacak
-        setSearchTerm('');
-        setResults(neighbors);
-
-        setLoading(false);
-      }, 40);
-    },
-    [execQuery]
-  );
-
-  // İlk açılış: kategori varsa boş arama
+  // İlk açılışta: kategori varsa boş arama, yoksa boş liste (istenirse performSearch('') de yapılabilir)
   useEffect(() => {
     if (!dbReady) return;
     if (category) performSearch('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady]);
 
-  // currentPos gelirse otomatik komşu aç (isteğe bağlı davranış)
-  useEffect(() => {
-    if (!dbReady) return;
-    if (currentPos && !searchTerm.trim()) {
-      showNeighbors(currentPos);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [dbReady, currentPos]);
-
-  // Input debounce (KRİTİK: neighbor mode + input boşken listeyi BOZMA)
+  // Input debounce
   useEffect(() => {
     if (!dbReady) return;
 
     const t = setTimeout(() => {
       const v = searchTerm.trim();
-
-      // Komşu modu açık + input boş => hiçbir şey yapma (listeyi 1. satırdan başlatmayı engeller)
-      if (isNeighborMode && v.length === 0) return;
-
-      if (v.length > 0) {
-        // kullanıcı yazdıysa neighbor modundan çık ve ara
-        if (isNeighborMode) {
-          setIsNeighborMode(false);
-          setNeighborAnchor(null);
-        }
-        performSearch(v);
-      } else {
-        // boşsa kategori varsa listele, yoksa boşalt
+      if (v.length > 0) performSearch(v);
+      else {
         if (category) performSearch('');
         else setResults([]);
       }
     }, 200);
 
     return () => clearTimeout(t);
-  }, [searchTerm, dbReady, performSearch, category, isNeighborMode]);
+  }, [searchTerm, dbReady, performSearch, category]);
 
   const handleAddPoz = useCallback(() => onSelect({ action: 'add' }), [onSelect]);
 
@@ -388,13 +277,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
             <input
               className="w-full pl-12 pr-4 py-4 rounded-xl outline-none text-slate-800 placeholder:text-slate-400 bg-transparent focus:ring-4 focus:ring-orange-200/60"
-              placeholder={
-                !dbReady
-                  ? 'Veritabanı yükleniyor...'
-                  : isNeighborMode
-                  ? `Komşu pozlar (±5) — ${neighborAnchor ?? ''}`
-                  : 'Poz No veya Tanım ara... (maks. 25 sonuç)'
-              }
+              placeholder={!dbReady ? 'Veritabanı yükleniyor...' : 'Poz No veya Tanım ara... (maks. 25 sonuç)'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               disabled={!dbReady}
@@ -407,20 +290,14 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
         <div className="mt-3 flex items-center justify-between px-1">
           <div className="flex items-center gap-2">
-            {isNeighborMode && (
-              <span className="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2 py-1 rounded-lg">
-                <ArrowUpDown className="w-3 h-3" />
-                Yakın Pozlar
-              </span>
-            )}
-            {category && !isNeighborMode && (
+            {category && (
               <span className="inline-flex items-center gap-1 text-[11px] font-bold text-orange-700 bg-orange-50 border border-orange-200 px-2 py-1 rounded-lg">
                 <Filter className="w-3 h-3" />
                 {category}
               </span>
             )}
             <span className="text-[11px] font-semibold text-slate-500">
-              {results.length} sonuç (maks. {totalCap})
+              {results.length} sonuç (maks. {SEARCH_LIMIT})
             </span>
           </div>
 
@@ -470,7 +347,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                       price: toNumberTR(priceVal),
                     })
                   }
-                  onChange={() => showNeighbors(posVal)}
                 />
               );
             })
@@ -499,7 +375,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
         <div className="border-t border-slate-200 bg-white p-2 text-center">
           <p className="text-[10px] text-slate-400 font-mono">
-            Gösterilen: {results.length} / {totalCap}
+            Gösterilen: {results.length} / {SEARCH_LIMIT}
           </p>
         </div>
       </div>
