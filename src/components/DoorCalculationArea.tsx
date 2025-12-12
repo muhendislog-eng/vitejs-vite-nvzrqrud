@@ -62,8 +62,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
       label: item.label, 
       width: item.width, 
       height: item.height, 
-      count: item.count || ''
-    });
+      count: item.count || '' });
     setEditingId(item.id);
   };
 
