@@ -25,24 +25,20 @@ interface PozAramaMotoruProps {
   currentPos?: string;
 }
 
-const ITEMS_PER_PAGE = 25;
-const SEARCH_LIMIT = 25;
-
+const SEARCH_LIMIT = 25; // DB'den max kaç satır çekilecek
+const NEIGHBOR_LIMIT = 11; // ±5 + kendisi
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, currentPos }) => {
   const [searchTerm, setSearchTerm] = useState('');
-  const [allResults, setAllResults] = useState<any[]>([]);
-  const [displayedResults, setDisplayedResults] = useState<any[]>([]);
+  const [results, setResults] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbReady, setDbReady] = useState(false);
-  const [page, setPage] = useState(1);
   const [isNeighborMode, setIsNeighborMode] = useState(false);
   const [neighborAnchor, setNeighborAnchor] = useState<string | null>(null);
 
   const dbRef = useRef<any>(null);
-  const listRef = useRef<HTMLDivElement>(null);
   const tableNameRef = useRef<string>('pozlar');
 
-  const totalCap = useMemo(() => (isNeighborMode ? 11 : SEARCH_LIMIT), [isNeighborMode]);
+  const totalCap = useMemo(() => (isNeighborMode ? NEIGHBOR_LIMIT : SEARCH_LIMIT), [isNeighborMode]);
 
   /* ---------------- DB YÜKLE ---------------- */
   useEffect(() => {
@@ -105,7 +101,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- NORMAL ARAMA: en fazla 25 ---------------- */
+  /* ---------------- NORMAL ARAMA: poz_no + tanim ---------------- */
   const performSearch = useCallback(
     (term: string) => {
       const table = tableNameRef.current;
@@ -123,16 +119,16 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
         }
 
+        // Kategori kolonunuz varsa burada filtreleyebilirsiniz:
+        // if (category) q += ` AND category='${category.replace(/'/g,"''")}'`;
+
         q += ` ORDER BY id ASC LIMIT ${SEARCH_LIMIT}`;
 
         const data = execQuery(q);
 
         setIsNeighborMode(false);
         setNeighborAnchor(null);
-
-        setAllResults(data);
-        setDisplayedResults(data.slice(0, ITEMS_PER_PAGE));
-        setPage(1);
+        setResults(data);
 
         setLoading(false);
       }, 80);
@@ -140,14 +136,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     [execQuery]
   );
 
-  /* ---------------- KOMŞU (±5): toplam 11 kayıt ---------------- */
+  /* ---------------- KOMŞU (±5): satır numarası ile ---------------- */
   const showNeighbors = useCallback(
     (pozNo: string) => {
       const table = tableNameRef.current;
       const safePos = pozNo.replace(/'/g, "''");
 
       setLoading(true);
-
       setTimeout(() => {
         const target = execQuery(`
           SELECT rn
@@ -177,20 +172,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           )
           WHERE rn BETWEEN ${start} AND ${end}
           ORDER BY rn ASC
-          LIMIT 11
+          LIMIT ${NEIGHBOR_LIMIT}
         `);
 
-        // ÖNEMLİ: Neighbor mode'u önce açıyoruz ve anchor'ı set ediyoruz.
-        // searchTerm'i boşaltmak OK; fakat aşağıdaki searchTerm effect’i boşken neighbor mode’da arama yapmayacak.
         setIsNeighborMode(true);
         setNeighborAnchor(pozNo);
-        setSearchTerm('');
-
-        setAllResults(neighbors);
-        setDisplayedResults(neighbors); // max 11 zaten
-        setPage(1);
-
-        if (listRef.current) listRef.current.scrollTop = 0;
+        setSearchTerm(''); // input boş kalsın
+        setResults(neighbors);
 
         setLoading(false);
       }, 80);
@@ -209,57 +197,38 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady, currentPos]);
 
-  /* ---------------- input araması (KRİTİK FIX BURADA) ---------------- */
+  /* ---------------- input araması (neighbor mode koruma fixli) ---------------- */
   useEffect(() => {
     if (!dbReady) return;
 
     const t = setTimeout(() => {
       const v = searchTerm.trim();
 
-      // KRİTİK: neighbor mode açık ve input boşsa hiçbir şey yapma.
-      // Böylece komşu liste "1. satırdan itibaren" resetlenmez.
+      // neighbor mode açıkken input boşsa: komşu listeyi bozma
       if (isNeighborMode && v.length === 0) return;
 
       if (v.length > 0) {
-        // kullanıcı yazmaya başladıysa neighbor modundan çık
         if (isNeighborMode) {
           setIsNeighborMode(false);
           setNeighborAnchor(null);
         }
         performSearch(v);
       } else {
-        // boşsa: kategori varsa listele, yoksa boşalt
         if (category) performSearch('');
-        else {
-          setAllResults([]);
-          setDisplayedResults([]);
-          setPage(1);
-        }
+        else setResults([]);
       }
-    }, 300);
+    }, 250);
 
     return () => clearTimeout(t);
   }, [searchTerm, dbReady, performSearch, category, isNeighborMode]);
 
-  /* ---------------- infinite scroll ---------------- */
-  const handleScroll = useCallback(() => {
-    if (!listRef.current) return;
-    const { scrollTop, scrollHeight, clientHeight } = listRef.current;
-    if (scrollTop + clientHeight >= scrollHeight - 80) {
-      if (displayedResults.length < allResults.length) {
-        const next = page + 1;
-        const nextItems = allResults.slice(0, next * ITEMS_PER_PAGE);
-        setDisplayedResults(nextItems);
-        setPage(next);
-      }
-    }
-  }, [displayedResults, allResults, page]);
-
+  /* ---------------- UI ---------------- */
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
       {/* HEADER */}
       <div className="p-5 border-b bg-gradient-to-b from-white to-slate-50/80">
         <div className="flex items-center gap-3">
+          {/* Search Box */}
           <div
             className={`relative flex-1 rounded-2xl border shadow-sm transition-all ${
               isNeighborMode ? 'border-blue-200 bg-blue-50/60' : 'border-slate-200 bg-white'
@@ -338,7 +307,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             )}
 
             <span className="text-[11px] font-semibold text-slate-500">
-              {allResults.length} sonuç (maks. {totalCap})
+              {results.length} sonuç (maks. {totalCap})
             </span>
           </div>
 
@@ -356,14 +325,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       </div>
 
       {/* LISTE */}
-      <div
-        className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40"
-        ref={listRef}
-        onScroll={handleScroll}
-      >
-        {displayedResults.length > 0 ? (
+      <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/40">
+        {results.length > 0 ? (
           <>
-            {displayedResults.map((item: any, index: number) => {
+            {results.map((item: any, index: number) => {
               const posVal = item.poz_no ?? '---';
               const descVal = item.tanim ?? 'Tanımsız';
               const unitVal = item.birim ?? 'Adet';
@@ -408,6 +373,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                       </span>
 
                       <div className="flex gap-2 mt-3">
+                        {/* POZ SEÇ */}
                         <button
                           type="button"
                           onClick={() =>
@@ -431,6 +397,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                           {isCurrent ? 'MEVCUT' : 'SEÇ'}
                         </button>
 
+                        {/* POZ DEĞİŞTİR -> KOMŞULAR */}
                         <button
                           type="button"
                           onClick={() => showNeighbors(posVal)}
@@ -472,7 +439,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       {/* FOOTER */}
       <div className="bg-slate-50 border-t border-slate-200 p-2 text-center">
         <p className="text-[10px] text-slate-400 font-mono">
-          Gösterilen: {displayedResults.length} / {totalCap}
+          Gösterilen: {results.length} / {totalCap}
         </p>
       </div>
     </div>
