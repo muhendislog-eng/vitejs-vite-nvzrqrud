@@ -22,11 +22,11 @@ declare global {
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
   category?: string;
-  currentPos?: string; // düzenleme modunda gelen poz_no
+  currentPos?: string;
 }
 
-const ITEMS_PER_PAGE = 25; // ekranda en fazla 25 göster
-const SEARCH_LIMIT = 25;   // DB'den de en fazla 25 çek
+const ITEMS_PER_PAGE = 25;
+const SEARCH_LIMIT = 25;
 
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, currentPos }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -42,7 +42,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const listRef = useRef<HTMLDivElement>(null);
   const tableNameRef = useRef<string>('pozlar');
 
-  // Footer’da “toplam” olarak 25/11 göstermek için
   const totalCap = useMemo(() => (isNeighborMode ? 11 : SEARCH_LIMIT), [isNeighborMode]);
 
   /* ---------------- DB YÜKLE ---------------- */
@@ -57,7 +56,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         if (!window.initSqlJs) throw new Error('SQL.js yüklenemedi');
 
         const SQL = await window.initSqlJs({
-          locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+          locateFile: (file: string) =>
+            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
         });
 
         const res = await fetch('/database.db');
@@ -105,7 +105,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- NORMAL ARAMA: poz_no + tanim (EN FAZLA 25) ---------------- */
+  /* ---------------- NORMAL ARAMA: en fazla 25 ---------------- */
   const performSearch = useCallback(
     (term: string) => {
       const table = tableNameRef.current;
@@ -122,9 +122,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         if (safe) {
           q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
         }
-
-        // Kategori alanınız varsa açın:
-        // if (category) q += ` AND category='${category.replace(/'/g,"''")}'`;
 
         q += ` ORDER BY id ASC LIMIT ${SEARCH_LIMIT}`;
 
@@ -150,6 +147,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       const safePos = pozNo.replace(/'/g, "''");
 
       setLoading(true);
+
       setTimeout(() => {
         const target = execQuery(`
           SELECT rn
@@ -182,11 +180,14 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           LIMIT 11
         `);
 
+        // ÖNEMLİ: Neighbor mode'u önce açıyoruz ve anchor'ı set ediyoruz.
+        // searchTerm'i boşaltmak OK; fakat aşağıdaki searchTerm effect’i boşken neighbor mode’da arama yapmayacak.
         setIsNeighborMode(true);
         setNeighborAnchor(pozNo);
         setSearchTerm('');
+
         setAllResults(neighbors);
-        setDisplayedResults(neighbors.slice(0, ITEMS_PER_PAGE)); // ITEMS_PER_PAGE=25 ama neighbors zaten max 11
+        setDisplayedResults(neighbors); // max 11 zaten
         setPage(1);
 
         if (listRef.current) listRef.current.scrollTop = 0;
@@ -202,26 +203,32 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     if (!dbReady) return;
     if (currentPos && !searchTerm.trim()) {
       showNeighbors(currentPos);
-    } else if (!currentPos && category && !searchTerm.trim()) {
+    } else if (!currentPos && category && !searchTerm.trim() && !isNeighborMode) {
       performSearch('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady, currentPos]);
 
-  /* ---------------- input araması ---------------- */
+  /* ---------------- input araması (KRİTİK FIX BURADA) ---------------- */
   useEffect(() => {
     if (!dbReady) return;
 
     const t = setTimeout(() => {
       const v = searchTerm.trim();
 
+      // KRİTİK: neighbor mode açık ve input boşsa hiçbir şey yapma.
+      // Böylece komşu liste "1. satırdan itibaren" resetlenmez.
+      if (isNeighborMode && v.length === 0) return;
+
       if (v.length > 0) {
+        // kullanıcı yazmaya başladıysa neighbor modundan çık
         if (isNeighborMode) {
           setIsNeighborMode(false);
           setNeighborAnchor(null);
         }
         performSearch(v);
       } else {
+        // boşsa: kategori varsa listele, yoksa boşalt
         if (category) performSearch('');
         else {
           setAllResults([]);
@@ -234,7 +241,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     return () => clearTimeout(t);
   }, [searchTerm, dbReady, performSearch, category, isNeighborMode]);
 
-  /* ---------------- infinite scroll (25 sınırında fiilen çalışmaz ama kalsın) ---------------- */
+  /* ---------------- infinite scroll ---------------- */
   const handleScroll = useCallback(() => {
     if (!listRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = listRef.current;
@@ -248,13 +255,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, [displayedResults, allResults, page]);
 
-  /* ---------------- UI ---------------- */
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
-      {/* HEADER / ARAMA */}
+      {/* HEADER */}
       <div className="p-5 border-b bg-gradient-to-b from-white to-slate-50/80">
         <div className="flex items-center gap-3">
-          {/* Search Box */}
           <div
             className={`relative flex-1 rounded-2xl border shadow-sm transition-all ${
               isNeighborMode ? 'border-blue-200 bg-blue-50/60' : 'border-slate-200 bg-white'
@@ -267,7 +272,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                   : 'bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-400'
               }`}
             />
-
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
               {loading ? (
                 <Loader
@@ -404,7 +408,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                       </span>
 
                       <div className="flex gap-2 mt-3">
-                        {/* POZ SEÇ */}
                         <button
                           type="button"
                           onClick={() =>
@@ -428,7 +431,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                           {isCurrent ? 'MEVCUT' : 'SEÇ'}
                         </button>
 
-                        {/* POZ DEĞİŞTİR -> KOMŞULAR */}
                         <button
                           type="button"
                           onClick={() => showNeighbors(posVal)}
