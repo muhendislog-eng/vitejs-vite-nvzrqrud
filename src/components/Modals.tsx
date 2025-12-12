@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Lock, LogIn, X, Info, PieChart as PieChartIcon, Grid, MapPin, RefreshCw } from 'lucide-react';
-import PozAramaMotoru from './PozAramaMotoru'; // Yeni motoru import ediyoruz
+import PozAramaMotoru from './PozAramaMotoru'; // Arama motorunu import ettik
 
 // --- GİRİŞ MODALI ---
 export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
@@ -12,6 +12,7 @@ export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    // Basit bir kullanıcı adı şifre kontrolü
     if (username === 'gokalp' && password === 'gokalp81') {
       onLogin();
       onClose();
@@ -133,8 +134,9 @@ export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) 
   );
 };
 
-// --- YENİ POZ SEÇİM MODALI (Gelişmiş Arama Motorunu Kullanır) ---
-export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect }: any) => {
+// --- YENİ POZ SEÇİM MODALI ---
+// currentPos prop'unu alıp PozAramaMotoru'na iletiyoruz
+export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos }: any) => {
   if (!isOpen) return null;
 
   return (
@@ -164,7 +166,11 @@ export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect }: any) 
 
         {/* Yeni Arama Motorunu Buraya Entegre Ettik */}
         <div className="flex-1 bg-slate-50 p-4 overflow-hidden">
-            <PozAramaMotoru onSelect={onSelect} category={category} />
+            <PozAramaMotoru 
+                onSelect={onSelect} 
+                category={category} 
+                currentPos={currentPos} 
+            />
         </div>
 
       </div>
