@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 import { formatCurrency } from '../utils/helpers';
 
-// Veri Tipleri (Mahal kaldırıldı)
+// Veri Tipleri (Mahal tamamen kaldırıldı)
 interface WindowItem {
   id: number;
   label: string;
@@ -27,10 +27,10 @@ interface WindowCalculationAreaProps {
   items: WindowItem[];
   setItems: React.Dispatch<React.SetStateAction<WindowItem[]>>;
   onUpdateQuantities: (updates: { [key: string]: number }) => void;
-  // locations prop'u kaldırıldı
 }
 
 const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, setItems, onUpdateQuantities }) => {
+  // Mahal alanı state'den çıkarıldı
   const [newItem, setNewItem] = useState<Omit<WindowItem, 'id' | 'type'>>({ 
     label: '', 
     width: '', 
@@ -86,14 +86,14 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
     const midReg = parseFloat(item.middleRegister) || 0;
     
     let weight = 0;
-    // Cam Alanı
+    // Cam Alanı: (En-20cm) * (Boy-20cm) * Adet
     const glassArea = Math.max(0, (widthM - 0.2) * (heightM - 0.2)) * count;
 
     if (item.type === 'pvc') {
-       // PVC: Çevre * 1.1 * 2 * Adet
+       // PVC Formülü: Çevre * 1.1 * 2 * Adet
        weight = 2 * (widthM + heightM) * 1.1 * 2 * count;
     } else if (item.type === 'alu') {
-       // Alüminyum
+       // Alüminyum Hesaplama Mantığı
        if (midReg > 0) {
          // Orta Kayıtlı
          const term1 = (widthM * heightM) * 2 * 1.596;
@@ -200,7 +200,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
             {editingId ? 'Pencere Düzenle' : `Yeni ${windowType === 'pvc' ? 'PVC' : 'Alüminyum'} Pencere Ekle`}
         </h3>
         
-        {/* RESPONSIVE GRID: 6 Sütun (Mahal kaldırıldı) */}
+        {/* RESPONSIVE GRID: Mahal olmadan 6 sütunlu yapı */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-5 items-end relative z-10 w-full">
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1.5">Tip (Örn: P1)</label>
@@ -272,6 +272,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
             <table className="w-full text-left text-sm table-fixed min-w-[800px]">
               <thead className="bg-slate-100 text-slate-600 text-xs font-bold uppercase border-b border-slate-200">
                 <tr>
+                  {/* Poz No yerine Tip geldi ve Sticky özelliği korundu */}
                   <th className="px-6 py-4 w-32 sticky left-0 bg-slate-100 z-10 border-r border-slate-200 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">Tip</th>
                   <th className="px-6 py-4">Çeşit</th>
                   <th className="px-6 py-4">Ebat (En/Boy)</th>
