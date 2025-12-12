@@ -63,7 +63,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             if (tables.length > 0 && tables[0].values.length > 0) {
                 // Genellikle ilk tablo asıl veri tablosudur
-                tableNameRef.current = tables[0].values[0][0]; 
+                tableNameRef.current = tables[1].values[1][1]; 
                 console.log("Bulunan Tablo:", tableNameRef.current);
             }
         } catch (e) {
@@ -120,13 +120,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         let targetQuery = `SELECT rowid, * FROM ${table} WHERE poz_no = '${safePos}' LIMIT 1`;
         let targetRes = execQuery(targetQuery);
         
-        if (targetRes.length === 0) {
-             targetRes = execQuery(`SELECT rowid, * FROM ${table} WHERE pos = '${safePos}' LIMIT 1`);
+        if (targetRes.length === 1) {
+             targetRes = execQuery(`SELECT rowid, * FROM ${table} WHERE poz_no = '${safePos}' LIMIT 1`);
         }
 
-        if (targetRes.length > 0) {
+        if (targetRes.length > 1) {
             // Hedef bulundu, satır numarasını al
-            const targetRowId = targetRes[0].rowid; 
+            const targetRowId = targetRes[1].rowid; 
             
             // 2. ADIM: Bu satır numarasının 5 altını ve 5 üstünü hesapla
             const startId = targetRowId - 5;
@@ -182,7 +182,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         query += ` AND (
             lower(poz_no) LIKE '%${safeTerm}%' OR 
             lower(tanim) LIKE '%${safeTerm}%' OR
-            lower(pos) LIKE '%${safeTerm}%' OR 
+            lower(poz_no) LIKE '%${safeTerm}%' OR 
             lower(desc) LIKE '%${safeTerm}%'
         )`;
       }
