@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import {
   Search,
   Plus,
@@ -25,7 +25,8 @@ interface PozAramaMotoruProps {
   currentPos?: string; // düzenleme modunda gelen poz_no
 }
 
-const ITEMS_PER_PAGE = 20;
+const ITEMS_PER_PAGE = 25; // ekranda en fazla 25 göster
+const SEARCH_LIMIT = 25;   // DB'den de en fazla 25 çek
 
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, currentPos }) => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -41,6 +42,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const listRef = useRef<HTMLDivElement>(null);
   const tableNameRef = useRef<string>('pozlar');
 
+  // Footer’da “toplam” olarak 25/11 göstermek için
+  const totalCap = useMemo(() => (isNeighborMode ? 11 : SEARCH_LIMIT), [isNeighborMode]);
+
   /* ---------------- DB YÜKLE ---------------- */
   useEffect(() => {
     const initDB = async () => {
@@ -53,11 +57,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         if (!window.initSqlJs) throw new Error('SQL.js yüklenemedi');
 
         const SQL = await window.initSqlJs({
-          locateFile: (file: string) =>
-            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+          locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
         });
 
-        // public/database.db
         const res = await fetch('/database.db');
         if (!res.ok) throw new Error('database.db bulunamadı');
 
@@ -65,7 +67,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         const db = new SQL.Database(new Uint8Array(buf));
         dbRef.current = db;
 
-        // tablo adını otomatik bul
         const tables = db.exec(`
           SELECT name FROM sqlite_master
           WHERE type='table' AND name NOT LIKE 'sqlite_%'
@@ -104,7 +105,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- NORMAL ARAMA: poz_no + tanim ---------------- */
+  /* ---------------- NORMAL ARAMA: poz_no + tanim (EN FAZLA 25) ---------------- */
   const performSearch = useCallback(
     (term: string) => {
       const table = tableNameRef.current;
@@ -122,10 +123,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
         }
 
-        // İstersen kategori kolonunuz varsa burada filtreleyin.
+        // Kategori alanınız varsa açın:
         // if (category) q += ` AND category='${category.replace(/'/g,"''")}'`;
 
-        q += ` ORDER BY id ASC LIMIT 500`;
+        q += ` ORDER BY id ASC LIMIT ${SEARCH_LIMIT}`;
 
         const data = execQuery(q);
 
@@ -142,7 +143,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     [execQuery]
   );
 
-  /* ---------------- KOMŞU (±5): ROW_NUMBER ile (ID boşluklarında da doğru) ---------------- */
+  /* ---------------- KOMŞU (±5): toplam 11 kayıt ---------------- */
   const showNeighbors = useCallback(
     (pozNo: string) => {
       const table = tableNameRef.current;
@@ -150,7 +151,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
       setLoading(true);
       setTimeout(() => {
-        // 1) Hedef pozun sıralı satır numarasını bul (id sırasına göre)
         const target = execQuery(`
           SELECT rn
           FROM (
@@ -170,7 +170,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         const start = rn - 5;
         const end = rn + 5;
 
-        // 2) rn aralığındaki komşuları çek
         const neighbors = execQuery(`
           SELECT id, poz_no, tanim, birim, birim_fiyat, rn
           FROM (
@@ -180,16 +179,16 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           )
           WHERE rn BETWEEN ${start} AND ${end}
           ORDER BY rn ASC
+          LIMIT 11
         `);
 
         setIsNeighborMode(true);
         setNeighborAnchor(pozNo);
-        setSearchTerm(''); // input boş kalsın; kullanıcı yazarsa neighbor modundan çıkar
+        setSearchTerm('');
         setAllResults(neighbors);
-        setDisplayedResults(neighbors.slice(0, ITEMS_PER_PAGE));
+        setDisplayedResults(neighbors.slice(0, ITEMS_PER_PAGE)); // ITEMS_PER_PAGE=25 ama neighbors zaten max 11
         setPage(1);
 
-        // listeyi başa al
         if (listRef.current) listRef.current.scrollTop = 0;
 
         setLoading(false);
@@ -204,7 +203,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     if (currentPos && !searchTerm.trim()) {
       showNeighbors(currentPos);
     } else if (!currentPos && category && !searchTerm.trim()) {
-      // istersen kategori gelince başlangıç listelemesi:
       performSearch('');
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -218,14 +216,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       const v = searchTerm.trim();
 
       if (v.length > 0) {
-        // kullanıcı yazmaya başladıysa neighbor modundan çık
         if (isNeighborMode) {
           setIsNeighborMode(false);
           setNeighborAnchor(null);
         }
         performSearch(v);
       } else {
-        // boşsa: kategori varsa listele, yoksa boşalt
         if (category) performSearch('');
         else {
           setAllResults([]);
@@ -238,14 +234,15 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     return () => clearTimeout(t);
   }, [searchTerm, dbReady, performSearch, category, isNeighborMode]);
 
-  /* ---------------- infinite scroll ---------------- */
+  /* ---------------- infinite scroll (25 sınırında fiilen çalışmaz ama kalsın) ---------------- */
   const handleScroll = useCallback(() => {
     if (!listRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = listRef.current;
     if (scrollTop + clientHeight >= scrollHeight - 80) {
       if (displayedResults.length < allResults.length) {
         const next = page + 1;
-        setDisplayedResults(allResults.slice(0, next * ITEMS_PER_PAGE));
+        const nextItems = allResults.slice(0, next * ITEMS_PER_PAGE);
+        setDisplayedResults(nextItems);
         setPage(next);
       }
     }
@@ -256,48 +253,68 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
       {/* HEADER / ARAMA */}
       <div className="p-5 border-b bg-gradient-to-b from-white to-slate-50/80">
-        <div
-          className={`relative rounded-2xl border shadow-sm transition-all ${
-            isNeighborMode ? 'border-blue-200 bg-blue-50/60' : 'border-slate-200 bg-white'
-          }`}
-        >
+        <div className="flex items-center gap-3">
+          {/* Search Box */}
           <div
-            className={`absolute inset-x-0 top-0 h-[3px] rounded-t-2xl ${
-              isNeighborMode
-                ? 'bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500'
-                : 'bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-400'
+            className={`relative flex-1 rounded-2xl border shadow-sm transition-all ${
+              isNeighborMode ? 'border-blue-200 bg-blue-50/60' : 'border-slate-200 bg-white'
             }`}
-          />
+          >
+            <div
+              className={`absolute inset-x-0 top-0 h-[3px] rounded-t-2xl ${
+                isNeighborMode
+                  ? 'bg-gradient-to-r from-blue-500 via-sky-400 to-indigo-500'
+                  : 'bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-400'
+              }`}
+            />
 
-          <div className="absolute left-4 top-1/2 -translate-y-1/2">
-            {loading ? (
-              <Loader
-                className={`w-5 h-5 animate-spin ${
-                  isNeighborMode ? 'text-blue-600' : 'text-orange-600'
+            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+              {loading ? (
+                <Loader
+                  className={`w-5 h-5 animate-spin ${
+                    isNeighborMode ? 'text-blue-600' : 'text-orange-600'
+                  }`}
+                />
+              ) : (
+                <Search className="w-5 h-5 text-slate-400" />
+              )}
+            </div>
+
+            <input
+              className={`w-full pl-12 pr-4 py-4 rounded-2xl outline-none text-slate-800 placeholder:text-slate-400
+                bg-transparent transition-all focus:ring-4 ${
+                  isNeighborMode ? 'focus:ring-blue-200/70' : 'focus:ring-orange-200/70'
                 }`}
-              />
-            ) : (
-              <Search className="w-5 h-5 text-slate-400" />
-            )}
+              placeholder={
+                !dbReady
+                  ? 'Veritabanı yükleniyor...'
+                  : isNeighborMode
+                  ? `Komşu pozlar (±5) — anchor: ${neighborAnchor ?? ''}`
+                  : 'Poz No veya Tanım ara... (maks. 25 sonuç)'
+              }
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              disabled={!dbReady}
+              autoFocus
+            />
           </div>
 
-          <input
-            className={`w-full pl-12 pr-4 py-4 rounded-2xl outline-none text-slate-800 placeholder:text-slate-400
-              bg-transparent transition-all focus:ring-4 ${
-                isNeighborMode ? 'focus:ring-blue-200/70' : 'focus:ring-orange-200/70'
-              }`}
-            placeholder={
-              !dbReady
-                ? 'Veritabanı yükleniyor...'
-                : isNeighborMode
-                ? `Komşu pozlar (±5) — anchor: ${neighborAnchor ?? ''}`
-                : 'Poz No veya Tanım ara...'
-            }
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+          {/* POZ EKLE */}
+          <button
+            type="button"
             disabled={!dbReady}
-            autoFocus
-          />
+            onClick={() => onSelect({ action: 'add' })}
+            className={`h-[56px] px-4 rounded-2xl font-bold text-sm inline-flex items-center gap-2 border shadow-sm transition-colors
+              ${
+                dbReady
+                  ? 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
+                  : 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
+              }`}
+            title="Yeni poz ekle"
+          >
+            <Plus className="w-4 h-4" />
+            Poz Ekle
+          </button>
         </div>
 
         <div className="mt-3 flex items-center justify-between px-1">
@@ -317,7 +334,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             )}
 
             <span className="text-[11px] font-semibold text-slate-500">
-              {allResults.length} kayıt
+              {allResults.length} sonuç (maks. {totalCap})
             </span>
           </div>
 
@@ -354,7 +371,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 <div
                   key={`${posVal}-${index}`}
                   className={`p-4 rounded-xl border transition-all ${
-                    isCurrent ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-100' : 'bg-white border-slate-200'
+                    isCurrent
+                      ? 'bg-blue-50 border-blue-300 ring-2 ring-blue-100'
+                      : 'bg-white border-slate-200'
                   }`}
                 >
                   <div className="flex justify-between items-start gap-4">
@@ -385,7 +404,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                       </span>
 
                       <div className="flex gap-2 mt-3">
-                        {/* SEÇ */}
+                        {/* POZ SEÇ */}
                         <button
                           type="button"
                           onClick={() =>
@@ -409,7 +428,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                           {isCurrent ? 'MEVCUT' : 'SEÇ'}
                         </button>
 
-                        {/* DEĞİŞTİR -> KOMŞULARI GETİR */}
+                        {/* POZ DEĞİŞTİR -> KOMŞULAR */}
                         <button
                           type="button"
                           onClick={() => showNeighbors(posVal)}
@@ -424,12 +443,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 </div>
               );
             })}
-
-            {displayedResults.length < allResults.length && (
-              <div className="py-4 text-center text-slate-400 text-sm flex items-center justify-center">
-                <Loader className="w-4 h-4 animate-spin mr-2" /> Yükleniyor...
-              </div>
-            )}
           </>
         ) : (
           <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-70">
@@ -457,8 +470,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       {/* FOOTER */}
       <div className="bg-slate-50 border-t border-slate-200 p-2 text-center">
         <p className="text-[10px] text-slate-400 font-mono">
-          Gösterilen: {displayedResults.length} / {allResults.length} gösterim
-        
+          Gösterilen: {displayedResults.length} / {totalCap}
         </p>
       </div>
     </div>
