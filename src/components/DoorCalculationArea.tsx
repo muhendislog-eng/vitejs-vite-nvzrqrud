@@ -19,7 +19,6 @@ interface DoorItem {
   width: string;
   height: string;
   count: string;
-  mahal: string;
 }
 
 interface DoorCalculationAreaProps {
@@ -34,8 +33,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
     label: '', 
     width: '', 
     height: '', 
-    count: '', 
-    mahal: '' 
+    count: ''
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   
@@ -140,21 +138,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
              {editingId ? 'Kapı Düzenle' : 'Yeni Kapı Ekle'}
         </h3>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 items-end">
-          {/* Mahal Seçimi */}
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">Mahal</label>
-            <select 
-              value={newItem.mahal}
-              onChange={e => setNewItem({...newItem, mahal: e.target.value})}
-              className="w-full p-2.5 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none"
-            >
-              <option value="">Genel</option>
-              {locationOptions.map((loc: any) => (
-                <option key={loc.id} value={loc.name}>{loc.name}</option>
-              ))}
-            </select>
-          </div>
-          
+                    
           {/* Tip Girişi */}
           <div>
             <label className="block text-xs font-bold text-slate-500 mb-1">Tip (Örn: K1)</label>
@@ -220,7 +204,6 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
         <table className="w-full text-left text-sm table-fixed min-w-[800px]">
           <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
             <tr>
-              <th className="px-6 py-4 w-32">Mahal</th>
               <th className="px-6 py-4 w-32">Tip</th>
               <th className="px-6 py-4 w-32">Ebat (En/Boy)</th>
               <th className="px-6 py-4 w-24 text-center">Adet</th>
@@ -238,7 +221,6 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
               const { leafArea, frameArea } = calculateRowValues(item);
               return (
                 <tr key={item.id} className={`hover:bg-slate-50 ${editingId === item.id ? 'bg-orange-50' : ''}`}>
-                  <td className="px-6 py-4 text-slate-500 text-xs font-mono">{item.mahal || '-'}</td>
                   <td className="px-6 py-4 font-bold text-indigo-700">{item.label}</td>
                   <td className="px-6 py-4">{item.width} / {item.height} cm</td>
                   <td className="px-6 py-4 text-center font-bold">{item.count}</td>

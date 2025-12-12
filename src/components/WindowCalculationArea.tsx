@@ -21,7 +21,6 @@ interface WindowItem {
   height: string;
   count: string;
   middleRegister: string;
-  mahal: string;
   type: 'pvc' | 'alu';
 }
 
@@ -38,8 +37,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
     width: '', 
     height: '', 
     count: '', 
-    middleRegister: '', 
-    mahal: '' 
+    middleRegister: ''
   });
   const [editingId, setEditingId] = useState<number | null>(null);
   const [windowType, setWindowType] = useState<'pvc' | 'alu'>('pvc'); 
@@ -69,8 +67,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
       width: item.width, 
       height: item.height, 
       count: item.count,
-      middleRegister: item.middleRegister || '',
-      mahal: item.mahal || ''
+      middleRegister: item.middleRegister || ''
     });
     setEditingId(item.id);
   };
@@ -80,7 +77,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
     setItems(items.filter((item) => item.id !== id));
     if (editingId === id) {
       setEditingId(null);
-      setNewItem({ label: '', width: '', height: '', count: '', middleRegister: '', mahal: '' });
+      setNewItem({ label: '', width: '', height: '', count: '', middleRegister: '' });
     }
   };
 
@@ -204,19 +201,6 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
             {editingId ? 'Pencere Düzenle' : `Yeni ${windowType === 'pvc' ? 'PVC' : 'Alüminyum'} Pencere Ekle`}
         </h3>
         
-        {/* RESPONSIVE GRID: Mobilde 1, Tablette 3, Masaüstünde 7 sütun (Buton dahil) */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 xl:grid-cols-7 gap-5 items-end relative z-10">
-          <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1.5">Mahal</label>
-            <select 
-              value={newItem.mahal}
-              onChange={e => setNewItem({...newItem, mahal: e.target.value})}
-              className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all"
-            >
-              <option value="">Genel</option>
-              {locationOptions.map((loc: any) => (
-                <option key={loc.id} value={loc.name}>{loc.name}</option>
-              ))}
             </select>
           </div>
           <div>
@@ -290,7 +274,6 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
               <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase">
                 <tr>
                   <th className="px-6 py-4 w-32 sticky left-0 bg-slate-200 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)]">Poz No</th>
-                  <th className="px-6 py-4 w-32">Mahal</th>
                   <th className="px-6 py-4">Tip</th>
                   <th className="px-6 py-4">Çeşit</th>
                   <th className="px-6 py-4">Ebat (En/Boy)</th>
