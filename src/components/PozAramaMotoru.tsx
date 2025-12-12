@@ -24,7 +24,7 @@ declare global {
 
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
-  category?: string; // UI’da gösterilebilir ama filtrelemede kullanılmıyor (istersen kaldır)
+  category?: string;
   currentPos?: string;
 }
 
@@ -35,7 +35,9 @@ const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 const FAVORITES_KEY = 'gkmetraj_favorites';
 const MANUAL_KEY = 'gkmetraj_manual_pozlar';
 
-// TR fiyat parse: "1.234,56" -> 1234.56
+// ✅ Birimler sadece bunlar (elle yazmak yok, DB’den çekmek yok)
+const UNIT_OPTIONS = ['Kg', 'li', 'm', 'm²', 'm³', 'n', 'Ton'] as const;
+
 const toNumberTR = (v: any): number => {
   if (v === null || v === undefined) return 0;
   if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
@@ -58,8 +60,7 @@ type NormalizedPoz = {
   price: number;
   source: 'db' | 'manual';
   createdAt?: number;
-  // orijinal satırları da saklayalım (DB satırı seçilince bozulmasın)
-  _raw?: any;
+  _raw?: any; // db satırı
 };
 
 const PozCard = React.memo(function PozCard({
@@ -94,7 +95,7 @@ const PozCard = React.memo(function PozCard({
         isAnchor
           ? 'border-blue-400 bg-blue-50/40'
           : isCurrent
-          ? 'border-blue-300 shadow-sm ring-2 ring-blue-100'
+          ? 'bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-100'
           : 'border-slate-200 hover:border-orange-400 hover:shadow-md'
       }`}
       onClick={onPick}
@@ -136,27 +137,23 @@ const PozCard = React.memo(function PozCard({
           </p>
         </div>
 
-        <div className="text-right flex flex-col items-end justify-between gap-2 min-w-[110px]">
-          <span className="font-black text-slate-800 text-lg tracking-tight">
-            {priceText}
-          </span>
+        <div className="text-right flex flex-col items-end justify-between gap-2 min-w-[120px]">
+          <span className="font-black text-slate-800 text-lg tracking-tight">{priceText}</span>
 
           <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            {/* Favori */}
             <button
               type="button"
               onClick={onToggleFav}
               className={`p-1.5 rounded-lg transition-colors border ${
                 isFav
-                  ? 'bg-yellow-50 border-yellow-200 text-yellow-500 hover:bg-yellow-100'
-                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200'
+                  ? 'bg-yellow-50 border-yellow-200 text-yellow-600 hover:bg-yellow-100'
+                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-yellow-600 hover:border-yellow-200'
               }`}
               title={isFav ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}
             >
               <Star className={`w-4 h-4 ${isFav ? 'fill-yellow-500' : ''}`} />
             </button>
 
-            {/* Değiştir (komşu) sadece DB itemlarında mantıklı */}
             {allowChange && item.source === 'db' && (
               <button
                 type="button"
@@ -168,7 +165,6 @@ const PozCard = React.memo(function PozCard({
               </button>
             )}
 
-            {/* Seç */}
             <span
               className={`inline-flex items-center text-xs font-bold text-white px-3 py-1.5 rounded-lg shadow-sm transition-colors ${
                 isCurrent ? 'bg-blue-600' : 'bg-green-600 group-hover:bg-green-700'
@@ -191,7 +187,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [loading, setLoading] = useState(true);
   const [dbReady, setDbReady] = useState(false);
 
-  // Favoriler
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
   const [favorites, setFavorites] = useState<string[]>([]);
 
@@ -201,12 +196,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [mPos, setMPos] = useState('');
   const [mDesc, setMDesc] = useState('');
   const [mPrice, setMPrice] = useState('');
-  const [mUnit, setMUnit] = useState('');
+  const [mUnit, setMUnit] = useState<(typeof UNIT_OPTIONS)[number]>('Kg');
   const [manualError, setManualError] = useState<string | null>(null);
-
-  // ✅ Birimler DB’den (elle giriş yok)
-  const [unitOptions, setUnitOptions] = useState<string[]>([]);
-  const [unitsLoading, setUnitsLoading] = useState(false);
 
   // Komşu mod
   const [isNeighborMode, setIsNeighborMode] = useState(false);
@@ -221,7 +212,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     [isNeighborMode]
   );
 
-  /* ---------------- FAVORİ + MANUEL LOAD ---------------- */
+  /* ---------- localStorage load ---------- */
   useEffect(() => {
     try {
       const savedFavs = localStorage.getItem(FAVORITES_KEY);
@@ -247,25 +238,29 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     localStorage.setItem(MANUAL_KEY, JSON.stringify(list));
   }, []);
 
+  /* ---------- FAVORİ toggle (favori sırasını korur) ---------- */
   const toggleFavorite = useCallback(
     (e: React.MouseEvent, pozNo: string) => {
       e.stopPropagation();
+      const p = String(pozNo).trim();
+
       let next: string[];
-      if (favorites.includes(pozNo)) next = favorites.filter((x) => x !== pozNo);
-      else next = [...favorites, pozNo];
+      if (favorites.includes(p)) next = favorites.filter((x) => x !== p);
+      else next = [...favorites, p]; // ✅ ekleme sırası korunur
       persistFavorites(next);
 
-      // Favoriler sekmesindeyken çıkarılırsa UI anında güncellensin
       if (viewMode === 'favorites') {
-        const updated = displayedResults.filter((x) => x.pos !== pozNo);
-        setDisplayedResults(updated);
-        setAllResults((prev) => prev.filter((x) => x.pos !== pozNo));
+        // favoriden çıkardıysa UI’dan kaldır
+        if (!next.includes(p)) {
+          setAllResults((prev) => prev.filter((x) => x.pos !== p));
+          setDisplayedResults((prev) => prev.filter((x) => x.pos !== p));
+        }
       }
     },
-    [favorites, persistFavorites, viewMode, displayedResults]
+    [favorites, persistFavorites, viewMode]
   );
 
-  /* ---------------- DB YÜKLE ---------------- */
+  /* ---------- DB init ---------- */
   useEffect(() => {
     const initDB = async () => {
       try {
@@ -309,7 +304,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     initDB();
   }, []);
 
-  /* ---------------- SQL ÇALIŞTIR + normalize ---------------- */
+  /* ---------- exec + normalize ---------- */
   const execQuery = useCallback((query: string) => {
     if (!dbRef.current) return [];
     try {
@@ -323,7 +318,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         const raw: any = {};
         columns.forEach((col: string, i: number) => (raw[col] = row[i]));
 
-        const pos = String(raw['poz_no'] ?? raw['pos'] ?? raw['no'] ?? '---');
+        const pos = String(raw['poz_no'] ?? raw['pos'] ?? raw['no'] ?? '---').trim();
         const desc = String(raw['tanim'] ?? raw['aciklama'] ?? raw['desc'] ?? 'Tanımsız');
         const unit = String(raw['birim'] ?? raw['unit'] ?? 'Adet');
         const price = toNumberTR(raw['birim_fiyat'] ?? raw['fiyat'] ?? raw['price'] ?? 0);
@@ -345,39 +340,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- DB’den birimleri çek (DISTINCT birim) ---------------- */
-  const loadUnits = useCallback(() => {
-    if (!dbRef.current) return;
-    setUnitsLoading(true);
-    try {
-      const table = tableNameRef.current;
-      const res = dbRef.current.exec(`
-        SELECT DISTINCT birim
-        FROM "${table}"
-        WHERE birim IS NOT NULL AND TRIM(birim) <> ''
-      `);
-
-      const list =
-        res?.[0]?.values?.map((v: any[]) => String(v[0]).trim()) ?? [];
-
-      const uniq = Array.from(new Set(list)).sort((a, b) => a.localeCompare(b, 'tr'));
-      const finalList = uniq.length ? uniq : ['Adet'];
-
-      setUnitOptions(finalList);
-      setMUnit((prev) => (prev && finalList.includes(prev) ? prev : finalList[0]));
-    } catch (e) {
-      setUnitOptions(['Adet']);
-      setMUnit('Adet');
-    } finally {
-      setUnitsLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    if (dbReady) loadUnits();
-  }, [dbReady, loadUnits]);
-
-  /* ---------------- Manuel poz ekle ---------------- */
+  /* ---------- Manual poz ekle ---------- */
   const addManualPoz = useCallback(() => {
     setManualError(null);
 
@@ -387,11 +350,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
     if (!pos || !desc) {
       setManualError('Poz No ve Tanım zorunludur.');
-      return;
-    }
-
-    if (!mUnit || !unitOptions.includes(mUnit)) {
-      setManualError('Birim sadece veritabanındaki seçeneklerden seçilmelidir.');
       return;
     }
 
@@ -407,15 +365,19 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     const next = [newItem, ...manualItems.filter((x) => x.pos !== pos)];
     persistManual(next);
 
-    // İstersen otomatik favoriye ekleyelim (kullanışlı)
-    // persistFavorites(favorites.includes(pos) ? favorites : [...favorites, pos]);
-
-    // Seçim aksiyonu
+    // Kaydet/Seç dediğinde parent’a standard + db-key uyumlu payload gönder
     onSelect({
       pos: newItem.pos,
       desc: newItem.desc,
       unit: newItem.unit,
-      price: newItem.price,
+      price: Number(newItem.price || 0),
+
+      // ✅ parent tarafı bunları bekliyorsa diye
+      poz_no: newItem.pos,
+      tanim: newItem.desc,
+      birim: newItem.unit,
+      birim_fiyat: Number(newItem.price || 0),
+
       source: 'manual',
     });
 
@@ -424,15 +386,15 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     setMDesc('');
     setMPrice('');
     setManualError(null);
-  }, [mPos, mDesc, mPrice, mUnit, unitOptions, manualItems, persistManual, onSelect]);
+  }, [mPos, mDesc, mPrice, mUnit, manualItems, persistManual, onSelect]);
 
-  /* ---------------- Komşu pozlar (±5) - rowid kesin yöntem ---------------- */
+  /* ---------- Komşu pozlar (±5) ---------- */
   const showNeighbors = useCallback(
     (pozNo: string) => {
       if (!dbReady) return;
 
       const table = tableNameRef.current;
-      const safePos = pozNo.replace(/'/g, "''");
+      const safePos = String(pozNo).trim().replace(/'/g, "''");
 
       setLoading(true);
       setTimeout(() => {
@@ -443,7 +405,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           LIMIT 1
         `);
 
-        // execQuery normalize ettiği için rowid’yi _raw’dan alacağız
         const ridRaw = target?.[0]?._raw?.rowid;
         if (ridRaw == null) {
           console.warn('Hedef poz bulunamadı:', pozNo);
@@ -464,9 +425,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         `);
 
         setIsNeighborMode(true);
-        setNeighborAnchor(pozNo);
+        setNeighborAnchor(String(pozNo).trim());
         setSearchTerm('');
-        setViewMode('all'); // komşu modu “tüm pozlar” mantığında çalışır
+        setViewMode('all');
         setAllResults(neighbors);
         setDisplayedResults(neighbors);
         if (listRef.current) listRef.current.scrollTop = 0;
@@ -481,12 +442,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     setIsNeighborMode(false);
     setNeighborAnchor(null);
     setSearchTerm('');
-    // geri dönünce “tüm pozlar” listesine döner (limit 25)
     setViewMode('all');
   }, []);
 
-  /* ---------------- Arama / Favori / Manuel merge mantığı ---------------- */
-  const computeManualMatches = useCallback(
+  /* ---------- Manual filtre ---------- */
+  const manualMatches = useCallback(
     (term: string) => {
       const t = term.trim().toLowerCase();
       if (!t) return manualItems;
@@ -501,81 +461,96 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     [manualItems]
   );
 
+  /* ---------- Arama ---------- */
   const performSearch = useCallback(
     (term: string) => {
       if (!dbReady) return;
 
-      const safeTerm = term.toLowerCase().replace(/'/g, "''");
+      const t = term.trim();
+      const safeTerm = t.toLowerCase().replace(/'/g, "''");
       const table = tableNameRef.current;
 
       setLoading(true);
       setTimeout(() => {
-        // 1) MANUEL eşleşmeleri al (ALL veya FAVORITES’ta kullanılacak)
-        const manualMatchesAll = computeManualMatches(term);
+        const manAll = manualMatches(t);
 
-        // 2) DB sorgusu
-        let query = `SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat FROM "${table}" WHERE 1=1`;
-        const conditions: string[] = [];
-
+        // FAVORITES MODE
         if (viewMode === 'favorites') {
-          // Favorilerde: DB’den favori pozları çek
+          const favSet = new Set(favorites.map((x) => String(x).trim()));
+          const manFavs = manAll.filter((m) => favSet.has(m.pos));
+
           if (favorites.length === 0) {
-            const manualFavs = manualMatchesAll.filter((m) => favorites.includes(m.pos));
-            setAllResults(manualFavs.slice(0, SEARCH_LIMIT));
-            setDisplayedResults(manualFavs.slice(0, SEARCH_LIMIT));
+            const mergedOnly = manFavs.slice(0, SEARCH_LIMIT);
+            setAllResults(mergedOnly);
+            setDisplayedResults(mergedOnly);
             setLoading(false);
             return;
           }
-          const favList = favorites.map((f) => `'${f.replace(/'/g, "''")}'`).join(',');
-          conditions.push(`(poz_no IN (${favList}) OR pos IN (${favList}) OR no IN (${favList}))`);
+
+          const favList = favorites.map((f) => `'${String(f).trim().replace(/'/g, "''")}'`).join(',');
+
+          // ✅ LIMIT’i SQL’de değil JS’de kesiyoruz; favori sayısı az olduğu için performans sorunu yok
+          let q = `
+            SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
+            FROM "${table}"
+            WHERE (poz_no IN (${favList}) OR pos IN (${favList}) OR no IN (${favList}))
+          `;
+
+          if (safeTerm) {
+            q += ` AND (lower(poz_no) LIKE '%${safeTerm}%' OR lower(tanim) LIKE '%${safeTerm}%')`;
+          }
+
+          const dbFavs = execQuery(q) as NormalizedPoz[];
+
+          // ✅ Favori sırasını koru
+          const idx = (p: string) => favorites.findIndex((x) => String(x).trim() === String(p).trim());
+          dbFavs.sort((a, b) => idx(a.pos) - idx(b.pos));
+
+          const merged = [...manFavs, ...dbFavs].slice(0, SEARCH_LIMIT);
+          setAllResults(merged);
+          setDisplayedResults(merged);
+          setLoading(false);
+          return;
         }
+
+        // ALL MODE
+        let query = `
+          SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
+          FROM "${table}"
+          WHERE 1=1
+        `;
 
         if (safeTerm) {
-          conditions.push(`(lower(poz_no) LIKE '%${safeTerm}%' OR lower(tanim) LIKE '%${safeTerm}%')`);
+          query += ` AND (lower(poz_no) LIKE '%${safeTerm}%' OR lower(tanim) LIKE '%${safeTerm}%')`;
         }
-
-        if (conditions.length > 0) query += ` AND ${conditions.join(' AND ')}`;
 
         query += ` ORDER BY rowid ASC LIMIT ${SEARCH_LIMIT}`;
 
         const dbData = execQuery(query) as NormalizedPoz[];
 
-        // 3) Manual + DB merge
-        let merged: NormalizedPoz[] = [];
-
-        if (viewMode === 'favorites') {
-          const manualFavs = manualMatchesAll.filter((m) => favorites.includes(m.pos));
-          merged = [...manualFavs, ...dbData].slice(0, SEARCH_LIMIT);
-        } else {
-          // ALL mod: manual eşleşmeleri üste koy (kullanışlı), sonra DB
-          merged = [...manualMatchesAll, ...dbData]
-            // aynı pos iki kez gelmesin
-            .filter((x, idx, arr) => arr.findIndex((y) => y.pos === x.pos && y.source === x.source) === idx)
-            .slice(0, SEARCH_LIMIT);
-        }
+        // manual üstte + db (aynı pos tekrar gelmesin)
+        const merged = [...manAll, ...dbData]
+          .filter((x, i, arr) => arr.findIndex((y) => y.pos === x.pos && y.source === x.source) === i)
+          .slice(0, SEARCH_LIMIT);
 
         setIsNeighborMode(false);
         setNeighborAnchor(null);
-
         setAllResults(merged);
         setDisplayedResults(merged);
         setLoading(false);
       }, 60);
     },
-    [dbReady, execQuery, viewMode, favorites, computeManualMatches]
+    [dbReady, execQuery, viewMode, favorites, manualMatches]
   );
 
-  /* ---------------- İlk açılış: ALL modda boş arama => ilk 25 (DB + manuel) ---------------- */
+  /* ---------- İlk açılış ---------- */
   useEffect(() => {
     if (!dbReady) return;
-    if (viewMode === 'all') {
-      // boş arama: manuel + ilk 25 DB
-      performSearch('');
-    }
+    performSearch('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady]);
 
-  /* ---------------- currentPos gelirse otomatik komşu ---------------- */
+  /* ---------- currentPos otomatik komşu ---------- */
   useEffect(() => {
     if (!dbReady) return;
     if (currentPos && searchTerm.trim() === '' && viewMode === 'all') {
@@ -584,49 +559,42 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady, currentPos]);
 
-  /* ---------------- Input debounce (Kritik: neighbor mode + boş input => bozma) ---------------- */
+  /* ---------- debounce (komşu mod boş input => bozma) ---------- */
   useEffect(() => {
     if (!dbReady) return;
 
-    const t = setTimeout(() => {
+    const h = setTimeout(() => {
       const v = searchTerm.trim();
 
-      // Komşu moddayken input boşsa: listeyi bozma
       if (isNeighborMode && v === '') return;
 
-      // Kullanıcı yazarsa neighbor moddan çık
       if (v.length > 0) setIsNeighborMode(false);
 
-      // Favorilerde: tek karakterle de arat (favoriler içinde filtre mantıklı)
-      if (viewMode === 'favorites') {
-        performSearch(v);
-        return;
-      }
-
-      // ALL mod
-      if (v.length > 0) performSearch(v);
-      else performSearch('');
+      // favorites: tek harf de çalışsın
+      if (viewMode === 'favorites') performSearch(v);
+      else performSearch(v);
     }, 250);
 
-    return () => clearTimeout(t);
+    return () => clearTimeout(h);
   }, [searchTerm, dbReady, performSearch, isNeighborMode, viewMode]);
 
-  /* ---------------- View mode değişince listeyi yenile ---------------- */
+  /* ---------- viewMode değişince ---------- */
   useEffect(() => {
     if (!dbReady) return;
 
-    // Komşu moddayken tab değişirse komşuyu kapat
     if (isNeighborMode) {
       setIsNeighborMode(false);
       setNeighborAnchor(null);
     }
+
     setSearchTerm('');
     performSearch('');
-  }, [viewMode, dbReady]); // eslint-disable-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewMode]);
 
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
-      {/* ÜST KISIM */}
+      {/* ÜST */}
       <div className="p-4 bg-white border-b border-slate-200 shadow-sm z-10 flex-shrink-0">
         {/* TABLAR */}
         <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg mb-3 w-fit">
@@ -659,12 +627,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         <div className="flex items-center gap-3">
           <div className="relative flex-1">
             <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              {loading ? (
-                <Loader className="w-5 h-5 animate-spin text-orange-500" />
-              ) : (
-                <Search className="w-5 h-5" />
-              )}
+              {loading ? <Loader className="w-5 h-5 animate-spin text-orange-500" /> : <Search className="w-5 h-5" />}
             </div>
+
             <input
               type="text"
               placeholder={
@@ -695,8 +660,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             onClick={() => {
               setManualOpen((p) => !p);
               setManualError(null);
-              // birimler yoksa tekrar çek
-              if (dbReady && unitOptions.length === 0) loadUnits();
             }}
             className={`h-[46px] px-4 rounded-xl font-bold text-sm inline-flex items-center gap-2 border transition-colors ${
               !dbReady
@@ -710,7 +673,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           </button>
         </div>
 
-        {/* MANUEL POZ EKLE PANEL */}
+        {/* MANUEL PANEL */}
         {manualOpen && (
           <div className="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50">
             <div className="flex items-center justify-between mb-2">
@@ -728,7 +691,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
               <div className="md:col-span-1">
                 <label className="block text-xs font-bold text-slate-600 mb-1">Poz No</label>
                 <input
@@ -750,26 +713,19 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </div>
 
               <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Birim (DB)</label>
+                <label className="block text-xs font-bold text-slate-600 mb-1">Birim</label>
                 <select
                   value={mUnit}
-                  onChange={(e) => setMUnit(e.target.value)}
-                  disabled={!dbReady || unitsLoading || unitOptions.length === 0}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300 disabled:bg-slate-100"
+                  onChange={(e) => setMUnit(e.target.value as any)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300"
                 >
-                  {unitOptions.length === 0 ? (
-                    <option value="">Birim yok</option>
-                  ) : (
-                    unitOptions.map((u) => (
-                      <option key={u} value={u}>
-                        {u}
-                      </option>
-                    ))
-                  )}
+                  {UNIT_OPTIONS.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
                 </select>
-                <div className="text-[10px] text-slate-500 mt-1">
-                  Elle giriş kapalı. Birimler DB’den gelir.
-                </div>
+                <div className="text-[10px] text-slate-500 mt-1">Sadece sabit birim listesi.</div>
               </div>
 
               <div className="md:col-span-1">
@@ -783,11 +739,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </div>
             </div>
 
-            {manualError && (
-              <div className="mt-2 text-sm font-bold text-red-600">
-                {manualError}
-              </div>
-            )}
+            {manualError && <div className="mt-2 text-sm font-bold text-red-600">{manualError}</div>}
 
             <div className="mt-3 flex justify-end gap-2">
               <button
@@ -803,7 +755,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               <button
                 type="button"
                 onClick={addManualPoz}
-                disabled={!dbReady || unitsLoading || !mUnit}
+                disabled={!dbReady}
                 className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold disabled:bg-slate-300"
               >
                 Kaydet / Seç
@@ -812,7 +764,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           </div>
         )}
 
-        {/* BİLGİ ÇUBUĞU */}
+        {/* BİLGİ */}
         <div className="mt-2 flex justify-between items-center px-1">
           <div className="flex items-center space-x-2">
             {isNeighborMode && (
@@ -831,7 +783,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </>
             )}
 
-            {/* Kategori/etiket filtrelemesi yok; sadece istersen label olarak göster */}
             {category && !isNeighborMode && viewMode === 'all' && (
               <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100 flex items-center">
                 <Filter className="w-3 h-3 mr-1" /> {category}
@@ -845,9 +796,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
           <span
             className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${
-              dbReady
-                ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                : 'text-slate-600 bg-slate-100 border-slate-200'
+              dbReady ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-600 bg-slate-100 border-slate-200'
             }`}
           >
             <Database className="w-3.5 h-3.5" />
@@ -856,7 +805,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         </div>
       </div>
 
-      {/* LİSTE ALANI */}
+      {/* LİSTE */}
       <div
         className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30"
         ref={listRef}
@@ -879,26 +828,41 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 allowChange={viewMode === 'all' && !manualOpen}
                 onToggleFav={(e) => toggleFavorite(e, posVal)}
                 onPick={() => {
-                  // Seçildiğinde: manuel ise direkt kendisini gönder
+                  // ✅ Seç: parent tarafı “poz değiştirme” için gereken tüm alanları alsın
                   if (item.source === 'manual') {
                     onSelect({
                       pos: item.pos,
                       desc: item.desc,
                       unit: item.unit,
                       price: Number(item.price || 0),
+
+                      // parent DB alanı bekliyorsa:
+                      poz_no: item.pos,
+                      tanim: item.desc,
+                      birim: item.unit,
+                      birim_fiyat: Number(item.price || 0),
+
                       source: 'manual',
                     });
                     return;
                   }
 
-                  // DB ise _raw’ı da gönderelim (mevcut kodunu bozmasın)
                   const raw = item._raw ?? {};
                   onSelect({
                     ...raw,
+
+                    // ✅ standart alanlar
                     pos: item.pos,
                     desc: item.desc,
                     unit: item.unit,
                     price: Number(item.price || 0),
+
+                    // ✅ DB alanları (poz değiştirmenin çalışması için kritik)
+                    poz_no: item.pos,
+                    tanim: item.desc,
+                    birim: item.unit,
+                    birim_fiyat: Number(item.price || 0),
+
                     source: 'db',
                   });
                 }}
@@ -917,9 +881,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               <>
                 <Star className="w-16 h-16 mb-4 text-slate-200" />
                 <p className="text-lg font-bold text-slate-500">Henüz Favoriniz Yok</p>
-                <p className="text-sm text-center px-6">
-                  Sık kullandığınız pozları yıldızlayarak buraya ekleyebilirsiniz.
-                </p>
+                <p className="text-sm text-center px-6">Sık kullandığınız pozları yıldızlayarak buraya ekleyebilirsiniz.</p>
               </>
             ) : searchTerm ? (
               <>
