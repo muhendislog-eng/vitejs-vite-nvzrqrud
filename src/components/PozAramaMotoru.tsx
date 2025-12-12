@@ -113,7 +113,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         
         // Not: Eğer tablo adını bilmiyorsan "SELECT name FROM sqlite_master WHERE type='table'" ile bakabiliriz.
         // Şimdilik standart tablo ismiyle deniyorum.
-        const targetRes = execQuery(`SELECT id FROM poz_library WHERE pos = '${safePos}' LIMIT 1`);
+        const targetRes = execQuery(`SELECT id FROM poz_no WHERE pos = '${safePos}' LIMIT 1`);
         
         if (targetRes.length > 0) {
             const targetId = targetRes[0].id;
@@ -121,7 +121,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             const endId = targetId + 5;
             
             // Komşuları çek
-            const neighbors = execQuery(`SELECT * FROM poz_library WHERE id BETWEEN ${startId} AND ${endId} ORDER BY id ASC`);
+            const neighbors = execQuery(`SELECT * FROM poz_no WHERE id BETWEEN ${startId} AND ${endId} ORDER BY id ASC`);
             
             setAllResults(neighbors);
             setDisplayedResults(neighbors);
@@ -166,7 +166,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     setLoading(true);
     setTimeout(() => {
       const safeTerm = term.toLowerCase().replace(/'/g, "''");
-      let query = "SELECT * FROM poz_library";
+      let query = "SELECT * FROM poz_no";
       
       const conditions = [];
       // Hem Poz No hem Tanım içinde ara
