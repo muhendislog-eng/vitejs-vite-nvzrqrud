@@ -71,48 +71,47 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   const handlePrint = () => window.print();
 
   return (
-    <div className="w-full">
-      {/* Responsive page container */}
-      <div className="mx-auto w-full max-w-screen-2xl px-4 sm:px-6 lg:px-8 py-6 dashboard-root">
-        {/* PRINT CSS: SADECE #print-area yazdırılır */}
-        <style>
-          {`
-            /* Genel: kart/grafik bölünmesini iyileştir */
-            .print-card {
-              break-inside: avoid;
-              page-break-inside: avoid;
+    <div className="w-full min-w-0 dashboard-root">
+      {/* PRINT: SADECE #print-area yazdırılır */}
+      <style>
+        {`
+          .print-card {
+            break-inside: avoid;
+            page-break-inside: avoid;
+          }
+
+          @media print {
+            @page { margin: 12mm; }
+
+            /* Uygulamanın tamamını gizle */
+            body * { visibility: hidden !important; }
+
+            /* SADECE print-area göster */
+            #print-area, #print-area * { visibility: visible !important; }
+
+            /* print-area sayfanın başına yerleşsin */
+            #print-area {
+              position: absolute;
+              left: 0;
+              top: 0;
+              width: 100%;
             }
 
-            @media print {
-              @page { margin: 12mm; }
+            /* Yazdırmada üst alan görünmesin */
+            .print-hidden { display: none !important; }
 
-              /* Uygulamanın tamamını gizle */
-              body * { visibility: hidden !important; }
+            /* Yazdırmada gölgeleri azalt */
+            .no-print-shadow { box-shadow: none !important; }
 
-              /* SADECE print-area göster */
-              #print-area, #print-area * { visibility: visible !important; }
+            /* Recharts overflow önle */
+            .recharts-wrapper, .recharts-responsive-container { width: 100% !important; }
+          }
+        `}
+      </style>
 
-              /* print-area sayfanın başına yerleşsin */
-              #print-area {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-              }
-
-              /* Yazdırmada buton/üst alan görünmesin */
-              .print-hidden { display: none !important; }
-
-              /* Yazdırmada gölgeleri azalt (daha temiz çıktı) */
-              .no-print-shadow { box-shadow: none !important; }
-
-              /* Recharts bazen overflow yapabiliyor */
-              .recharts-wrapper, .recharts-responsive-container { width: 100% !important; }
-            }
-          `}
-        </style>
-
-        {/* --- ÜST BİLGİ ALANI (Ekranda var, yazdırmada yok) --- */}
+      {/* Sayfa padding (tam ekran genişlik) */}
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-6">
+        {/* --- ÜST BİLGİ (Ekranda var, yazdırmada yok) --- */}
         <div className="print-hidden flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
           <div className="min-w-0">
             <h2 className="text-2xl font-black text-slate-800 flex items-center tracking-tight">
@@ -134,18 +133,18 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
           </button>
         </div>
 
-        {/* =========================
-            PRINT BAŞLANGIÇ: BURADAN İTİBAREN ÇIKTI ALINIR
-           ========================= */}
-        <div id="print-area" className="w-full">
+        {/* ===== PRINT AREA BAŞLANGIÇ (ÇIKTI BURADAN) ===== */}
+        <div id="print-area" className="w-full min-w-0">
           {/* --- KPI KARTLARI --- */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-6">
-            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-orange-100 shadow-sm">
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-6 w-full min-w-0">
+            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-orange-100 shadow-sm min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-orange-500"></span>
-                    <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">Kaba İnşaat</span>
+                    <span className="text-xs font-bold text-orange-600 uppercase tracking-wider">
+                      Kaba İnşaat
+                    </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight break-words">
                     {formatCurrency(staticTotal)}
@@ -158,12 +157,14 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
               </div>
             </div>
 
-            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-blue-100 shadow-sm">
+            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-blue-100 shadow-sm min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-blue-500"></span>
-                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">Mimari İmalat</span>
+                    <span className="text-xs font-bold text-blue-600 uppercase tracking-wider">
+                      Mimari İmalat
+                    </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight break-words">
                     {formatCurrency(archTotal)}
@@ -176,12 +177,14 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
               </div>
             </div>
 
-            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-yellow-100 shadow-sm">
+            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-yellow-100 shadow-sm min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-yellow-500"></span>
-                    <span className="text-xs font-bold text-yellow-600 uppercase tracking-wider">Elektrik (Tahmini)</span>
+                    <span className="text-xs font-bold text-yellow-600 uppercase tracking-wider">
+                      Elektrik (Tahmini)
+                    </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight break-words">
                     {formatCurrency(electricTotal)}
@@ -194,12 +197,14 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
               </div>
             </div>
 
-            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm">
+            <div className="print-card no-print-shadow bg-white p-5 rounded-2xl border border-indigo-100 shadow-sm min-w-0">
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                   <div className="flex items-center gap-2 mb-2">
                     <span className="w-2 h-2 rounded-full bg-indigo-500"></span>
-                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">Mekanik (Tahmini)</span>
+                    <span className="text-xs font-bold text-indigo-600 uppercase tracking-wider">
+                      Mekanik (Tahmini)
+                    </span>
                   </div>
                   <div className="text-2xl sm:text-3xl font-black text-slate-800 tracking-tight break-words">
                     {formatCurrency(mechanicalTotal)}
@@ -214,15 +219,15 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
           </div>
 
           {/* --- GRAFİKLER --- */}
-          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6 mb-6">
-            <div className="print-card no-print-shadow bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden">
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-5 sm:gap-6 mb-6 w-full min-w-0">
+            <div className="print-card no-print-shadow bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden min-w-0">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <h3 className="font-bold text-slate-700 flex items-center">
                   <PieChartIcon className="w-5 h-5 mr-2 text-slate-400" /> Maliyet Dağılımı
                 </h3>
               </div>
 
-              <div className="w-full h-[300px] sm:h-[350px]">
+              <div className="w-full h-[300px] sm:h-[350px] min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -235,7 +240,11 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                       dataKey="value"
                     >
                       {chartData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          strokeWidth={0}
+                        />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -245,21 +254,26 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
               </div>
             </div>
 
-            <div className="print-card no-print-shadow bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden">
+            <div className="print-card no-print-shadow bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm overflow-hidden min-w-0">
               <div className="flex items-center justify-between border-b border-slate-100 pb-3 mb-4">
                 <h3 className="font-bold text-slate-700 flex items-center">
                   <TrendingUp className="w-5 h-5 mr-2 text-slate-400" /> Bütçe Analizi
                 </h3>
               </div>
 
-              <div className="w-full h-[300px] sm:h-[350px]">
+              <div className="w-full h-[300px] sm:h-[350px] min-w-0">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart
                     data={chartData}
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={true}
+                      vertical={false}
+                      stroke="#e2e8f0"
+                    />
                     <XAxis
                       type="number"
                       tickFormatter={(val) => `₺${(val / 1_000_000).toFixed(1)}M`}
@@ -274,7 +288,10 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                       fontSize={11}
                       fontWeight={600}
                     />
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={{ fill: '#f8fafc' }} />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      cursor={{ fill: '#f8fafc' }}
+                    />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
                       {chartData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
