@@ -1,7 +1,14 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, Plus, BookOpen, AlertCircle, Loader, Filter, ArrowUpDown, Check } from 'lucide-react';
-import { searchPoses, getNeighborPoses } from '../db/database';
-import { formatCurrency } from '../utils/helpers';
+import { formatCurrency, loadScript } from '../utils/helpers';
+
+// SQL.js için tip tanımı
+declare global {
+  interface Window {
+    initSqlJs: any;
+    SQL: any;
+  }
+}
 
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
@@ -15,72 +22,167 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [searchTerm, setSearchTerm] = useState('');
   const [allResults, setAllResults] = useState<any[]>([]);
   const [displayedResults, setDisplayedResults] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // Başlangıçta yükleniyor
+  const [dbReady, setDbReady] = useState(false);
   const [page, setPage] = useState(1);
   const [isNeighborMode, setIsNeighborMode] = useState(false);
+  const dbRef = useRef<any>(null); // Veritabanı referansı
   
   const listRef = useRef<HTMLDivElement>(null);
 
-  // --- İLK AÇILIŞ VE ARAMA MANTIĞI ---
+  // --- 1. VERİTABANINI BAŞLATMA (COMPONENT MOUNT) ---
   useEffect(() => {
+    const initDB = async () => {
+      try {
+        // SQL.js kütüphanesini yükle
+        if (!window.initSqlJs) {
+          await loadScript("https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/sql-wasm.js");
+        }
+
+        if (!window.initSqlJs) {
+          console.error("SQL.js yüklenemedi.");
+          setLoading(false);
+          return;
+        }
+
+        const SQL = await window.initSqlJs({
+          locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`
+        });
+
+        // database.db dosyasını public klasöründen çek
+        const response = await fetch('/database.db');
+        if (!response.ok) throw new Error("Veritabanı dosyası bulunamadı.");
+        
+        const buffer = await response.arrayBuffer();
+        const db = new SQL.Database(new Uint8Array(buffer));
+        dbRef.current = db;
+        setDbReady(true);
+        setLoading(false);
+
+      } catch (err) {
+        console.error("Veritabanı başlatma hatası:", err);
+        setLoading(false);
+      }
+    };
+
+    initDB();
+  }, []);
+
+  // --- YARDIMCI: SQL SONUCUNU JSON'A ÇEVİRME ---
+  const execQuery = (query: string) => {
+    if (!dbRef.current) return [];
+    try {
+      const res = dbRef.current.exec(query);
+      if (!res || res.length === 0) return [];
+      const columns = res[0].columns;
+      const values = res[0].values;
+      return values.map((row: any) => {
+        let obj: any = {};
+        columns.forEach((col: string, i: number) => {
+          obj[col] = row[i];
+        });
+        return obj;
+      });
+    } catch (e) {
+      console.warn("Sorgu hatası:", e);
+      return [];
+    }
+  };
+
+  // --- 2. İLK AÇILIŞ VE KOMŞU POZ MANTIĞI ---
+  useEffect(() => {
+    if (!dbReady) return;
+
+    // Eğer mevcut bir poz varsa ve arama kutusu boşsa -> Komşuları Getir
+    if (currentPos && searchTerm === '') {
+      setLoading(true);
+      setTimeout(() => {
+        // 1. Hedef pozun ID'sini bul
+        const safePos = currentPos.replace(/'/g, "''");
+        // Not: Tablo adının 'poz_library' veya 'pozlar' olup olmadığını veritabanından kontrol etmek gerekebilir.
+        // Genelde standart isim 'poz_library' kullanıyoruz.
+        // Eğer veritabanı farklıysa tablo adını 'metraj_data' veya doğru tablo adıyla değiştirmelisiniz.
+        // Burada veritabanının yapısını bilmediğimiz için genel bir sorgu deniyoruz.
+        
+        // Önce tablo adlarını kontrol et (Debug için)
+        // const tables = execQuery("SELECT name FROM sqlite_master WHERE type='table'");
+        // console.log("Tablolar:", tables);
+
+        // Varsayılan tablo: poz_library (constants.ts'den oluşturulan yapı)
+        let targetRows = execQuery(`SELECT id FROM poz_library WHERE pos = '${safePos}' LIMIT 1`);
+        
+        if (targetRows.length > 0) {
+            const targetId = targetRows[0].id;
+            const startId = Math.max(1, targetId - 5);
+            const endId = targetId + 5;
+            
+            // Komşuları getir
+            const neighbors = execQuery(`SELECT * FROM poz_library WHERE id BETWEEN ${startId} AND ${endId} ORDER BY id ASC`);
+            
+            if (neighbors.length > 0) {
+                setAllResults(neighbors);
+                setDisplayedResults(neighbors);
+                setIsNeighborMode(true);
+            }
+        } else {
+             // Poz bulunamazsa (belki farklı bir tablodadır veya format farklıdır) boş getirme, kategori varsa ona bak.
+             if (category) performSearch('');
+        }
+        setLoading(false);
+      }, 50);
+    } 
+    else if (!currentPos && category && searchTerm === '') {
+        performSearch(''); // Sadece kategori bazlı getir
+    }
+  }, [dbReady, currentPos, category]); // searchTerm buraya eklenmemeli, döngüye girer
+
+  // --- 3. ARAMA TETİKLEYİCİSİ (DEBOUNCE) ---
+  useEffect(() => {
+    if (!dbReady) return;
+
     const delayDebounceFn = setTimeout(() => {
-      // 1. Durum: Arama kutusu doluysa normal arama yap
       if (searchTerm.trim().length > 1) {
         setIsNeighborMode(false);
         performSearch(searchTerm);
-      } 
-      // 2. Durum: Arama boşsa
-      else if (searchTerm.trim().length === 0) {
-        // Eğer mevcut bir poz varsa (Düzenleme moduysa) -> Komşuları getir
-        if (currentPos && !searchTerm) {
-           setLoading(true);
-           // Veritabanı sorgusu hızlı olsa da UI akıcılığı için timeout içinde çağırıyoruz
-           setTimeout(() => {
-             const neighbors = getNeighborPoses(currentPos);
-             if (neighbors && neighbors.length > 0) {
-               setAllResults(neighbors);
-               setDisplayedResults(neighbors);
-               setIsNeighborMode(true);
-             } else if (category) {
-               // Komşu bulunamazsa veya poz yoksa kategoriye göre getir
-               performSearch('');
-             }
-             setLoading(false);
-           }, 50);
-        } 
-        // Eğer sadece kategori varsa -> O kategoriyi getir
-        else if (category) {
-            performSearch('');
-        } 
-        // Hiçbir şey yoksa -> Boş bırak
-        else {
+      } else if (searchTerm.trim().length === 0 && !isNeighborMode) {
+         // Arama temizlendiyse ve komşu modunda değilse (veya komşu modundan çıkıldıysa)
+         if (category) performSearch('');
+         else {
             setAllResults([]);
             setDisplayedResults([]);
-            setIsNeighborMode(false);
-        }
+         }
       }
     }, 300);
 
     return () => clearTimeout(delayDebounceFn);
-  }, [searchTerm, category, currentPos]);
+  }, [searchTerm, dbReady]);
 
   const performSearch = (term: string) => {
     setLoading(true);
     setTimeout(() => {
-      try {
-        let data = searchPoses(term);
-        // Kategori filtresi varsa uygula
-        if (category) {
-          data = data.filter((item: any) => item.category === category);
-        }
-        setAllResults(data);
-        setPage(1);
-        setDisplayedResults(data.slice(0, ITEMS_PER_PAGE));
-      } catch (error) {
-        console.error("Arama hatası:", error);
-      } finally {
-        setLoading(false);
+      const safeTerm = term.toLowerCase().replace(/'/g, "''");
+      let query = "SELECT * FROM poz_library";
+      
+      // Filtreleme Koşulları
+      const conditions = [];
+      if (safeTerm) {
+        conditions.push(`(lower(pos) LIKE '%${safeTerm}%' OR lower(desc) LIKE '%${safeTerm}%')`);
       }
+      if (category) {
+        conditions.push(`category = '${category}'`);
+      }
+
+      if (conditions.length > 0) {
+        query += " WHERE " + conditions.join(" AND ");
+      }
+      
+      query += " LIMIT 100"; // Performans için limit
+
+      const data = execQuery(query);
+      setAllResults(data);
+      setPage(1);
+      setDisplayedResults(data.slice(0, ITEMS_PER_PAGE));
+      setLoading(false);
     }, 10);
   };
 
@@ -109,11 +211,15 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
           </div>
           <input 
             type="text" 
-            placeholder={isNeighborMode ? `Mevcut Poz (${currentPos}) civarı listeleniyor...` : "Poz No, Tanım veya Anahtar Kelime Ara..."}
+            placeholder={!dbReady ? "Veritabanı yükleniyor..." : (isNeighborMode ? `Mevcut Poz (${currentPos}) civarı listeleniyor...` : "Poz No, Tanım veya Anahtar Kelime Ara...")}
             className={`w-full pl-12 pr-4 py-4 border rounded-2xl outline-none transition-all shadow-inner text-slate-700 placeholder:text-slate-400 font-medium text-lg ${isNeighborMode ? 'bg-blue-50 border-blue-200 focus:ring-4 focus:ring-blue-100' : 'bg-slate-50 border-slate-200 focus:ring-4 focus:ring-orange-100 focus:border-orange-500'}`}
             value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            onChange={(e) => {
+                setSearchTerm(e.target.value);
+                if(e.target.value.length > 0) setIsNeighborMode(false); // Yazmaya başlayınca moddan çık
+            }}
             autoFocus
+            disabled={!dbReady}
           />
         </div>
         
@@ -121,7 +227,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
              <div className="flex items-center space-x-2">
                 {isNeighborMode && (
                     <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 flex items-center animate-in fade-in zoom-in duration-300">
-                        <ArrowUpDown className="w-3 h-3 mr-1"/> Yakın Pozlar Listeleniyor
+                        <ArrowUpDown className="w-3 h-3 mr-1"/> Yakın Pozlar
                     </span>
                 )}
                 {category && !isNeighborMode && (
@@ -137,7 +243,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
              </div>
              
              <span className="text-[10px] font-bold text-green-600 flex items-center bg-green-50 px-2 py-1 rounded-full border border-green-100">
-                <BookOpen className="w-3 h-3 mr-1"/> ÇŞB 2025
+                <BookOpen className="w-3 h-3 mr-1"/> {dbReady ? "Veritabanı Aktif" : "Bağlanıyor..."}
              </span>
         </div>
       </div>
@@ -151,7 +257,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         {displayedResults.length > 0 ? (
           <>
             {displayedResults.map((item: any, index: number) => {
-               // Eğer listedeki eleman şu an seçili olan poz ise (currentPos) vurgula
                const isCurrent = currentPos && item.pos === currentPos;
                
                return (
@@ -199,7 +304,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                );
             })}
             
-            {/* Yükleme Göstergesi */}
             {displayedResults.length < allResults.length && (
                 <div className="py-4 text-center text-slate-400 text-sm flex items-center justify-center">
                     <Loader className="w-4 h-4 animate-spin mr-2"/> Daha fazlası yükleniyor...
@@ -209,7 +313,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         ) : (
           /* BOŞ DURUM */
           <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-60 pb-10">
-             {searchTerm ? (
+             {!dbReady ? (
+                <>
+                  <Loader className="w-12 h-12 mb-4 animate-spin text-slate-300"/>
+                  <p className="text-sm font-medium">Veritabanı Yükleniyor...</p>
+                </>
+             ) : searchTerm ? (
                <>
                  <AlertCircle className="w-16 h-16 mb-4 text-slate-300"/>
                  <p className="text-lg font-bold text-slate-500">Sonuç Bulunamadı</p>
