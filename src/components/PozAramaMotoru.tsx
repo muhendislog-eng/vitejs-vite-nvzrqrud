@@ -62,7 +62,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         try {
             const tables = db.exec("SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%'");
             if (tables.length > 0 && tables[0].values.length > 0) {
-                tableNameRef.current = tables[0].values[0][0]; // İlk tabloyu al
+                // Genellikle ilk tablo asıl veri tablosudur
+                tableNameRef.current = tables[0].values[0][0]; 
                 console.log("Bulunan Tablo:", tableNameRef.current);
             }
         } catch (e) {
@@ -114,29 +115,31 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         const table = tableNameRef.current;
         const safePos = currentPos.replace(/'/g, "''");
         
-        // Hedef pozun satırını bul (poz_no sütununa göre)
-        // Not: Sütun adları poz_no veya pos olabilir, ikisini de dene
+        // 1. ADIM: Hedef pozun satır numarasını (rowid) bul
+        // Hem 'poz_no' hem 'pos' sütun isimlerini dene
         let targetQuery = `SELECT rowid, * FROM ${table} WHERE poz_no = '${safePos}' LIMIT 1`;
         let targetRes = execQuery(targetQuery);
         
-        // Eğer poz_no ile bulunamazsa pos ile dene (yedek)
         if (targetRes.length === 0) {
              targetRes = execQuery(`SELECT rowid, * FROM ${table} WHERE pos = '${safePos}' LIMIT 1`);
         }
 
         if (targetRes.length > 0) {
-            const targetRowId = targetRes[0].rowid; // SQLite'ın gizli rowid'si
+            // Hedef bulundu, satır numarasını al
+            const targetRowId = targetRes[0].rowid; 
+            
+            // 2. ADIM: Bu satır numarasının 5 altını ve 5 üstünü hesapla
             const startId = targetRowId - 5;
             const endId = targetRowId + 5;
             
-            // Komşuları getir
+            // 3. ADIM: Bu aralıktaki tüm satırları çek
             const neighbors = execQuery(`SELECT * FROM ${table} WHERE rowid BETWEEN ${startId} AND ${endId} ORDER BY rowid ASC`);
             
             setAllResults(neighbors);
             setDisplayedResults(neighbors);
             setIsNeighborMode(true);
         } else {
-             // Poz veritabanında yoksa normal listeleme yap
+             // Poz veritabanında yoksa normal listeleme yap (Kategoriye göre)
              if (category) performSearch('');
         }
         setLoading(false);
@@ -173,10 +176,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       const safeTerm = term.toLowerCase().replace(/'/g, "''");
       const table = tableNameRef.current;
       
-      // Dinamik sütun kontrolü (poz_no mu pos mu? tanim mi desc mi?)
-      // Genelde kullanıcı 'poz_no' ve 'tanim' dediği için bunları öncelikli kullanıyoruz.
-      // Ancak hata almamak için OR ile alternatifleri de ekliyoruz.
-      
       let query = `SELECT * FROM ${table} WHERE 1=1`;
       
       if (safeTerm) {
@@ -188,8 +187,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         )`;
       }
 
-      // Kategori filtresi (Opsiyonel: Eğer veritabanında kategori sütunu varsa)
-      // query += ` AND category = '${category}'` (Veritabanı yapısına göre açılabilir)
+      // Opsiyonel: Kategoriye göre filtrele (Eğer veritabanında bu sütun varsa)
+      // query += ` AND category = '${category}'` 
 
       query += " LIMIT 100"; 
 
