@@ -76,7 +76,6 @@ const MetrajTable = ({
                   <tr>
                     <th className="px-6 py-4 w-28 sticky left-0 bg-slate-200 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Poz No</th>
                     <th className="px-6 py-4 w-auto min-w-[300px]">İmalat Adı</th>
-                    <th className="px-6 py-4 w-48">Mahal</th>
                     <th className="px-6 py-4 w-20 text-center">Birim</th>
                     <th className="px-6 py-4 w-28 text-right">Birim Fiyat</th>
                     <th className="px-6 py-4 w-24 text-center">İşlem</th>
@@ -102,19 +101,7 @@ const MetrajTable = ({
                         </div>
                       </td>
 
-                      {/* 3. Mahal Seçimi */}
-                      <td className="px-6 py-4">
-                         <select 
-                           className="w-full p-1.5 text-xs border border-slate-200 rounded-lg bg-white focus:ring-2 focus:ring-orange-500 outline-none transition-all cursor-pointer"
-                           value={item.mahal || ''}
-                           onChange={(e) => onUpdateLocation(item.id, e.target.value)}
-                         >
-                           <option value="">Genel</option>
-                           {locationOptions.map((loc: any) => (
-                             <option key={loc.id} value={loc.name}>{loc.name}</option>
-                           ))}
-                         </select>
-                      </td>
+                      
 
                       {/* 4. Birim */}
                       <td className="px-6 py-4 text-center">
