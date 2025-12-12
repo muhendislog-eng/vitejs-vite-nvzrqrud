@@ -1,42 +1,52 @@
-import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState, useCallback } from 'react';
 import {
   Search,
-  Plus,
-  AlertCircle,
   Loader,
-  Filter,
-  Check,
-  Database,
-  Pencil,
-  ArrowUpDown,
-  Undo2,
   Star,
+  ArrowUpDown,
+  Database,
+  Check,
+  Plus,
   X,
+  Save,
 } from 'lucide-react';
 import { formatCurrency, loadScript } from '../utils/helpers';
 
 declare global {
   interface Window {
     initSqlJs: any;
-    SQL: any;
   }
 }
 
 interface PozAramaMotoruProps {
   onSelect: (pose: any) => void;
-  category?: string;
-  currentPos?: string;
+  currentPos?: string; // “poz değiştir” modunda gelen poz_no
 }
 
-const SEARCH_LIMIT = 25;
+const ITEMS_PER_PAGE = 20;
+const SEARCH_LIMIT_DB = 100;
 const NEIGHBOR_RADIUS = 5;
 const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 
 const FAVORITES_KEY = 'gkmetraj_favorites';
-const MANUAL_KEY = 'gkmetraj_manual_pozlar';
 
-// ✅ Birimler sadece bunlar (elle yazmak yok, DB’den çekmek yok)
+// Kullanıcı istedi: sadece bunlar
 const UNIT_OPTIONS = ['Kg', 'li', 'm', 'm²', 'm³', 'n', 'Ton'] as const;
+
+type UnitOption = (typeof UNIT_OPTIONS)[number];
+
+type ViewMode = 'all' | 'favorites';
+
+type PozItem = {
+  pos: string;
+  desc: string;
+  unit: UnitOption | string;
+  price: number;
+  source: 'db' | 'manual';
+  rowid?: number;
+};
+
+const escapeSql = (s: string) => s.replace(/'/g, "''").trim();
 
 const toNumberTR = (v: any): number => {
   if (v === null || v === undefined) return 0;
@@ -44,8 +54,9 @@ const toNumberTR = (v: any): number => {
 
   let s = String(v).trim();
   if (!s) return 0;
-
   s = s.replace(/\s/g, '');
+
+  // 1.234,56 -> 1234.56
   if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
   else s = s.replace(',', '.');
 
@@ -53,214 +64,82 @@ const toNumberTR = (v: any): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-type NormalizedPoz = {
-  pos: string;
-  desc: string;
-  unit: string;
-  price: number;
-  source: 'db' | 'manual';
-  createdAt?: number;
-  _raw?: any; // db satırı
+const normalizeItemFromDbRow = (row: any): PozItem => {
+  const pos = String(row?.poz_no ?? row?.pos ?? row?.no ?? '---').trim();
+  const desc = String(row?.tanim ?? row?.aciklama ?? row?.desc ?? 'Tanımsız');
+  const unit = String(row?.birim ?? row?.unit ?? 'Adet');
+  const price = toNumberTR(row?.birim_fiyat ?? row?.fiyat ?? row?.price ?? 0);
+  const rowid = row?.rowid != null ? Number(row.rowid) : undefined;
+
+  return {
+    pos,
+    desc,
+    unit,
+    price,
+    source: 'db',
+    rowid,
+  };
 };
 
-const PozCard = React.memo(function PozCard({
-  item,
-  isCurrent,
-  isAnchor,
-  isFav,
-  onPick,
-  onChange,
-  onToggleFav,
-  allowChange,
-}: {
-  item: NormalizedPoz;
-  isCurrent: boolean;
-  isAnchor: boolean;
-  isFav: boolean;
-  onPick: () => void;
-  onChange: () => void;
-  onToggleFav: (e: React.MouseEvent) => void;
-  allowChange: boolean;
-}) {
-  const priceText = useMemo(() => formatCurrency(Number(item.price || 0)), [item.price]);
-
-  return (
-    <div
-      style={{
-        contentVisibility: 'auto' as any,
-        contain: 'content',
-        containIntrinsicSize: '120px',
-      }}
-      className={`p-3 rounded-xl border cursor-pointer transition-all group bg-white ${
-        isAnchor
-          ? 'border-blue-400 bg-blue-50/40'
-          : isCurrent
-          ? 'bg-blue-50 border-blue-300 shadow-sm ring-2 ring-blue-100'
-          : 'border-slate-200 hover:border-orange-400 hover:shadow-md'
-      }`}
-      onClick={onPick}
-    >
-      <div className="flex justify-between items-start gap-3">
-        <div className="flex-1 min-w-0">
-          <div className="flex items-center flex-wrap gap-2 mb-1.5">
-            <span
-              className={`font-mono text-sm font-black px-2 py-0.5 rounded-lg border ${
-                isAnchor
-                  ? 'text-blue-700 bg-blue-100 border-blue-200'
-                  : isCurrent
-                  ? 'text-blue-700 bg-blue-100 border-blue-200'
-                  : 'text-orange-700 bg-orange-50 border-orange-100'
-              }`}
-            >
-              {item.pos || '---'}
-            </span>
-
-            <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-              {item.unit || 'Adet'}
-            </span>
-
-            {isAnchor && (
-              <span className="text-[10px] font-black text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md">
-                MERKEZ
-              </span>
-            )}
-
-            {item.source === 'manual' && (
-              <span className="text-[10px] font-black text-slate-700 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
-                MANUEL
-              </span>
-            )}
-          </div>
-
-          <p className="text-sm text-slate-700 leading-snug font-medium line-clamp-2">
-            {item.desc || 'Tanımsız'}
-          </p>
-        </div>
-
-        <div className="text-right flex flex-col items-end justify-between gap-2 min-w-[120px]">
-          <span className="font-black text-slate-800 text-lg tracking-tight">{priceText}</span>
-
-          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-            <button
-              type="button"
-              onClick={onToggleFav}
-              className={`p-1.5 rounded-lg transition-colors border ${
-                isFav
-                  ? 'bg-yellow-50 border-yellow-200 text-yellow-600 hover:bg-yellow-100'
-                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-yellow-600 hover:border-yellow-200'
-              }`}
-              title={isFav ? 'Favorilerden Çıkar' : 'Favorilere Ekle'}
-            >
-              <Star className={`w-4 h-4 ${isFav ? 'fill-yellow-500' : ''}`} />
-            </button>
-
-            {allowChange && item.source === 'db' && (
-              <button
-                type="button"
-                onClick={onChange}
-                className="p-1.5 rounded-lg transition-colors border bg-white border-slate-200 text-slate-600 hover:bg-slate-50"
-                title="Bu pozun ±5 komşusunu göster"
-              >
-                <Pencil className="w-4 h-4" />
-              </button>
-            )}
-
-            <span
-              className={`inline-flex items-center text-xs font-bold text-white px-3 py-1.5 rounded-lg shadow-sm transition-colors ${
-                isCurrent ? 'bg-blue-600' : 'bg-green-600 group-hover:bg-green-700'
-              }`}
-            >
-              <Check className="w-3.5 h-3.5 mr-1.5" />
-              {isCurrent ? 'SEÇİLİ' : 'SEÇ'}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-});
-
-const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, currentPos }) => {
+const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos }) => {
+  // UI
+  const [viewMode, setViewMode] = useState<ViewMode>('all');
   const [searchTerm, setSearchTerm] = useState('');
-  const [allResults, setAllResults] = useState<NormalizedPoz[]>([]);
-  const [displayedResults, setDisplayedResults] = useState<NormalizedPoz[]>([]);
   const [loading, setLoading] = useState(true);
   const [dbReady, setDbReady] = useState(false);
 
-  const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
+  // Data
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [manualItems, setManualItems] = useState<PozItem[]>([]);
+  const [dbCache, setDbCache] = useState<PozItem[]>([]); // son aramanın DB sonucu (max 100)
 
-  // Manual pozlar
-  const [manualItems, setManualItems] = useState<NormalizedPoz[]>([]);
+  // Neighbor mode
+  const [isNeighborMode, setIsNeighborMode] = useState(false);
+  const [neighborAnchor, setNeighborAnchor] = useState<string | null>(null);
+  const [neighborResults, setNeighborResults] = useState<PozItem[]>([]);
+
+  // Pagination (kasma azaltmak için)
+  const [page, setPage] = useState(1);
+  const listRef = useRef<HTMLDivElement>(null);
+
+  // SQL.js refs
+  const dbRef = useRef<any>(null);
+  const tableRef = useRef<string>('');
+
+  // Manual add modal
   const [manualOpen, setManualOpen] = useState(false);
   const [mPos, setMPos] = useState('');
   const [mDesc, setMDesc] = useState('');
-  const [mPrice, setMPrice] = useState('');
-  const [mUnit, setMUnit] = useState<(typeof UNIT_OPTIONS)[number]>('Kg');
-  const [manualError, setManualError] = useState<string | null>(null);
+  const [mUnit, setMUnit] = useState<UnitOption>('Adet');
+  const [mPrice, setMPrice] = useState<string>('0');
 
-  // Komşu mod
-  const [isNeighborMode, setIsNeighborMode] = useState(false);
-  const [neighborAnchor, setNeighborAnchor] = useState<string | null>(null);
-
-  const dbRef = useRef<any>(null);
-  const listRef = useRef<HTMLDivElement>(null);
-  const tableNameRef = useRef<string>('pozlar');
-
-  const totalCap = useMemo(
-    () => (isNeighborMode ? NEIGHBOR_LIMIT : SEARCH_LIMIT),
-    [isNeighborMode]
-  );
-
-  /* ---------- localStorage load ---------- */
+  /* ---------------- FAVORİLER LOAD/SAVE ---------------- */
   useEffect(() => {
     try {
-      const savedFavs = localStorage.getItem(FAVORITES_KEY);
-      if (savedFavs) setFavorites(JSON.parse(savedFavs));
-    } catch {}
+      const raw = localStorage.getItem(FAVORITES_KEY);
+      if (raw) setFavorites(JSON.parse(raw));
+    } catch {
+      // ignore
+    }
+  }, []);
 
+  const persistFavorites = (next: string[]) => {
+    setFavorites(next);
     try {
-      const savedManual = localStorage.getItem(MANUAL_KEY);
-      if (savedManual) {
-        const parsed = JSON.parse(savedManual) as NormalizedPoz[];
-        setManualItems(Array.isArray(parsed) ? parsed : []);
-      }
-    } catch {}
-  }, []);
+      localStorage.setItem(FAVORITES_KEY, JSON.stringify(next));
+    } catch {
+      // ignore
+    }
+  };
 
-  const persistFavorites = useCallback((list: string[]) => {
-    setFavorites(list);
-    localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
-  }, []);
+  const toggleFavorite = (pos: string) => {
+    const p = pos.trim();
+    if (!p) return;
+    const next = favorites.includes(p) ? favorites.filter((x) => x !== p) : [...favorites, p];
+    persistFavorites(next);
+  };
 
-  const persistManual = useCallback((list: NormalizedPoz[]) => {
-    setManualItems(list);
-    localStorage.setItem(MANUAL_KEY, JSON.stringify(list));
-  }, []);
-
-  /* ---------- FAVORİ toggle (favori sırasını korur) ---------- */
-  const toggleFavorite = useCallback(
-    (e: React.MouseEvent, pozNo: string) => {
-      e.stopPropagation();
-      const p = String(pozNo).trim();
-
-      let next: string[];
-      if (favorites.includes(p)) next = favorites.filter((x) => x !== p);
-      else next = [...favorites, p]; // ✅ ekleme sırası korunur
-      persistFavorites(next);
-
-      if (viewMode === 'favorites') {
-        // favoriden çıkardıysa UI’dan kaldır
-        if (!next.includes(p)) {
-          setAllResults((prev) => prev.filter((x) => x.pos !== p));
-          setDisplayedResults((prev) => prev.filter((x) => x.pos !== p));
-        }
-      }
-    },
-    [favorites, persistFavorites, viewMode]
-  );
-
-  /* ---------- DB init ---------- */
+  /* ---------------- DB INIT ---------------- */
   useEffect(() => {
     const initDB = async () => {
       try {
@@ -272,31 +151,29 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         if (!window.initSqlJs) throw new Error('SQL.js yüklenemedi');
 
         const SQL = await window.initSqlJs({
-          locateFile: (file: string) =>
-            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+          locateFile: (f: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${f}`,
         });
 
-        const response = await fetch('/database.db');
-        if (!response.ok) throw new Error('database.db dosyası bulunamadı!');
+        const res = await fetch('/database.db');
+        if (!res.ok) throw new Error('database.db bulunamadı');
 
-        const buffer = await response.arrayBuffer();
-        const db = new SQL.Database(new Uint8Array(buffer));
+        const buf = await res.arrayBuffer();
+        const db = new SQL.Database(new Uint8Array(buf));
         dbRef.current = db;
 
         const tables = db.exec(`
           SELECT name FROM sqlite_master
           WHERE type='table' AND name NOT LIKE 'sqlite_%'
           ORDER BY name
-          LIMIT 1
         `);
-        if (tables?.[0]?.values?.length) {
-          tableNameRef.current = String(tables[0].values[0][0]);
-        }
+
+        if (!tables?.[0]?.values?.length) throw new Error('Tablo bulunamadı');
+        tableRef.current = String(tables[0].values[0][0]);
 
         setDbReady(true);
-        setLoading(false);
-      } catch (err) {
-        console.error('DB Yükleme Hatası:', err);
+      } catch (e) {
+        console.error('DB init error:', e);
+      } finally {
         setLoading(false);
       }
     };
@@ -304,610 +181,556 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     initDB();
   }, []);
 
-  /* ---------- exec + normalize ---------- */
+  /* ---------------- SQL EXEC ---------------- */
   const execQuery = useCallback((query: string) => {
     if (!dbRef.current) return [];
     try {
       const res = dbRef.current.exec(query);
-      if (!res || res.length === 0) return [];
-
-      const columns = res[0].columns.map((c: string) => c.toLowerCase());
-      const values = res[0].values;
-
+      if (!res || !res.length) return [];
+      const { columns, values } = res[0];
       return values.map((row: any[]) => {
-        const raw: any = {};
-        columns.forEach((col: string, i: number) => (raw[col] = row[i]));
-
-        const pos = String(raw['poz_no'] ?? raw['pos'] ?? raw['no'] ?? '---').trim();
-        const desc = String(raw['tanim'] ?? raw['aciklama'] ?? raw['desc'] ?? 'Tanımsız');
-        const unit = String(raw['birim'] ?? raw['unit'] ?? 'Adet');
-        const price = toNumberTR(raw['birim_fiyat'] ?? raw['fiyat'] ?? raw['price'] ?? 0);
-
-        const normalized: NormalizedPoz = {
-          pos,
-          desc,
-          unit,
-          price,
-          source: 'db',
-          _raw: raw,
-        };
-
-        return normalized;
+        const o: any = {};
+        columns.forEach((c: string, i: number) => (o[c.toLowerCase()] = row[i]));
+        return o;
       });
     } catch (e) {
-      console.warn('Sorgu hatası:', e);
+      console.warn('SQL error:', e);
       return [];
     }
   }, []);
 
-  /* ---------- Manual poz ekle ---------- */
-  const addManualPoz = useCallback(() => {
-    setManualError(null);
+  /* ---------------- STANDARD EMIT ---------------- */
+  const emitSelect = useCallback(
+    (item: PozItem) => {
+      onSelect({
+        pos: item.pos,
+        desc: item.desc,
+        unit: item.unit,
+        price: Number(item.price || 0),
 
-    const pos = mPos.trim();
-    const desc = mDesc.trim();
-    const price = toNumberTR(mPrice);
+        // parent farklı isimler beklerse diye
+        poz_no: item.pos,
+        tanim: item.desc,
+        birim: item.unit,
+        birim_fiyat: Number(item.price || 0),
 
-    if (!pos || !desc) {
-      setManualError('Poz No ve Tanım zorunludur.');
-      return;
-    }
-
-    const newItem: NormalizedPoz = {
-      pos,
-      desc,
-      unit: mUnit,
-      price,
-      source: 'manual',
-      createdAt: Date.now(),
-    };
-
-    const next = [newItem, ...manualItems.filter((x) => x.pos !== pos)];
-    persistManual(next);
-
-    // Kaydet/Seç dediğinde parent’a standard + db-key uyumlu payload gönder
-    onSelect({
-      pos: newItem.pos,
-      desc: newItem.desc,
-      unit: newItem.unit,
-      price: Number(newItem.price || 0),
-
-      // ✅ parent tarafı bunları bekliyorsa diye
-      poz_no: newItem.pos,
-      tanim: newItem.desc,
-      birim: newItem.unit,
-      birim_fiyat: Number(newItem.price || 0),
-
-      source: 'manual',
-    });
-
-    setManualOpen(false);
-    setMPos('');
-    setMDesc('');
-    setMPrice('');
-    setManualError(null);
-  }, [mPos, mDesc, mPrice, mUnit, manualItems, persistManual, onSelect]);
-
-  /* ---------- Komşu pozlar (±5) ---------- */
-  const showNeighbors = useCallback(
-    (pozNo: string) => {
-      if (!dbReady) return;
-
-      const table = tableNameRef.current;
-      const safePos = String(pozNo).trim().replace(/'/g, "''");
-
-      setLoading(true);
-      setTimeout(() => {
-        const target = execQuery(`
-          SELECT rowid as rowid
-          FROM "${table}"
-          WHERE poz_no = '${safePos}' OR pos = '${safePos}' OR no = '${safePos}'
-          LIMIT 1
-        `);
-
-        const ridRaw = target?.[0]?._raw?.rowid;
-        if (ridRaw == null) {
-          console.warn('Hedef poz bulunamadı:', pozNo);
-          setLoading(false);
-          return;
-        }
-
-        const rid = Number(ridRaw);
-        const start = rid - NEIGHBOR_RADIUS;
-        const end = rid + NEIGHBOR_RADIUS;
-
-        const neighbors = execQuery(`
-          SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
-          FROM "${table}"
-          WHERE rowid BETWEEN ${start} AND ${end}
-          ORDER BY rowid ASC
-          LIMIT ${NEIGHBOR_LIMIT}
-        `);
-
-        setIsNeighborMode(true);
-        setNeighborAnchor(String(pozNo).trim());
-        setSearchTerm('');
-        setViewMode('all');
-        setAllResults(neighbors);
-        setDisplayedResults(neighbors);
-        if (listRef.current) listRef.current.scrollTop = 0;
-
-        setLoading(false);
-      }, 40);
-    },
-    [dbReady, execQuery]
-  );
-
-  const handleBackToList = useCallback(() => {
-    setIsNeighborMode(false);
-    setNeighborAnchor(null);
-    setSearchTerm('');
-    setViewMode('all');
-  }, []);
-
-  /* ---------- Manual filtre ---------- */
-  const manualMatches = useCallback(
-    (term: string) => {
-      const t = term.trim().toLowerCase();
-      if (!t) return manualItems;
-      return manualItems.filter((m) => {
-        return (
-          m.pos.toLowerCase().includes(t) ||
-          m.desc.toLowerCase().includes(t) ||
-          String(m.unit).toLowerCase().includes(t)
-        );
+        source: item.source,
       });
     },
-    [manualItems]
+    [onSelect]
   );
 
-  /* ---------- Arama ---------- */
-  const performSearch = useCallback(
+  /* ---------------- DB SEARCH (max 100) ---------------- */
+  const runDbSearch = useCallback(
     (term: string) => {
       if (!dbReady) return;
 
-      const t = term.trim();
-      const safeTerm = t.toLowerCase().replace(/'/g, "''");
-      const table = tableNameRef.current;
+      const table = tableRef.current;
+      const safe = escapeSql(term).toLowerCase();
 
       setLoading(true);
       setTimeout(() => {
-        const manAll = manualMatches(t);
-
-        // FAVORITES MODE
-        if (viewMode === 'favorites') {
-          const favSet = new Set(favorites.map((x) => String(x).trim()));
-          const manFavs = manAll.filter((m) => favSet.has(m.pos));
-
-          if (favorites.length === 0) {
-            const mergedOnly = manFavs.slice(0, SEARCH_LIMIT);
-            setAllResults(mergedOnly);
-            setDisplayedResults(mergedOnly);
-            setLoading(false);
-            return;
-          }
-
-          const favList = favorites.map((f) => `'${String(f).trim().replace(/'/g, "''")}'`).join(',');
-
-          // ✅ LIMIT’i SQL’de değil JS’de kesiyoruz; favori sayısı az olduğu için performans sorunu yok
-          let q = `
-            SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
-            FROM "${table}"
-            WHERE (poz_no IN (${favList}) OR pos IN (${favList}) OR no IN (${favList}))
-          `;
-
-          if (safeTerm) {
-            q += ` AND (lower(poz_no) LIKE '%${safeTerm}%' OR lower(tanim) LIKE '%${safeTerm}%')`;
-          }
-
-          const dbFavs = execQuery(q) as NormalizedPoz[];
-
-          // ✅ Favori sırasını koru
-          const idx = (p: string) => favorites.findIndex((x) => String(x).trim() === String(p).trim());
-          dbFavs.sort((a, b) => idx(a.pos) - idx(b.pos));
-
-          const merged = [...manFavs, ...dbFavs].slice(0, SEARCH_LIMIT);
-          setAllResults(merged);
-          setDisplayedResults(merged);
-          setLoading(false);
-          return;
-        }
-
-        // ALL MODE
-        let query = `
-          SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
+        let q = `
+          SELECT rowid as rowid, *
           FROM "${table}"
           WHERE 1=1
         `;
 
-        if (safeTerm) {
-          query += ` AND (lower(poz_no) LIKE '%${safeTerm}%' OR lower(tanim) LIKE '%${safeTerm}%')`;
+        if (safe) {
+          // En kritik kolonlar: poz_no, tanim. (Sabit tutuyoruz)
+          q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
         }
 
-        query += ` ORDER BY rowid ASC LIMIT ${SEARCH_LIMIT}`;
+        q += ` LIMIT ${SEARCH_LIMIT_DB}`;
 
-        const dbData = execQuery(query) as NormalizedPoz[];
+        const rows = execQuery(q);
+        const data = rows.map(normalizeItemFromDbRow);
 
-        // manual üstte + db (aynı pos tekrar gelmesin)
-        const merged = [...manAll, ...dbData]
-          .filter((x, i, arr) => arr.findIndex((y) => y.pos === x.pos && y.source === x.source) === i)
-          .slice(0, SEARCH_LIMIT);
-
-        setIsNeighborMode(false);
-        setNeighborAnchor(null);
-        setAllResults(merged);
-        setDisplayedResults(merged);
+        setDbCache(data);
         setLoading(false);
       }, 60);
     },
-    [dbReady, execQuery, viewMode, favorites, manualMatches]
+    [dbReady, execQuery]
   );
 
-  /* ---------- İlk açılış ---------- */
+  /* ---------------- NEIGHBORS (+/-5) ---------------- */
+  const showNeighbors = useCallback(
+    (posNo: string) => {
+      if (!dbReady) return;
+      const table = tableRef.current;
+      const safePos = escapeSql(posNo);
+
+      setLoading(true);
+      setTimeout(() => {
+        // hedef rowid
+        const target = execQuery(`
+          SELECT rowid as rowid
+          FROM "${table}"
+          WHERE poz_no='${safePos}'
+          LIMIT 1
+        `);
+
+        if (!target.length || target[0].rowid == null) {
+          console.warn('Neighbor anchor not found:', posNo);
+          setLoading(false);
+          return;
+        }
+
+        const rid = Number(target[0].rowid);
+        const start = rid - NEIGHBOR_RADIUS;
+        const end = rid + NEIGHBOR_RADIUS;
+
+        const rows = execQuery(`
+          SELECT rowid as rowid, *
+          FROM "${table}"
+          WHERE rowid BETWEEN ${start} AND ${end}
+        `);
+
+        const neighbors = rows
+          .map(normalizeItemFromDbRow)
+          .filter((x) => typeof x.rowid === 'number')
+          .sort((a, b) => Number(a.rowid) - Number(b.rowid))
+          .slice(0, NEIGHBOR_LIMIT);
+
+        setIsNeighborMode(true);
+        setNeighborAnchor(posNo);
+        setNeighborResults(neighbors);
+
+        // Komşu moduna girince: favoriler modunda kalmasın, “tüm pozlar”a dön
+        setViewMode('all');
+        setSearchTerm('');
+        setPage(1);
+
+        // scroll başa
+        if (listRef.current) listRef.current.scrollTop = 0;
+
+        setLoading(false);
+      }, 60);
+    },
+    [dbReady, execQuery]
+  );
+
+  /* ---------------- INIT LIST (ilk açılış) ---------------- */
   useEffect(() => {
     if (!dbReady) return;
-    performSearch('');
+    // ilk açılışta ilk 100 cache
+    runDbSearch('');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady]);
 
-  /* ---------- currentPos otomatik komşu ---------- */
+  /* ---------------- currentPos geldiyse otomatik komşu ---------------- */
   useEffect(() => {
     if (!dbReady) return;
-    if (currentPos && searchTerm.trim() === '' && viewMode === 'all') {
+    if (currentPos && !searchTerm.trim()) {
       showNeighbors(currentPos);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady, currentPos]);
 
-  /* ---------- debounce (komşu mod boş input => bozma) ---------- */
+  /* ---------------- SEARCH DEBOUNCE ---------------- */
   useEffect(() => {
     if (!dbReady) return;
 
-    const h = setTimeout(() => {
+    const t = setTimeout(() => {
       const v = searchTerm.trim();
 
+      // Komşu modundayken input boşsa: komşu listeyi bozma
       if (isNeighborMode && v === '') return;
 
-      if (v.length > 0) setIsNeighborMode(false);
+      // Komşu modundayken kullanıcı yazarsa: komşudan çık ve DB araması yap
+      if (isNeighborMode && v !== '') {
+        setIsNeighborMode(false);
+        setNeighborAnchor(null);
+        setNeighborResults([]);
+      }
 
-      // favorites: tek harf de çalışsın
-      if (viewMode === 'favorites') performSearch(v);
-      else performSearch(v);
+      if (viewMode === 'favorites') {
+        // Favoriler modunda DB sorgusu yok: sadece filtre
+        setPage(1);
+        return;
+      }
+
+      runDbSearch(v);
+      setPage(1);
     }, 250);
 
-    return () => clearTimeout(h);
-  }, [searchTerm, dbReady, performSearch, isNeighborMode, viewMode]);
+    return () => clearTimeout(t);
+  }, [searchTerm, dbReady, isNeighborMode, viewMode, runDbSearch]);
 
-  /* ---------- viewMode değişince ---------- */
-  useEffect(() => {
-    if (!dbReady) return;
+  /* ---------------- DERIVED LIST (favoriler kesin çalışsın) ---------------- */
+  const baseAllList: PozItem[] = useMemo(() => {
+    // Manual + DB cache birleşsin; aynı pos varsa manual üstün olsun (kullanıcı girişi)
+    const map = new Map<string, PozItem>();
 
-    if (isNeighborMode) {
-      setIsNeighborMode(false);
-      setNeighborAnchor(null);
+    for (const d of dbCache) {
+      if (d.pos) map.set(d.pos, d);
+    }
+    for (const m of manualItems) {
+      if (m.pos) map.set(m.pos, m);
     }
 
+    return Array.from(map.values());
+  }, [dbCache, manualItems]);
+
+  const filteredList: PozItem[] = useMemo(() => {
+    // Neighbor mode varsa: sadece neighborResults
+    if (isNeighborMode) return neighborResults;
+
+    const term = searchTerm.trim().toLowerCase();
+
+    if (viewMode === 'favorites') {
+      const favSet = new Set(favorites.map((f) => f.trim()));
+      const favItems = baseAllList.filter((i) => favSet.has(i.pos));
+
+      // Favori sırası korunsun
+      favItems.sort((a, b) => favorites.indexOf(a.pos) - favorites.indexOf(b.pos));
+
+      // Favoriler içinde arama
+      if (!term) return favItems;
+
+      return favItems.filter(
+        (i) =>
+          i.pos.toLowerCase().includes(term) ||
+          (i.desc || '').toLowerCase().includes(term)
+      );
+    }
+
+    // viewMode === all
+    // Not: DB aramasını runDbSearch zaten yaptı; burada sadece manual’ları da term ile süzerek ekleyelim:
+    if (!term) {
+      // arama boşken: dbCache + manual birleşimi
+      // (dbCache zaten LIMIT 100)
+      return baseAllList;
+    }
+
+    return baseAllList.filter(
+      (i) =>
+        i.pos.toLowerCase().includes(term) ||
+        (i.desc || '').toLowerCase().includes(term)
+    );
+  }, [
+    isNeighborMode,
+    neighborResults,
+    viewMode,
+    favorites,
+    baseAllList,
+    searchTerm,
+  ]);
+
+  const displayedResults = useMemo(() => {
+    const cap = isNeighborMode ? NEIGHBOR_LIMIT : page * ITEMS_PER_PAGE;
+    return filteredList.slice(0, cap);
+  }, [filteredList, page, isNeighborMode]);
+
+  /* ---------------- SCROLL LOAD MORE (hafif) ---------------- */
+  const onScroll = useCallback(() => {
+    if (!listRef.current) return;
+    const el = listRef.current;
+    const nearBottom = el.scrollTop + el.clientHeight >= el.scrollHeight - 80;
+    if (!nearBottom) return;
+
+    // neighbor modunda zaten 11 kayıt
+    if (isNeighborMode) return;
+
+    // daha fazla varsa sayfayı artır
+    const nextCap = (page + 1) * ITEMS_PER_PAGE;
+    if (nextCap <= filteredList.length) {
+      setPage((p) => p + 1);
+    }
+  }, [filteredList.length, isNeighborMode, page]);
+
+  /* ---------------- MANUAL ADD ---------------- */
+  const resetManualForm = () => {
+    setMPos('');
+    setMDesc('');
+    setMUnit('Adet');
+    setMPrice('0');
+  };
+
+  const saveManual = (selectAfter: boolean) => {
+    const pos = mPos.trim();
+    if (!pos) return;
+
+    const item: PozItem = {
+      pos,
+      desc: (mDesc || '').trim() || 'Tanımsız',
+      unit: mUnit,
+      price: toNumberTR(mPrice),
+      source: 'manual',
+    };
+
+    setManualItems((prev) => {
+      // aynı pos varsa güncelle
+      const idx = prev.findIndex((x) => x.pos === pos);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = item;
+        return next;
+      }
+      return [item, ...prev];
+    });
+
+    setManualOpen(false);
+    resetManualForm();
+
+    // Manual ekleyince: tüm pozlara geç, aramayı temizle, liste başa
+    setViewMode('all');
     setSearchTerm('');
-    performSearch('');
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewMode]);
+    setIsNeighborMode(false);
+    setNeighborAnchor(null);
+    setNeighborResults([]);
+    setPage(1);
+    if (listRef.current) listRef.current.scrollTop = 0;
+
+    if (selectAfter) emitSelect(item);
+  };
+
+  /* ---------------- HEADER INFO ---------------- */
+  const headerSubtitle = useMemo(() => {
+    if (!dbReady) return 'Veritabanı yükleniyor...';
+    if (isNeighborMode) return `Komşu pozlar (±${NEIGHBOR_RADIUS}) — ${neighborAnchor ?? ''}`;
+    if (viewMode === 'favorites') return 'Favorilerim';
+    return `Arama (DB cache: ${Math.min(dbCache.length, SEARCH_LIMIT_DB)} kayıt)`;
+  }, [dbReady, isNeighborMode, neighborAnchor, viewMode, dbCache.length]);
+
+  /* ---------------- CARD HELPERS ---------------- */
+  const isFav = (pos: string) => favorites.includes(pos);
 
   return (
     <div className="flex flex-col h-[600px] bg-white rounded-xl overflow-hidden border border-slate-200">
-      {/* ÜST */}
-      <div className="p-4 bg-white border-b border-slate-200 shadow-sm z-10 flex-shrink-0">
-        {/* TABLAR */}
-        <div className="flex space-x-1 bg-slate-100 p-1 rounded-lg mb-3 w-fit">
-          <button
-            onClick={() => setViewMode('all')}
-            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all flex items-center ${
-              viewMode === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Database className="w-4 h-4 mr-2" /> Tüm Pozlar
-          </button>
-
-          <button
-            onClick={() => setViewMode('favorites')}
-            className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all flex items-center ${
-              viewMode === 'favorites'
-                ? 'bg-white text-orange-500 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Star className={`w-4 h-4 mr-2 ${viewMode === 'favorites' ? 'fill-orange-500' : ''}`} />
-            Favorilerim
-            <span className="ml-2 bg-slate-200 text-slate-600 text-xs px-1.5 rounded-full">
-              {favorites.length}
-            </span>
-          </button>
-        </div>
-
-        {/* ARAMA + POZ EKLE */}
-        <div className="flex items-center gap-3">
-          <div className="relative flex-1">
-            <div className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400">
-              {loading ? <Loader className="w-5 h-5 animate-spin text-orange-500" /> : <Search className="w-5 h-5" />}
-            </div>
-
-            <input
-              type="text"
-              placeholder={
-                !dbReady
-                  ? 'Veritabanı Yükleniyor...'
-                  : viewMode === 'favorites'
-                  ? 'Favorilerim içinde ara...'
-                  : isNeighborMode
-                  ? `Komşu pozlar (±${NEIGHBOR_RADIUS}) — ${neighborAnchor ?? ''}`
-                  : 'Poz No veya Tanım ara... (maks. 25 sonuç)'
-              }
-              className={`w-full pl-12 pr-4 py-3 border rounded-xl outline-none transition-all shadow-inner text-slate-700 placeholder:text-slate-400 font-medium ${
-                isNeighborMode ? 'bg-blue-50 border-blue-200 focus:ring-blue-300' : 'bg-slate-50 border-slate-200 focus:ring-orange-200'
-              }`}
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                if (e.target.value.length > 0) setIsNeighborMode(false);
+      {/* HEADER */}
+      <div className="shrink-0 p-4 border-b bg-white">
+        {/* Tabs + Add */}
+        <div className="flex items-center justify-between gap-2 mb-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('all');
+                setIsNeighborMode(false);
+                setNeighborAnchor(null);
+                setNeighborResults([]);
+                setPage(1);
               }}
-              disabled={!dbReady}
-              autoFocus
-            />
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                viewMode === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Database className="w-4 h-4 inline mr-1" />
+              Tüm Pozlar
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setViewMode('favorites');
+                setIsNeighborMode(false);
+                setNeighborAnchor(null);
+                setNeighborResults([]);
+                setPage(1);
+              }}
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
+                viewMode === 'favorites'
+                  ? 'bg-orange-500 text-white'
+                  : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+              }`}
+            >
+              <Star className="w-4 h-4 inline mr-1" />
+              Favorilerim <span className="ml-1 opacity-90">({favorites.length})</span>
+            </button>
           </div>
 
           <button
             type="button"
-            disabled={!dbReady}
             onClick={() => {
-              setManualOpen((p) => !p);
-              setManualError(null);
+              setManualOpen(true);
+              // inputlarda önceki değer kalmasın
+              resetManualForm();
             }}
-            className={`h-[46px] px-4 rounded-xl font-bold text-sm inline-flex items-center gap-2 border transition-colors ${
-              !dbReady
-                ? 'bg-slate-100 border-slate-200 text-slate-400 cursor-not-allowed'
-                : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700'
-            }`}
+            className="px-3 py-1.5 rounded-lg text-sm font-bold bg-emerald-600 text-white hover:bg-emerald-700 transition-colors inline-flex items-center gap-2"
             title="Manuel poz ekle"
           >
             <Plus className="w-4 h-4" />
-            Poz Ekle
+            Manuel Poz
           </button>
         </div>
 
-        {/* MANUEL PANEL */}
-        {manualOpen && (
-          <div className="mt-3 p-4 rounded-xl border border-blue-200 bg-blue-50">
-            <div className="flex items-center justify-between mb-2">
-              <div className="font-black text-slate-700 text-sm">Manuel Poz Ekle</div>
-              <button
-                type="button"
-                onClick={() => {
-                  setManualOpen(false);
-                  setManualError(null);
-                }}
-                className="p-1.5 rounded-lg border border-blue-200 bg-white hover:bg-blue-50 text-blue-700"
-                title="Kapat"
-              >
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-5 gap-3">
-              <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Poz No</label>
-                <input
-                  value={mPos}
-                  onChange={(e) => setMPos(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300"
-                  placeholder="15.XXX.XXXX"
-                />
-              </div>
-
-              <div className="md:col-span-2">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Tanım</label>
-                <input
-                  value={mDesc}
-                  onChange={(e) => setMDesc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300"
-                  placeholder="Açıklama / tanım..."
-                />
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Birim</label>
-                <select
-                  value={mUnit}
-                  onChange={(e) => setMUnit(e.target.value as any)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300"
-                >
-                  {UNIT_OPTIONS.map((u) => (
-                    <option key={u} value={u}>
-                      {u}
-                    </option>
-                  ))}
-                </select>
-                <div className="text-[10px] text-slate-500 mt-1">Sadece sabit birim listesi.</div>
-              </div>
-
-              <div className="md:col-span-1">
-                <label className="block text-xs font-bold text-slate-600 mb-1">Birim Fiyat</label>
-                <input
-                  value={mPrice}
-                  onChange={(e) => setMPrice(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-2 focus:ring-blue-300"
-                  placeholder="0"
-                />
-              </div>
-            </div>
-
-            {manualError && <div className="mt-2 text-sm font-bold text-red-600">{manualError}</div>}
-
-            <div className="mt-3 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setManualOpen(false);
-                  setManualError(null);
-                }}
-                className="px-4 py-2 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 font-bold text-slate-700"
-              >
-                Vazgeç
-              </button>
-              <button
-                type="button"
-                onClick={addManualPoz}
-                disabled={!dbReady}
-                className="px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-bold disabled:bg-slate-300"
-              >
-                Kaydet / Seç
-              </button>
-            </div>
+        {/* Search */}
+        <div className="relative">
+          <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+            {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </div>
-        )}
+          <input
+            className="w-full pl-10 pr-3 py-2.5 border rounded-lg outline-none focus:ring-4 focus:ring-orange-200/60"
+            placeholder={
+              !dbReady
+                ? 'Veritabanı yükleniyor...'
+                : isNeighborMode
+                  ? `Komşu pozlar (±${NEIGHBOR_RADIUS})`
+                  : viewMode === 'favorites'
+                    ? 'Favorilerim içinde ara...'
+                    : 'Poz No veya Tanım ara...'
+            }
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            disabled={!dbReady}
+          />
+        </div>
 
-        {/* BİLGİ */}
-        <div className="mt-2 flex justify-between items-center px-1">
-          <div className="flex items-center space-x-2">
-            {isNeighborMode && (
-              <>
-                <span className="text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-lg border border-blue-100 flex items-center">
-                  <ArrowUpDown className="w-3 h-3 mr-1" /> Yakın Pozlar
-                </span>
-                <button
-                  type="button"
-                  onClick={handleBackToList}
-                  className="inline-flex items-center gap-1 text-xs font-bold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg hover:bg-slate-50 transition-colors"
-                >
-                  <Undo2 className="w-3 h-3" />
-                  Listeye Dön
-                </button>
-              </>
-            )}
-
-            {category && !isNeighborMode && viewMode === 'all' && (
-              <span className="text-xs font-bold text-orange-600 bg-orange-50 px-2 py-1 rounded-lg border border-orange-100 flex items-center">
-                <Filter className="w-3 h-3 mr-1" /> {category}
-              </span>
-            )}
-
-            <span className="text-xs font-semibold text-slate-500">
-              {allResults.length} sonuç (maks. {totalCap})
-            </span>
-          </div>
-
-          <span
-            className={`inline-flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-full border ${
-              dbReady ? 'text-emerald-700 bg-emerald-50 border-emerald-200' : 'text-slate-600 bg-slate-100 border-slate-200'
-            }`}
-          >
-            <Database className="w-3.5 h-3.5" />
-            {dbReady ? 'DB Bağlı' : 'Yükleniyor'}
+        {/* Info line */}
+        <div className="mt-2 flex items-center justify-between text-xs text-slate-500">
+          <span className="font-semibold">{headerSubtitle}</span>
+          <span className="font-mono">
+            Gösterilen: {displayedResults.length} / {isNeighborMode ? NEIGHBOR_LIMIT : filteredList.length}
           </span>
         </div>
       </div>
 
-      {/* LİSTE */}
+      {/* LIST */}
       <div
-        className="flex-1 overflow-y-auto p-4 space-y-3 bg-slate-50/30"
         ref={listRef}
-        style={{ willChange: 'transform', transform: 'translateZ(0)', contain: 'content' as any }}
+        onScroll={onScroll}
+        className="flex-1 overflow-y-auto bg-slate-50 p-3 space-y-2"
+        style={{ contain: 'content' as any }}
       >
-        {displayedResults.length > 0 ? (
-          displayedResults.map((item: NormalizedPoz, index: number) => {
-            const posVal = item.pos || '---';
-            const isCurrent = Boolean(currentPos && posVal === currentPos);
-            const isAnchor = Boolean(isNeighborMode && neighborAnchor && posVal === neighborAnchor);
-            const isFav = favorites.includes(posVal);
-
-            return (
-              <PozCard
-                key={`${item.source}-${posVal}-${index}`}
-                item={item}
-                isCurrent={isCurrent}
-                isAnchor={isAnchor}
-                isFav={isFav}
-                allowChange={viewMode === 'all' && !manualOpen}
-                onToggleFav={(e) => toggleFavorite(e, posVal)}
-                onPick={() => {
-                  // ✅ Seç: parent tarafı “poz değiştirme” için gereken tüm alanları alsın
-                  if (item.source === 'manual') {
-                    onSelect({
-                      pos: item.pos,
-                      desc: item.desc,
-                      unit: item.unit,
-                      price: Number(item.price || 0),
-
-                      // parent DB alanı bekliyorsa:
-                      poz_no: item.pos,
-                      tanim: item.desc,
-                      birim: item.unit,
-                      birim_fiyat: Number(item.price || 0),
-
-                      source: 'manual',
-                    });
-                    return;
-                  }
-
-                  const raw = item._raw ?? {};
-                  onSelect({
-                    ...raw,
-
-                    // ✅ standart alanlar
-                    pos: item.pos,
-                    desc: item.desc,
-                    unit: item.unit,
-                    price: Number(item.price || 0),
-
-                    // ✅ DB alanları (poz değiştirmenin çalışması için kritik)
-                    poz_no: item.pos,
-                    tanim: item.desc,
-                    birim: item.unit,
-                    birim_fiyat: Number(item.price || 0),
-
-                    source: 'db',
-                  });
-                }}
-                onChange={() => showNeighbors(posVal)}
-              />
-            );
-          })
-        ) : (
-          <div className="flex flex-col items-center justify-center h-full text-slate-400 opacity-70 pb-10">
-            {!dbReady ? (
+        {dbReady && displayedResults.length === 0 && !loading ? (
+          <div className="h-full min-h-[320px] flex flex-col items-center justify-center text-slate-400">
+            {viewMode === 'favorites' && favorites.length === 0 ? (
               <>
-                <Loader className="w-12 h-12 mb-4 animate-spin text-slate-300" />
-                <p className="text-sm">Veritabanı Yükleniyor...</p>
-              </>
-            ) : viewMode === 'favorites' && favorites.length === 0 ? (
-              <>
-                <Star className="w-16 h-16 mb-4 text-slate-200" />
-                <p className="text-lg font-bold text-slate-500">Henüz Favoriniz Yok</p>
-                <p className="text-sm text-center px-6">Sık kullandığınız pozları yıldızlayarak buraya ekleyebilirsiniz.</p>
-              </>
-            ) : searchTerm ? (
-              <>
-                <AlertCircle className="w-16 h-16 mb-4 text-slate-200" />
-                <p className="text-lg font-bold text-slate-400">Sonuç Bulunamadı</p>
-                <p className="text-sm text-center px-6">"{searchTerm}" için eşleşen poz yok.</p>
+                <Star className="w-10 h-10 mb-2 text-slate-300" />
+                <div className="font-bold text-slate-500">Henüz favorin yok</div>
+                <div className="text-sm">Pozların yanındaki yıldız ile ekleyebilirsin.</div>
               </>
             ) : (
               <>
-                <Search className="w-16 h-16 mb-4 text-slate-200" />
-                <p className="text-lg font-bold text-slate-400">Aramaya Başlayın</p>
-                <p className="text-sm">Poz numarası veya tanım yazarak filtreleyin.</p>
+                <Search className="w-10 h-10 mb-2 text-slate-300" />
+                <div className="font-bold text-slate-500">Sonuç bulunamadı</div>
+                <div className="text-sm">Arama terimini değiştirip tekrar dene.</div>
               </>
             )}
+          </div>
+        ) : (
+          displayedResults.map((item, idx) => {
+            const current = currentPos && item.pos === currentPos;
+            const anchor = isNeighborMode && neighborAnchor && item.pos === neighborAnchor;
+            const fav = isFav(item.pos);
+
+            return (
+              <div
+                key={`${item.pos}-${idx}`}
+                className={`p-3 rounded-xl border bg-white transition-colors ${
+                  anchor
+                    ? 'border-blue-400 bg-blue-50/40'
+                    : current
+                      ? 'border-emerald-300'
+                      : 'border-slate-200 hover:border-orange-300'
+                }`}
+                style={{
+                  contentVisibility: 'auto' as any,
+                  contain: 'content',
+                  containIntrinsicSize: '120px',
+                }}
+              >
+                <div className="flex items-start justify-between gap-3">
+                  {/* Left */}
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-center gap-2 flex-wrap mb-1.5">
+                      <span
+                        className={`font-mono text-sm font-black px-2 py-0.5 rounded-lg border ${
+                          anchor
+                            ? 'text-blue-700 bg-blue-100 border-blue-200'
+                            : current
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : 'text-orange-700 bg-orange-50 border-orange-100'
+                        }`}
+                      >
+                        {item.pos}
+                      </span>
+
+                      <span className="text-[10px] font-bold text-slate-600 uppercase tracking-wider bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                        {item.unit}
+                      </span>
+
+                      {item.source === 'manual' && (
+                        <span className="text-[10px] font-black text-slate-600 bg-slate-100 border border-slate-200 px-2 py-0.5 rounded-md">
+                          MANUEL
+                        </span>
+                      )}
+
+                      {anchor && (
+                        <span className="text-[10px] font-black text-blue-700 bg-blue-100 border border-blue-200 px-2 py-0.5 rounded-md">
+                          MERKEZ
+                        </span>
+                      )}
+                    </div>
+
+                    <p className="text-sm text-slate-700 leading-snug font-medium line-clamp-2">
+                      {item.desc}
+                    </p>
+                  </div>
+
+                  {/* Right */}
+                  <div className="text-right flex flex-col items-end gap-2 min-w-[110px]">
+                    <div className="font-black text-slate-800 text-lg tracking-tight">
+                      {formatCurrency(Number(item.price || 0))}
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      {/* Favorite */}
+                      <button
+                        type="button"
+                        onClick={() => toggleFavorite(item.pos)}
+                        className={`p-1.5 rounded-lg border transition-colors ${
+                          fav
+                            ? 'bg-yellow-50 border-yellow-200 text-yellow-500 hover:bg-yellow-100'
+                            : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200'
+                        }`}
+                        title={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
+                      >
+                        <Star className={`w-4 h-4 ${fav ? 'fill-yellow-500' : ''}`} />
+                      </button>
+
+                      {/* Select (tek kalsın) */}
+                      <button
+                        type="button"
+                        onClick={() => emitSelect(item)}
+                        className={`inline-flex items-center text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors ${
+                          current ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-green-600 hover:bg-green-700'
+                        }`}
+                        title="Seç"
+                      >
+                        <Check className="w-3.5 h-3.5 mr-1.5" />
+                        SEÇ
+                      </button>
+
+                      {/* Neighbors (+/-5) */}
+                      {item.source === 'db' && (
+                        <button
+                          type="button"
+                          onClick={() => showNeighbors(item.pos)}
+                          className="inline-flex items-center text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
+                          title="±5 komşu poz"
+                        >
+                          <ArrowUpDown className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            );
+          })
+        )}
+
+        {loading && (
+          <div className="py-3 text-center text-slate-400 text-sm flex items-center justify-center">
+            <Loader className="w-4 h-4 animate-spin mr-2" />
+            Yükleniyor...
           </div>
         )}
       </div>
 
-      {/* Footer */}
-      <div className="bg-slate-50 border-t border-slate-200 p-2 text-center">
-        <p className="text-[10px] text-slate-400 font-mono">
-          Gösterilen: {displayedResults.length} / {totalCap}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-export default PozAramaMotoru;
+      {/* MANUAL MODAL */}
+      {manualOpen && (
+        <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
+          <div className="w-full max-w-lg bg-whi
