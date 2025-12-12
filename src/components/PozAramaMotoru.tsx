@@ -22,7 +22,7 @@ const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 const FAVORITES_KEY = 'gkmetraj_favorites';
 
 // Sadece bunlar:
-const UNIT_OPTIONS = ['Kg', 'li', 'm', 'm²', 'm³', 'n', 'Ton'] as const;
+const UNIT_OPTIONS = ['Kg', 'm', 'm²', 'm³' , 'Ton'] as const;
 type UnitOption = (typeof UNIT_OPTIONS)[number];
 
 type ViewMode = 'all' | 'favorites';
