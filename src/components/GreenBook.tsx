@@ -327,8 +327,8 @@ const GreenBook: React.FC<GreenBookProps> = ({
                             <th className="border border-slate-300 px-2 py-2 w-16 text-center">Boy</th>
                             <th className="border border-slate-300 px-2 py-2 w-16 text-center">Yük.</th>
                             <th className="border border-slate-300 px-2 py-2 w-16 text-center">Adet</th>
-                            <th className="border border-slate-300 px-4 py-2 w-24 text-right">Azı (Tenhilat)</th>
-                            <th className="border border-slate-300 px-4 py-2 w-24 text-right bg-green-50">Çoğu (Toplam)</th>
+                            <th className="border border-slate-300 px-4 py-2 w-24 text-right">Minha</th>
+                            <th className="border border-slate-300 px-4 py-2 w-24 text-right bg-green-50">TOPLAM</th>
                         </tr>
                     </thead>
                     <tbody>

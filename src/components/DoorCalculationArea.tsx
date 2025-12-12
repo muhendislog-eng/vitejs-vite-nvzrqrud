@@ -53,7 +53,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
         setItems([...items, { ...newItem, id: Date.now() }]);
       }
       // Formu Sıfırla
-      setNewItem({ label: '', width: '', height: '', count: '', mahal: '' });
+      setNewItem({ label: '', width: '', height: '', count: '' });
     }
   };
 
@@ -62,8 +62,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
       label: item.label, 
       width: item.width, 
       height: item.height, 
-      count: item.count,
-      mahal: item.mahal || ''
+      count: item.count || ''
     });
     setEditingId(item.id);
   };
@@ -72,7 +71,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
     setItems(items.filter(item => item.id !== id));
     if (editingId === id) {
       setEditingId(null);
-      setNewItem({ label: '', width: '', height: '', count: '', mahal: '' });
+      setNewItem({ label: '', width: '', height: '', count: '' });
     }
   };
 
