@@ -12,6 +12,8 @@ import {
   Undo2,
   Star,
   X,
+  Tag,
+  Layers,
 } from 'lucide-react';
 import { formatCurrency, loadScript } from '../utils/helpers';
 
@@ -33,6 +35,7 @@ const NEIGHBOR_RADIUS = 5;
 const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 
 const FAVORITES_KEY = 'gkmetraj_favorites';
+const MANUAL_KEY = 'gkmetraj_manual_pozlar';
 
 // TR fiyat parse (DB string döndürürse 0'a düşmesin)
 const toNumberTR = (v: any): number => {
@@ -43,7 +46,6 @@ const toNumberTR = (v: any): number => {
   if (!s) return 0;
 
   s = s.replace(/\s/g, '');
-
   // 1.234,56 -> 1234.56
   if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
   else s = s.replace(',', '.');
@@ -51,6 +53,19 @@ const toNumberTR = (v: any): number => {
   const n = Number(s);
   return Number.isFinite(n) ? n : 0;
 };
+
+type ManualPoz = {
+  pos: string;
+  desc: string;
+  unit: string;
+  price: number;
+  category?: string;
+  tag?: string;
+  source: 'manual';
+  createdAt: number;
+};
+
+const safeLower = (s: any) => String(s ?? '').toLowerCase();
 
 const PozEkleButton = React.memo(function PozEkleButton({
   disabled,
@@ -101,12 +116,33 @@ const PozCard = React.memo(function PozCard({
   onToggleFav: (e: React.MouseEvent) => void;
   hideChangeButton?: boolean;
 }) {
+  const isManual = item?.source === 'manual';
+
   const posVal = item?.poz_no ?? item?.pos ?? '---';
   const descVal = item?.tanim ?? item?.desc ?? 'Tanımsız';
   const unitVal = item?.birim ?? item?.unit ?? 'Adet';
   const price = toNumberTR(item?.birim_fiyat ?? item?.price);
 
+  const category = item?.category;
+  const tag = item?.tag;
+
   const priceText = useMemo(() => formatCurrency(price), [price]);
+
+  const frameClass = isManual
+    ? 'border-purple-200 bg-purple-50/30 hover:border-purple-300'
+    : isAnchor
+    ? 'border-blue-400 bg-blue-50/40'
+    : isCurrent
+    ? 'border-emerald-300'
+    : 'border-slate-200 hover:border-orange-300';
+
+  const codePillClass = isManual
+    ? 'text-purple-700 bg-purple-100 border-purple-200'
+    : isAnchor
+    ? 'text-blue-700 bg-blue-100 border-blue-200'
+    : isCurrent
+    ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+    : 'text-orange-700 bg-orange-50 border-orange-100';
 
   return (
     <div
@@ -115,26 +151,12 @@ const PozCard = React.memo(function PozCard({
         contain: 'content',
         containIntrinsicSize: '120px',
       }}
-      className={`p-4 rounded-xl border bg-white transition-colors ${
-        isAnchor
-          ? 'border-blue-400 bg-blue-50/40'
-          : isCurrent
-          ? 'border-emerald-300'
-          : 'border-slate-200 hover:border-orange-300'
-      }`}
+      className={`p-4 rounded-xl border bg-white transition-colors ${frameClass}`}
     >
       <div className="flex justify-between items-start gap-4">
         <div className="flex-1 min-w-0">
           <div className="flex items-center flex-wrap gap-2 mb-2">
-            <span
-              className={`font-mono text-sm font-black px-2.5 py-1 rounded-lg border ${
-                isAnchor
-                  ? 'text-blue-700 bg-blue-100 border-blue-200'
-                  : isCurrent
-                  ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                  : 'text-orange-700 bg-orange-50 border-orange-100'
-              }`}
-            >
+            <span className={`font-mono text-sm font-black px-2.5 py-1 rounded-lg border ${codePillClass}`}>
               {posVal}
             </span>
 
@@ -142,7 +164,13 @@ const PozCard = React.memo(function PozCard({
               {unitVal}
             </span>
 
-            {isAnchor && (
+            {isManual && (
+              <span className="text-[10px] font-black text-purple-700 bg-purple-100 border border-purple-200 px-2 py-1 rounded-md">
+                MANUEL
+              </span>
+            )}
+
+            {isAnchor && !isManual && (
               <span className="text-[10px] font-black text-blue-700 bg-blue-100 border border-blue-200 px-2 py-1 rounded-md">
                 MERKEZ
               </span>
@@ -150,6 +178,23 @@ const PozCard = React.memo(function PozCard({
           </div>
 
           <p className="text-sm text-slate-700 leading-relaxed font-medium line-clamp-2">{descVal}</p>
+
+          {(category || tag) && (
+            <div className="mt-2 flex flex-wrap gap-2">
+              {category && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+                  <Layers className="w-3 h-3 text-slate-400" />
+                  {category}
+                </span>
+              )}
+              {tag && (
+                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-slate-700 bg-white border border-slate-200 px-2 py-1 rounded-lg">
+                  <Tag className="w-3 h-3 text-slate-400" />
+                  {tag}
+                </span>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="text-right flex flex-col items-end justify-between min-h-[88px]">
@@ -209,7 +254,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
   // Sekmeler
   const [viewMode, setViewMode] = useState<'all' | 'favorites'>('all');
+
+  // Favoriler + Manuel
   const [favorites, setFavorites] = useState<string[]>([]);
+  const [manualItems, setManualItems] = useState<ManualPoz[]>([]);
+  const [unitOptions, setUnitOptions] = useState<string[]>(['Adet']);
 
   // Neighbor mode
   const [isNeighborMode, setIsNeighborMode] = useState(false);
@@ -221,6 +270,9 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
   const [mDesc, setMDesc] = useState('');
   const [mUnit, setMUnit] = useState('Adet');
   const [mPrice, setMPrice] = useState('');
+  const [mCategory, setMCategory] = useState('');
+  const [mTag, setMTag] = useState('');
+  const [mAutoFav, setMAutoFav] = useState(true);
   const [manualError, setManualError] = useState<string | null>(null);
 
   const dbRef = useRef<any>(null);
@@ -228,19 +280,31 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
 
   const totalCap = useMemo(() => (isNeighborMode ? NEIGHBOR_LIMIT : SEARCH_LIMIT), [isNeighborMode]);
 
-  /* ---------------- FAVORİLERİ YÜKLE ---------------- */
+  /* ---------------- FAVORİLER + MANUEL YÜKLE ---------------- */
   useEffect(() => {
     try {
-      const saved = localStorage.getItem(FAVORITES_KEY);
-      if (saved) setFavorites(JSON.parse(saved));
+      const savedFav = localStorage.getItem(FAVORITES_KEY);
+      if (savedFav) setFavorites(JSON.parse(savedFav));
     } catch {
       setFavorites([]);
+    }
+
+    try {
+      const savedManual = localStorage.getItem(MANUAL_KEY);
+      if (savedManual) setManualItems(JSON.parse(savedManual));
+    } catch {
+      setManualItems([]);
     }
   }, []);
 
   const persistFavorites = useCallback((list: string[]) => {
     setFavorites(list);
     localStorage.setItem(FAVORITES_KEY, JSON.stringify(list));
+  }, []);
+
+  const persistManual = useCallback((list: ManualPoz[]) => {
+    setManualItems(list);
+    localStorage.setItem(MANUAL_KEY, JSON.stringify(list));
   }, []);
 
   /* ---------------- DB YÜKLE ---------------- */
@@ -255,8 +319,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         if (!window.initSqlJs) throw new Error('SQL.js yüklenemedi');
 
         const SQL = await window.initSqlJs({
-          locateFile: (file: string) =>
-            `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
+          locateFile: (file: string) => `https://cdnjs.cloudflare.com/ajax/libs/sql.js/1.8.0/${file}`,
         });
 
         const res = await fetch('/database.db');
@@ -273,6 +336,30 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         `);
         if (tables?.[0]?.values?.length) {
           tableNameRef.current = String(tables[0].values[0][0]);
+        }
+
+        // Birim listesini çek (manuel dropdown için)
+        try {
+          const u = db.exec(`
+            SELECT DISTINCT birim
+            FROM ${tableNameRef.current}
+            WHERE birim IS NOT NULL AND TRIM(birim) <> ''
+          `);
+          if (u?.[0]?.values?.length) {
+            const units = u[0].values
+              .map((v: any[]) => String(v[0]).trim())
+              .filter(Boolean)
+              .sort((a: string, b: string) => a.localeCompare(b, 'tr'));
+            setUnitOptions(units);
+            setMUnit(units[0] || 'Adet');
+          } else {
+            setUnitOptions(['Adet']);
+            setMUnit('Adet');
+          }
+        } catch (e) {
+          console.warn('Birim listesi alınamadı:', e);
+          setUnitOptions(['Adet']);
+          setMUnit('Adet');
         }
 
         setDbReady(true);
@@ -304,52 +391,86 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     }
   }, []);
 
-  /* ---------------- NORMAL ARAMA (max 25) ---------------- */
+  /* ---------------- Manuel filtre (term + mode) ---------------- */
+  const manualMatches = useCallback(
+    (term: string, mode: 'all' | 'favorites') => {
+      const t = safeLower(term);
+      let list = manualItems;
+
+      if (mode === 'favorites') {
+        const favSet = new Set(favorites);
+        list = list.filter((m) => favSet.has(m.pos));
+      }
+
+      if (!t) return list;
+
+      return list.filter((m) => {
+        return (
+          safeLower(m.pos).includes(t) ||
+          safeLower(m.desc).includes(t) ||
+          safeLower(m.category).includes(t) ||
+          safeLower(m.tag).includes(t)
+        );
+      });
+    },
+    [manualItems, favorites]
+  );
+
+  /* ---------------- DB + MANUEL ARAMA (toplam max 25) ---------------- */
   const performSearch = useCallback(
     (term: string, mode: 'all' | 'favorites') => {
       const table = tableNameRef.current;
       const safe = term.toLowerCase().replace(/'/g, "''");
 
+      const m = manualMatches(term, mode);
+      const remaining = Math.max(0, SEARCH_LIMIT - m.length);
+
+      // Komşu mod YOKKEN DB sorgusu + manual merge
       setLoading(true);
       setTimeout(() => {
-        let q = `
-          SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
-          FROM ${table}
-          WHERE 1=1
-        `;
+        let dbData: any[] = [];
 
-        if (mode === 'favorites') {
-          if (!favorites.length) {
-            setResults([]);
-            setLoading(false);
-            return;
+        if (remaining > 0 && dbReady) {
+          let q = `
+            SELECT rowid as rowid, poz_no, tanim, birim, birim_fiyat
+            FROM ${table}
+            WHERE 1=1
+          `;
+
+          if (mode === 'favorites') {
+            if (!favorites.length) {
+              // DB'den hiç çekme
+              dbData = [];
+            } else {
+              const favList = favorites.map((f) => `'${String(f).replace(/'/g, "''")}'`).join(',');
+              q += ` AND poz_no IN (${favList})`;
+            }
           }
-          const favList = favorites.map((f) => `'${String(f).replace(/'/g, "''")}'`).join(',');
-          q += ` AND poz_no IN (${favList})`;
+
+          if (safe) {
+            q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
+          }
+
+          // kategori opsiyonel
+          // if (category) q += ` AND category='${category.replace(/'/g,"''")}'`;
+
+          q += ` ORDER BY rowid ASC LIMIT ${remaining}`;
+
+          dbData = execQuery(q);
         }
-
-        if (safe) {
-          q += ` AND (lower(poz_no) LIKE '%${safe}%' OR lower(tanim) LIKE '%${safe}%')`;
-        }
-
-        // kategori (opsiyonel)
-        // if (category) q += ` AND category='${category.replace(/'/g,"''")}'`;
-
-        q += ` ORDER BY rowid ASC LIMIT ${SEARCH_LIMIT}`;
-
-        const data = execQuery(q);
 
         setIsNeighborMode(false);
         setNeighborAnchor(null);
-        setResults(data);
 
+        // Sonuç: Manuel + DB (manuel üstte dursun)
+        setResults([...m, ...dbData]);
         setLoading(false);
       }, 40);
     },
-    [execQuery, favorites]
+    [execQuery, favorites, manualMatches, dbReady]
   );
 
-  /* ---------------- KOMŞU (±5) - rowid TABANLI ---------------- */
+  /* ---------------- KOMŞU (±5) - rowid (SADECE DB) ---------------- */
   const showNeighbors = useCallback(
     (pozNo: string) => {
       const table = tableNameRef.current;
@@ -365,7 +486,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         `);
 
         if (!target.length || target[0].rowid == null) {
-          console.warn('Hedef poz bulunamadı:', pozNo);
+          console.warn('Hedef poz bulunamadı (komşu sadece DB için):', pozNo);
           setLoading(false);
           return;
         }
@@ -393,14 +514,14 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     [execQuery]
   );
 
-  /* ---------------- İlk açılış: ALL modda ilk 25 ---------------- */
+  /* ---------------- İlk açılış: ALL mod ilk 25 ---------------- */
   useEffect(() => {
     if (!dbReady) return;
     performSearch('', 'all');
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dbReady]);
 
-  /* ---------------- currentPos gelirse otomatik komşu (ALL mod) ---------------- */
+  /* ---------------- currentPos -> komşu (ALL + boş input) ---------------- */
   useEffect(() => {
     if (!dbReady) return;
     if (viewMode !== 'all') return;
@@ -417,23 +538,17 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     const t = setTimeout(() => {
       const v = searchTerm.trim();
 
-      // Komşu modundayken input boşsa: komşu listeyi bozma
+      // Komşu mod + ALL + input boş => komşuyu bozma
       if (viewMode === 'all' && isNeighborMode && v === '') return;
 
+      // Favorilerde komşu yok
       if (viewMode === 'favorites') {
         performSearch(v, 'favorites');
         return;
       }
 
-      if (v.length > 0) {
-        if (isNeighborMode) {
-          setIsNeighborMode(false);
-          setNeighborAnchor(null);
-        }
-        performSearch(v, 'all');
-      } else {
-        performSearch('', 'all');
-      }
+      // ALL
+      performSearch(v, 'all');
     }, 220);
 
     return () => clearTimeout(t);
@@ -460,9 +575,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       setManualOpen(false);
       setManualError(null);
 
-      if (dbReady) {
-        performSearch('', mode);
-      }
+      if (dbReady) performSearch('', mode);
     },
     [dbReady, performSearch]
   );
@@ -473,12 +586,14 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
     setManualError(null);
   }, []);
 
-  /* ---------------- Manuel poz gönder ---------------- */
+  /* ---------------- Manuel poz ekle (localStorage + opsiyonel auto fav) ---------------- */
   const submitManual = useCallback(() => {
     const pos = mPos.trim();
     const desc = mDesc.trim();
     const unit = (mUnit || 'Adet').trim();
     const price = toNumberTR(mPrice);
+    const cat = mCategory.trim();
+    const tag = mTag.trim();
 
     if (!pos) {
       setManualError('Poz No zorunlu.');
@@ -489,23 +604,74 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
       return;
     }
 
-    setManualError(null);
+    // Aynı poz manuelde varsa güncelle (overwrite)
+    const nextManual: ManualPoz[] = [
+      {
+        pos,
+        desc,
+        unit,
+        price,
+        category: cat || undefined,
+        tag: tag || undefined,
+        source: 'manual',
+        createdAt: Date.now(),
+      },
+      ...manualItems.filter((x) => x.pos !== pos),
+    ];
 
+    persistManual(nextManual);
+
+    if (mAutoFav && !favorites.includes(pos)) {
+      persistFavorites([...favorites, pos]);
+    }
+
+    // Seç/ekle davranışı: kullanıcı poz seçmiş gibi
     onSelect({
       pos,
       desc,
       unit,
       price,
+      category: cat || undefined,
+      tag: tag || undefined,
       source: 'manual',
     });
 
-    // Formu temizle
+    // Form temizle
+    setManualError(null);
     setMPos('');
     setMDesc('');
-    setMUnit('Adet');
+    setMUnit(unitOptions[0] || 'Adet');
     setMPrice('');
+    setMCategory('');
+    setMTag('');
     setManualOpen(false);
-  }, [mPos, mDesc, mUnit, mPrice, onSelect]);
+
+    // Ekrandaki listeyi de güncelle (ALL ise üstte görünür)
+    if (viewMode === 'all' && dbReady) {
+      performSearch(searchTerm.trim(), 'all');
+    }
+    if (viewMode === 'favorites' && dbReady) {
+      performSearch(searchTerm.trim(), 'favorites');
+    }
+  }, [
+    mPos,
+    mDesc,
+    mUnit,
+    mPrice,
+    mCategory,
+    mTag,
+    mAutoFav,
+    manualItems,
+    persistManual,
+    favorites,
+    persistFavorites,
+    onSelect,
+    unitOptions,
+    viewMode,
+    dbReady,
+    performSearch,
+    searchTerm,
+  ]);
 
   const handleBackToList = useCallback(() => {
     setIsNeighborMode(false);
@@ -525,9 +691,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               type="button"
               onClick={() => switchMode('all')}
               className={`px-4 py-1.5 rounded-md text-sm font-bold transition-all flex items-center ${
-                viewMode === 'all'
-                  ? 'bg-white text-blue-600 shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700'
+                viewMode === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-700'
               }`}
             >
               <Database className="w-4 h-4 mr-2" />
@@ -545,9 +709,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
             >
               <Star className={`w-4 h-4 mr-2 ${viewMode === 'favorites' ? 'fill-orange-500' : ''}`} />
               Favorilerim
-              <span className="ml-2 bg-slate-200 text-slate-600 text-xs px-1.5 rounded-full">
-                {favorites.length}
-              </span>
+              <span className="ml-2 bg-slate-200 text-slate-600 text-xs px-1.5 rounded-full">{favorites.length}</span>
             </button>
           </div>
 
@@ -568,11 +730,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
         <div className="flex items-center gap-3">
           <div className="relative flex-1 rounded-xl border border-slate-200 bg-white">
             <div className="absolute left-4 top-1/2 -translate-y-1/2">
-              {loading ? (
-                <Loader className="w-5 h-5 animate-spin text-orange-600" />
-              ) : (
-                <Search className="w-5 h-5 text-slate-400" />
-              )}
+              {loading ? <Loader className="w-5 h-5 animate-spin text-orange-600" /> : <Search className="w-5 h-5 text-slate-400" />}
             </div>
 
             <input
@@ -581,7 +739,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 !dbReady
                   ? 'Veritabanı yükleniyor...'
                   : viewMode === 'favorites'
-                  ? 'Favorilerimde poz_no / tanım ara... (maks. 25)'
+                  ? 'Favorilerimde poz_no / tanım / etiket ara... (maks. 25)'
                   : isNeighborMode
                   ? `Komşu pozlar (±${NEIGHBOR_RADIUS}) — ${neighborAnchor ?? ''}`
                   : 'Poz No veya Tanım ara... (maks. 25 sonuç)'
@@ -611,7 +769,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </button>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3">
               <div>
                 <label className="block text-[11px] font-bold text-slate-600 mb-1">Poz No</label>
                 <input
@@ -633,13 +791,18 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               </div>
 
               <div>
-                <label className="block text-[11px] font-bold text-slate-600 mb-1">Birim</label>
-                <input
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Birim (DB’den)</label>
+                <select
                   value={mUnit}
                   onChange={(e) => setMUnit(e.target.value)}
                   className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-blue-200/60"
-                  placeholder="Adet"
-                />
+                >
+                  {unitOptions.map((u) => (
+                    <option key={u} value={u}>
+                      {u}
+                    </option>
+                  ))}
+                </select>
               </div>
 
               <div>
@@ -652,6 +815,65 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                   inputMode="decimal"
                 />
               </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Kategori</label>
+                <input
+                  value={mCategory}
+                  onChange={(e) => setMCategory(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-blue-200/60"
+                  placeholder="Örn: Mimari"
+                />
+              </div>
+
+              <div>
+                <label className="block text-[11px] font-bold text-slate-600 mb-1">Etiket</label>
+                <input
+                  value={mTag}
+                  onChange={(e) => setMTag(e.target.value)}
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-blue-200/60"
+                  placeholder="Örn: Pencere"
+                />
+              </div>
+            </div>
+
+            <div className="mt-3 flex items-center justify-between gap-3 flex-wrap">
+              <label className="inline-flex items-center gap-2 text-sm font-bold text-slate-700">
+                <input
+                  type="checkbox"
+                  checked={mAutoFav}
+                  onChange={(e) => setMAutoFav(e.target.checked)}
+                  className="accent-blue-600"
+                />
+                Otomatik favorilere ekle
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setMPos('');
+                    setMDesc('');
+                    setMUnit(unitOptions[0] || 'Adet');
+                    setMPrice('');
+                    setMCategory('');
+                    setMTag('');
+                    setManualError(null);
+                  }}
+                  className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-sm hover:bg-slate-50"
+                >
+                  Temizle
+                </button>
+
+                <button
+                  type="button"
+                  onClick={submitManual}
+                  className="px-4 py-2 rounded-lg bg-blue-600 text-white font-black text-sm hover:bg-blue-700 inline-flex items-center gap-2"
+                >
+                  <Check className="w-4 h-4" />
+                  Kaydet / Seç
+                </button>
+              </div>
             </div>
 
             {manualError && (
@@ -659,31 +881,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 {manualError}
               </div>
             )}
-
-            <div className="mt-3 flex items-center justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => {
-                  setMPos('');
-                  setMDesc('');
-                  setMUnit('Adet');
-                  setMPrice('');
-                  setManualError(null);
-                }}
-                className="px-4 py-2 rounded-lg border border-slate-200 bg-white text-slate-700 font-bold text-sm hover:bg-slate-50"
-              >
-                Temizle
-              </button>
-
-              <button
-                type="button"
-                onClick={submitManual}
-                className="px-4 py-2 rounded-lg bg-blue-600 text-white font-black text-sm hover:bg-blue-700 inline-flex items-center gap-2"
-              >
-                <Check className="w-4 h-4" />
-                Ekle / Seç
-              </button>
-            </div>
           </div>
         )}
 
@@ -739,19 +936,19 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
               const unitVal = item?.birim ?? item?.unit ?? 'Adet';
               const priceVal = item?.birim_fiyat ?? item?.price ?? 0;
 
-              const isAnchor =
-                Boolean(viewMode === 'all' && isNeighborMode && neighborAnchor && posVal === neighborAnchor);
+              const isManual = item?.source === 'manual';
+              const isAnchor = Boolean(viewMode === 'all' && isNeighborMode && neighborAnchor && posVal === neighborAnchor);
               const isCurrent = Boolean(currentPos && posVal === currentPos);
               const isFav = favorites.includes(String(posVal));
 
               return (
                 <PozCard
-                  key={`${posVal}-${index}`}
+                  key={`${isManual ? 'm' : 'd'}-${posVal}-${index}`}
                   item={item}
                   isCurrent={isCurrent}
                   isAnchor={isAnchor}
                   isFav={isFav}
-                  hideChangeButton={viewMode === 'favorites'}
+                  hideChangeButton={viewMode === 'favorites' || isManual}
                   onPick={() =>
                     onSelect({
                       ...item,
@@ -764,12 +961,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                   onChange={() => showNeighbors(String(posVal))}
                   onToggleFav={(e) => {
                     e.stopPropagation();
+
                     const wasFav = favorites.includes(String(posVal));
                     toggleFavorite(String(posVal));
+
+                    // Favoriler sekmesinde favoriden çıkarınca UI'dan düşür
                     if (viewMode === 'favorites' && wasFav) {
-                      setResults((prev) =>
-                        prev.filter((x) => String(x?.poz_no ?? x?.pos) !== String(posVal))
-                      );
+                      setResults((prev) => prev.filter((x) => String(x?.poz_no ?? x?.pos) !== String(posVal)));
                     }
                   }}
                 />
@@ -799,7 +997,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, category, cur
                 <>
                   <Search className="w-14 h-14 mb-3 text-slate-200" />
                   <p className="text-lg font-bold text-slate-400">Aramaya başlayın</p>
-                  <p className="text-sm">Poz numarası veya tanım yazarak filtreleyin.</p>
+                  <p className="text-sm">Poz numarası, tanım, etiket ile filtreleyin.</p>
                 </>
               )}
             </div>
