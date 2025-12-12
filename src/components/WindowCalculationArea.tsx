@@ -54,8 +54,6 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
       } else {
         setItems([...items, { ...itemToSave, id: Date.now() }]);
       }
-      // Formu temizle ancak Mahal'i koru (kullanıcı kolaylığı için)
-      setNewItem({ ...newItem, label: '', width: '', height: '', count: '', middleRegister: '' });
     }
   };
 
@@ -296,7 +294,6 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({ items, se
                     <td className="px-6 py-4 font-mono text-xs font-bold text-slate-500 sticky left-0 bg-white shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] group-hover:bg-slate-50">
                        {posNo}
                     </td>
-                    <td className="px-6 py-4 text-slate-500 text-xs font-mono">{item.mahal || '-'}</td>
                     <td className="px-6 py-4 font-bold text-blue-700">{item.label}</td>
                     <td className="px-6 py-4">
                       <span className={`text-xs px-2.5 py-1 rounded-full font-bold ${item.type === 'pvc' ? 'bg-blue-100 text-blue-700' : 'bg-slate-100 text-slate-700'}`}>
