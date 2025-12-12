@@ -142,11 +142,6 @@ export default function App() {
     else setArchitecturalItems(prev => prev.map(item => item.id === id ? { ...item, quantity } : item));
   };
 
-  const handleUpdateLocation = (id: number | string, locationName: string, type: 'static' | 'architectural') => {
-    if (type === 'static') setStaticItems(prev => prev.map(item => item.id === id ? { ...item, mahal: locationName } : item));
-    else setArchitecturalItems(prev => prev.map(item => item.id === id ? { ...item, mahal: locationName } : item));
-  };
-
   const handleBatchUpdateQuantities = (updates: any) => {
     const updateList = (list: any[]) => list.map(item => {
       if (updates[item.pos] !== undefined) {
@@ -170,14 +165,13 @@ export default function App() {
       unit: newPoseData.unit,
       price: newPoseData.price,
       quantity: 0,
-      mahal: ""
     };
 
     if (isAddingNew) {
       if (activeTab === 'static') setStaticItems(prev => [...prev, newItem]);
       else setArchitecturalItems(prev => [...prev, newItem]);
     } else if (editingItem) {
-      const updateList = (items: any[]) => items.map(item => item.id === editingItem.id ? { ...item, ...newItem, id: item.id, quantity: item.quantity, mahal: item.mahal } : item);
+      const updateList = (items: any[]) => items.map(item => item.id === editingItem.id ? { ...item, ...newItem, id: item.id, quantity: item.quantity } : item);
       if (activeTab === 'static') setStaticItems(prev => updateList(prev));
       else setArchitecturalItems(prev => updateList(prev));
     }
