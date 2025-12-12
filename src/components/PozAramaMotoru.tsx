@@ -46,7 +46,6 @@ const toNumberTR = (v: any): number => {
   if (!s) return 0;
   s = s.replace(/\s/g, '');
 
-  // 1.234,56 -> 1234.56
   if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
   else s = s.replace(',', '.');
 
@@ -54,17 +53,10 @@ const toNumberTR = (v: any): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
-const mapUnitToAllowed = (u: any): string => {
-  const s = String(u ?? '').trim();
-  if (!s) return 'm';
-  // DB’de farklı yazım varsa olduğu gibi göster; manuelde zaten kısıtlı.
-  return s;
-};
-
 const normalizeItemFromDbRow = (row: any): PozItem => {
   const pos = String(row?.poz_no ?? row?.pos ?? row?.no ?? '---').trim();
   const desc = String(row?.tanim ?? row?.aciklama ?? row?.desc ?? 'Tanımsız');
-  const unit = mapUnitToAllowed(row?.birim ?? row?.unit);
+  const unit = String(row?.birim ?? row?.unit ?? 'm').trim() || 'm';
   const price = toNumberTR(row?.birim_fiyat ?? row?.fiyat ?? row?.price ?? 0);
   const rowid = row?.rowid != null ? Number(row.rowid) : undefined;
 
@@ -78,26 +70,19 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
   const [loading, setLoading] = useState(true);
   const [dbReady, setDbReady] = useState(false);
 
-  // Favoriler
   const [favorites, setFavorites] = useState<string[]>([]);
-  const [favoritesItems, setFavoritesItems] = useState<PozItem[]>([]); // Favoriler sekmesinde DB’den çekilenler
+  const [favoritesItems, setFavoritesItems] = useState<PozItem[]>([]);
 
-  // Manual
   const [manualItems, setManualItems] = useState<PozItem[]>([]);
-
-  // DB arama cache’i (Tüm Pozlar sekmesi için)
   const [dbCache, setDbCache] = useState<PozItem[]>([]);
 
-  // Neighbor
   const [isNeighborMode, setIsNeighborMode] = useState(false);
   const [neighborAnchor, setNeighborAnchor] = useState<string | null>(null);
   const [neighborResults, setNeighborResults] = useState<PozItem[]>([]);
 
-  // Pagination
   const [page, setPage] = useState(1);
   const listRef = useRef<HTMLDivElement>(null);
 
-  // SQL.js refs
   const dbRef = useRef<any>(null);
   const tableRef = useRef<string>('');
 
@@ -108,7 +93,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
   const [mUnit, setMUnit] = useState<UnitOption>('m');
   const [mPrice, setMPrice] = useState<string>('0');
 
-  /* ---------- Favoriler Load ---------- */
   useEffect(() => {
     try {
       const raw = localStorage.getItem(FAVORITES_KEY);
@@ -137,7 +121,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     [favorites, persistFavorites]
   );
 
-  /* ---------- DB Init ---------- */
   useEffect(() => {
     const initDB = async () => {
       try {
@@ -178,7 +161,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     initDB();
   }, []);
 
-  /* ---------- SQL exec ---------- */
   const execQuery = useCallback((query: string) => {
     if (!dbRef.current) return [];
     try {
@@ -196,7 +178,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     }
   }, []);
 
-  /* ---------- Emit select (poz değişmiyor sorunu için standartlaştırıldı) ---------- */
   const emitSelect = useCallback(
     (item: PozItem) => {
       onSelect({
@@ -205,7 +186,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
         unit: item.unit,
         price: Number(item.price || 0),
 
-        // db isimleri
         poz_no: item.pos,
         tanim: item.desc,
         birim: item.unit,
@@ -217,7 +197,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     [onSelect]
   );
 
-  /* ---------- DB Search (Tüm Pozlar) ---------- */
   const runDbSearch = useCallback(
     (term: string) => {
       if (!dbReady) return;
@@ -246,7 +225,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     [dbReady, execQuery]
   );
 
-  /* ---------- FAVORİLERİ DB’den ÇEK (Favoriler sekmesinin boş görünmesi düzeltildi) ---------- */
   const fetchFavoritesFromDb = useCallback(() => {
     if (!dbReady) return;
 
@@ -267,8 +245,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
       `);
 
       const items = rows.map(normalizeItemFromDbRow);
-
-      // Favori sırasını koru:
       items.sort((a, b) => favorites.indexOf(a.pos) - favorites.indexOf(b.pos));
 
       setFavoritesItems(items);
@@ -276,7 +252,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     }, 60);
   }, [dbReady, execQuery, favorites]);
 
-  /* ---------- NEIGHBORS (+/-5) (çalışmıyor sorunu düzeltildi: rowid kesin + sıralama) ---------- */
   const showNeighbors = useCallback(
     (posNo: string) => {
       if (!dbReady) return;
@@ -336,13 +311,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     setPage(1);
   }, []);
 
-  /* ---------- İlk açılış: ilk liste ---------- */
   useEffect(() => {
     if (!dbReady) return;
     runDbSearch('');
   }, [dbReady, runDbSearch]);
 
-  /* ---------- currentPos otomatik komşu ---------- */
   useEffect(() => {
     if (!dbReady) return;
     if (currentPos && !searchTerm.trim()) {
@@ -350,7 +323,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     }
   }, [dbReady, currentPos, searchTerm, showNeighbors]);
 
-  /* ---------- ViewMode değişince ---------- */
   useEffect(() => {
     if (!dbReady) return;
     setPage(1);
@@ -359,29 +331,23 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
       exitNeighborMode();
       fetchFavoritesFromDb();
     } else {
-      // all
-      // arama terimi varsa aramayı sürdür
       if (!isNeighborMode) runDbSearch(searchTerm.trim());
     }
   }, [viewMode, dbReady, fetchFavoritesFromDb, runDbSearch, searchTerm, exitNeighborMode, isNeighborMode]);
 
-  /* ---------- Search debounce ---------- */
   useEffect(() => {
     if (!dbReady) return;
 
     const t = setTimeout(() => {
       const v = searchTerm.trim();
 
-      // Neighbor modundayken input boşsa: bozma
       if (isNeighborMode && v === '') return;
 
       if (viewMode === 'favorites') {
-        // Favorilerde DB tekrar çekmeye gerek yok, local filtrele
         setPage(1);
         return;
       }
 
-      // all mode
       if (isNeighborMode && v !== '') exitNeighborMode();
       runDbSearch(v);
       setPage(1);
@@ -390,30 +356,23 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     return () => clearTimeout(t);
   }, [searchTerm, dbReady, isNeighborMode, viewMode, runDbSearch, exitNeighborMode]);
 
-  /* ---------- Base list (manual + db) ---------- */
   const allMerged = useMemo(() => {
     const map = new Map<string, PozItem>();
     for (const d of dbCache) map.set(d.pos, d);
-    for (const m of manualItems) map.set(m.pos, m); // manuel üstün
+    for (const m of manualItems) map.set(m.pos, m);
     return Array.from(map.values());
   }, [dbCache, manualItems]);
 
   const favoritesMerged = useMemo(() => {
-    // Favoriler sekmesi: DB’den çekilen favoriler + manuel favoriler
     const map = new Map<string, PozItem>();
     for (const f of favoritesItems) map.set(f.pos, f);
-
-    // manuelde favori olanlar da gösterilsin:
-    for (const m of manualItems) {
-      if (favorites.includes(m.pos)) map.set(m.pos, m);
-    }
+    for (const m of manualItems) if (favorites.includes(m.pos)) map.set(m.pos, m);
 
     const arr = Array.from(map.values());
     arr.sort((a, b) => favorites.indexOf(a.pos) - favorites.indexOf(b.pos));
     return arr;
   }, [favoritesItems, manualItems, favorites]);
 
-  /* ---------- Filtered list ---------- */
   const filtered = useMemo(() => {
     const term = searchTerm.trim().toLowerCase();
 
@@ -426,7 +385,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
       );
     }
 
-    // all
     if (!term) return allMerged;
     return allMerged.filter((i) => i.pos.toLowerCase().includes(term) || (i.desc || '').toLowerCase().includes(term));
   }, [isNeighborMode, neighborResults, viewMode, favoritesMerged, allMerged, searchTerm]);
@@ -436,7 +394,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     return filtered.slice(0, page * ITEMS_PER_PAGE);
   }, [filtered, page, isNeighborMode]);
 
-  /* ---------- Scroll load more ---------- */
   const onScroll = useCallback(() => {
     if (!listRef.current) return;
     if (isNeighborMode) return;
@@ -449,7 +406,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     if (nextCap <= filtered.length) setPage((p) => p + 1);
   }, [filtered.length, isNeighborMode, page]);
 
-  /* ---------- Manual modal actions ---------- */
   const resetManual = () => {
     setMPos('');
     setMDesc('');
@@ -558,12 +514,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
         </div>
 
         {/* Search */}
-        <div className="relative">
+        <div className="relative bg-white rounded-lg">
           <div className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
             {loading ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
           </div>
           <input
-            className="w-full pl-10 pr-3 py-2.5 border rounded-lg outline-none focus:ring-4 focus:ring-orange-200/60"
+            className="w-full pl-10 pr-3 py-2.5 border border-slate-200 rounded-lg outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-4 focus:ring-orange-200/50"
             placeholder={
               !dbReady
                 ? 'Veritabanı yükleniyor...'
@@ -675,10 +631,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                       <button
                         type="button"
                         onClick={() => toggleFavorite(item.pos)}
-                        className={`p-1.5 rounded-lg border transition-colors ${
+                        className={`p-1.5 rounded-lg border transition-colors bg-white ${
                           fav
-                            ? 'bg-yellow-50 border-yellow-200 text-yellow-500 hover:bg-yellow-100'
-                            : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200'
+                            ? 'border-yellow-200 text-yellow-500 hover:bg-yellow-50'
+                            : 'border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200 hover:bg-yellow-50'
                         }`}
                         title={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                       >
@@ -723,11 +679,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
         )}
       </div>
 
-      {/* MANUAL MODAL */}
+      {/* MANUAL MODAL (SİYAH ARKA PLAN YOK) */}
       {manualOpen && (
-        <div className="absolute inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm flex items-center justify-center p-4 z-50">
           <div className="w-full max-w-lg bg-white rounded-2xl border border-slate-200 shadow-xl overflow-hidden">
-            <div className="flex items-center justify-between px-5 py-4 border-b">
+            <div className="flex items-center justify-between px-5 py-4 border-b bg-white">
               <div className="font-black text-slate-800">Manuel Poz Ekle</div>
               <button
                 type="button"
@@ -739,13 +695,13 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
               </button>
             </div>
 
-            <div className="p-5 space-y-4">
+            <div className="p-5 space-y-4 bg-white">
               <div>
                 <label className="block text-xs font-bold text-slate-500 mb-1">Poz No</label>
                 <input
                   value={mPos}
                   onChange={(e) => setMPos(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-4 focus:ring-emerald-200/60"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-4 focus:ring-emerald-200/50"
                   placeholder="Örn: 15.105.1108"
                 />
               </div>
@@ -755,7 +711,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                 <textarea
                   value={mDesc}
                   onChange={(e) => setMDesc(e.target.value)}
-                  className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-4 focus:ring-emerald-200/60 min-h-[90px]"
+                  className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-4 focus:ring-emerald-200/50 min-h-[90px]"
                   placeholder="Poz açıklaması..."
                 />
               </div>
@@ -766,7 +722,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                   <select
                     value={mUnit}
                     onChange={(e) => setMUnit(e.target.value as UnitOption)}
-                    className="w-full px-3 py-2 rounded-lg border bg-white outline-none focus:ring-4 focus:ring-emerald-200/60"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 bg-white outline-none focus:ring-4 focus:ring-emerald-200/50"
                   >
                     {UNIT_OPTIONS.map((u) => (
                       <option key={u} value={u}>
@@ -774,7 +730,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                       </option>
                     ))}
                   </select>
-                  <div className="text-[11px] text-slate-400 mt-1">Birim el ile girilemez; sadece listeden seçilir.</div>
                 </div>
 
                 <div>
@@ -782,7 +737,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                   <input
                     value={mPrice}
                     onChange={(e) => setMPrice(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border outline-none focus:ring-4 focus:ring-emerald-200/60"
+                    className="w-full px-3 py-2 rounded-lg border border-slate-200 outline-none bg-white text-slate-800 placeholder:text-slate-400 focus:ring-4 focus:ring-emerald-200/50"
                     placeholder="Örn: 853,80"
                   />
                 </div>
