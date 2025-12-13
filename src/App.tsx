@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useMemo } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   Building,
   Ruler,
@@ -107,23 +107,6 @@ export default function App() {
   const totalArchCost = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const grandTotalCost = totalStaticCost + totalArchCost;
 
-  // ✅ FIX: GreenBook’a gitmeden önce quantity’leri normalize et (string/undefined vs. olmasın)
-  const normalizedStaticItems = useMemo(() => {
-    return staticItems.map((it: any) => ({
-      ...it,
-      quantity: Number(it.quantity) || 0,
-      price: Number(it.price) || 0,
-    }));
-  }, [staticItems]);
-
-  const normalizedArchitecturalItems = useMemo(() => {
-    return architecturalItems.map((it: any) => ({
-      ...it,
-      quantity: Number(it.quantity) || 0,
-      price: Number(it.price) || 0,
-    }));
-  }, [architecturalItems]);
-
   // --- BAŞLANGIÇ ---
   useEffect(() => {
     const loadLibraries = async () => {
@@ -168,48 +151,75 @@ export default function App() {
   }, []);
 
   // --- AUTH ---
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    localStorage.setItem('gkmetraj_session', 'active');
-  };
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('gkmetraj_session');
-  };
+const handleLogin = () => {
+  setIsLoggedIn(true);
+  localStorage.setItem('gkmetraj_session', 'active');
+};
+const handleLogout = () => {
+  setIsLoggedIn(false);
+  localStorage.removeItem('gkmetraj_session');
+};
 
-  // --- SAVE ---
-  const handleSave = () => {
-    const dataToSave = {
-      staticItems,
-      architecturalItems,
-      doorItems,
-      windowItems,
-      projectInfo,
-      locations,
-      lastSaved: new Date().toLocaleTimeString(),
-    };
-    localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
-    alert('Proje başarıyla kaydedildi!');
+// --- SAVE ---
+const handleSave = () => {
+  const dataToSave = {
+    staticItems,
+    architecturalItems,
+    doorItems,
+    windowItems,
+    projectInfo,
+    locations,
+    lastSaved: new Date().toLocaleTimeString(),
   };
+  localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
+  alert('Proje başarıyla kaydedildi!');
+};
 
-  // --- QUANTITY ---
-  const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
-    if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-    else setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-  };
+// --- QUANTITY ---
+const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
+  if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+  else setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+};
 
-  const handleBatchUpdateQuantities = (updates: any) => {
-    const updateList = (list: any[]) =>
-      list.map(item => {
-        if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
-        return item;
-      });
+const handleBatchUpdateQuantities = (updates: any) => {
+  const updateList = (list: any[]) =>
+    list.map(item => {
+      if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
+      return item;
+    });
 
-    setStaticItems(prev => updateList(prev));
-    setArchitecturalItems(prev => updateList(prev));
-  };
+  setStaticItems(prev => updateList(prev));
+  setArchitecturalItems(prev => updateList(prev));
+};
 
-  // --- LOCATION ---
+// ✅ BURAYA EKLE: Manuel poz düzenleme patch handler’ı
+const onUpdateManualItem = (id: number | string, patch: any) => {
+  const merge = (list: any[]) =>
+    list.map((it) =>
+      it.id === id ? { ...it, ...patch } : it
+    );
+
+  if (activeTab === 'static') {
+    setStaticItems((prev) => merge(prev));
+  } else {
+    setArchitecturalItems((prev) => merge(prev));
+  }
+};
+
+// ✅ (Eğer yoksa) silme handler’ı da bu bölüme yakın dursun
+const onDeleteManualItem = (id: number | string) => {
+  const remove = (list: any[]) => list.filter((it) => it.id !== id);
+
+  if (activeTab === 'static') {
+    setStaticItems((prev) => remove(prev));
+  } else {
+    setArchitecturalItems((prev) => remove(prev));
+  }
+};
+
+
+  // --- LOCATION (SENDE YOKTU -> ÇALIŞAN STUB) ---
+  // Eğer lokasyon seçimi gerçekten kullanılıyorsa, burada istediğin modele göre güncellersin.
   const handleUpdateLocation = (id: number | string, locId: any, type: 'static' | 'architectural') => {
     const patch = (list: MetrajItem[]) => list.map(it => (it.id === id ? { ...it, locationId: locId } : it));
     if (type === 'static') setStaticItems(prev => patch(prev));
@@ -230,7 +240,7 @@ export default function App() {
     setIsModalOpen(true);
   };
 
-  // Poz seçildi: ekle / değiştir
+  // ✅ Poz seçildi: ekle / değiştir
   const handleSelectPose = (newPoseData: any) => {
     const base: MetrajItem = {
       id: isAddingNew ? Date.now() : (editingItem?.id ?? Date.now()),
@@ -240,50 +250,61 @@ export default function App() {
       unit: newPoseData.unit,
       price: newPoseData.price,
       quantity: isAddingNew ? 0 : (editingItem?.quantity ?? 0),
-  
-      // ✅ Burayı kesinleştir:
-      isManual: isAddingNew ? true : (editingItem?.isManual ?? false),
+
+      // ✅ Manuel ekleme için flag
+      // Eğer senin PoseSelector "manuel ekleme" yapıyorsa:
+      // newPoseData.isManual true gelmiyorsa bile, isAddingNew senin "Poz Ekle" akışında çalışıyor.
+      // İstersen: sadece manual eklemelerde true yap.
+      isManual: Boolean(newPoseData?.isManual === true),
     };
-  
-    ...
+
+    // Eğer sen "Poz Ekle" ile manuel ekliyorsan ama modal isManual göndermiyorsa:
+    // burada güvenli yaklaşım: manuel akışta true bas.
+    if (isAddingNew && newPoseData?.source === 'manual') {
+      base.isManual = true;
+    }
+
+    if (isAddingNew) {
+      // Eğer gerçekten manuel ekleme istiyorsan ve modal bunu ayırmıyorsa:
+      // base.isManual = true;
+
+      if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
+      else setArchitecturalItems(prev => [...prev, base]);
+    } else if (editingItem) {
+      const updateList = (items: MetrajItem[]) =>
+        items.map(item => (item.id === editingItem.id ? { ...item, ...base, id: item.id } : item));
+
+      if (activeTab === 'static') setStaticItems(prev => updateList(prev));
+      else setArchitecturalItems(prev => updateList(prev));
+    }
+
+    setIsModalOpen(false);
   };
-  
 
-   if (isAddingNew) {
-    if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
-    else setArchitecturalItems(prev => [...prev, base]);
-  } else if (editingItem) {
-    const updateList = (items: MetrajItem[]) =>
-      items.map(item =>
-        item.id === editingItem.id
-          ? { ...item, ...base, id: item.id }
-          : item
-      );
+  // --- MANUEL POZ: INLINE EDIT/SİL (MetrajTable FINAL ile uyumlu) ---
+  const updateManualInList = (list: MetrajItem[], id: number | string, patch: Partial<MetrajItem>) =>
+    list.map(it => (it.id === id ? { ...it, ...patch } : it));
 
-    if (activeTab === 'static') setStaticItems(prev => updateList(prev));
-    else setArchitecturalItems(prev => updateList(prev));
-  }
+  const deleteManualFromList = (list: MetrajItem[], id: number | string) =>
+    list.filter(it => it.id !== id);
 
-  setIsModalOpen(false);
-};
-
-  // --- MANUEL POZ: INLINE EDIT/SİL ---
   const handleUpdateManualItem = (id: number | string, patch: Partial<MetrajItem>) => {
+    // Sadece manuel öğelerin editlenmesine izin ver
     const guard = (list: MetrajItem[]) =>
       list.map(it => {
         if (it.id !== id) return it;
-        if (!it.isManual) return it;
-  
-        // 🔒 isManual asla kaybolmasın
-        return { ...it, ...patch, isManual: true };
+        if (!it.isManual) return it; // DB pozuna dokunma
+        return { ...it, ...patch };
       });
-  
+
     if (activeTab === 'static') setStaticItems(prev => guard(prev));
     else if (activeTab === 'architectural') setArchitecturalItems(prev => guard(prev));
   };
 
   const handleDeleteManualItem = (id: number | string) => {
+    // Sadece manuel öğelerin silinmesine izin ver
     const guard = (list: MetrajItem[]) => list.filter(it => !(it.id === id && it.isManual));
+
     if (activeTab === 'static') setStaticItems(prev => guard(prev));
     else if (activeTab === 'architectural') setArchitecturalItems(prev => guard(prev));
   };
@@ -322,6 +343,7 @@ export default function App() {
 
       const updateList = (list: MetrajItem[]) =>
         list.map(item => {
+          // DB pozlarını güncelle; manuel pozların fiyatını otomatik değiştirmeyelim
           if (newPricesMap[item.pos] && !item.isManual) {
             updatedCount++;
             return { ...item, price: newPricesMap[item.pos].price };
@@ -512,11 +534,10 @@ export default function App() {
               />
             )}
 
-            {/* ✅ FIX: GreenBook’a normalize edilmiş listeleri gönder */}
             {activeTab === 'green_book' && (
               <GreenBook
-                staticItems={normalizedStaticItems as any}
-                architecturalItems={normalizedArchitecturalItems as any}
+                staticItems={staticItems}
+                architecturalItems={architecturalItems}
                 doorItems={doorItems}
                 windowItems={windowItems}
               />
@@ -524,7 +545,7 @@ export default function App() {
 
             {activeTab === 'dashboard' && (
               <Dashboard
-                staticItems={architecturalItems ? staticItems : staticItems}
+                staticItems={staticItems}
                 architecturalItems={architecturalItems}
               />
             )}
