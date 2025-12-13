@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 // --- BURAYA DİKKAT: Logonuzu import ediyoruz ---
-import logo from '../assets/logo.jpeg'; 
+import logo from '../assets/logo.jpg'; 
 
 // Proje bilgileri için tip tanımı
 export interface ProjectInfo {
