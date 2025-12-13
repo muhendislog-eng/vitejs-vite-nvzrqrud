@@ -1,9 +1,45 @@
+// --- src/utils/helpers.tsx ---
+
+/**
+ * Sayısal bir değeri Türkçe para formatına çevirir.
+ * Örn: 1578.25 -> "₺1.578,25"
+ */
 export const formatCurrency = (value: number) => {
   return new Intl.NumberFormat('tr-TR', {
     style: 'currency',
     currency: 'TRY',
     minimumFractionDigits: 2,
   }).format(value);
+};
+
+/**
+ * YENİ EKLENDİ: Türkçe formatındaki string sayıları (Excel'den gelen)
+ * JavaScript'in anlayacağı number formatına çevirir.
+ * Örn: "1.578,25" -> 1578.25
+ * Örn: "15,50" -> 15.5
+ */
+export const parseTurkishMoney = (value: any): number => {
+  if (value === null || value === undefined || value === '') return 0;
+  
+  // Eğer zaten sayı tipindeyse direkt döndür
+  if (typeof value === 'number') return value;
+
+  // String'e çevir ve kenar boşluklarını temizle
+  let cleanValue = String(value).trim();
+
+  // 1. Binlik ayracı olan noktaları (.) tamamen sil
+  // Örn: 1.500.250 -> 1500250
+  cleanValue = cleanValue.replace(/\./g, '');
+
+  // 2. Ondalık ayracı olan virgülü (,) noktaya (.) çevir
+  // Örn: 125,50 -> 125.50
+  cleanValue = cleanValue.replace(',', '.');
+
+  // 3. Sayıya dönüştür
+  const result = parseFloat(cleanValue);
+
+  // Eğer sonuç sayı değilse (NaN) 0 döndür
+  return isNaN(result) ? 0 : result;
 };
 
 /**
@@ -104,20 +140,4 @@ export const getFlattenedLocations = (nodes: any[], prefix = ''): any[] => {
     }
   });
   return options;
-
-
-  // Türkçe para formatını (Örn: 1.578,25) sisteme tanıtan fonksiyon
-export const parseTurkishMoney = (value: any): number => {
-  if (!value) return 0;
-  if (typeof value === 'number') return value; // Zaten sayıysa dokunma
-
-  // 1. Önce string'e çevir
-  let cleanValue = value.toString();
-
-  // 2. Noktaları (binlik ayıraçları) sil (1.578,25 -> 1578,25)
-  cleanValue = cleanValue.replace(/\./g, '');
-
-  // 4. Sayıya çevir
-  return parseFloat(cleanValue) || 0;
-};
 };
