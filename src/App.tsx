@@ -362,6 +362,9 @@ export default function App() {
         </div>
       </main>
 
+ {/* Footer */}
+ <Footer />
+
       {/* Kilit Ekranı */}
       {!isLoggedIn && (
         <div className="fixed inset-0 z-10 flex items-center justify-center pointer-events-none">
