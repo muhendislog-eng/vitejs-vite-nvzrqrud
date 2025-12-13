@@ -241,11 +241,13 @@ export default function App() {
       price: newPoseData.price,
       quantity: isAddingNew ? 0 : (editingItem?.quantity ?? 0),
   
-      // 🔴 KRİTİK FIX
-      isManual: isAddingNew
-        ? true
-        : editingItem?.isManual === true,
+      // ✅ Burayı kesinleştir:
+      isManual: isAddingNew ? true : (editingItem?.isManual ?? false),
     };
+  
+    ...
+  };
+  
 
    if (isAddingNew) {
     if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
