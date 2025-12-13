@@ -449,7 +449,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
   const subtitle = useMemo(() => {
     if (!dbReady) return 'Veritabanı yükleniyor...';
-    if (isNeighborMode) return `Komşu pozlar (±${NEIGHBOR_RADIUS}) — ${neighborAnchor ?? ''}`;
+    if (isNeighborMode) return `Benzer Pozlar (±${NEIGHBOR_RADIUS}) — ${neighborAnchor ?? ''}`;
     if (viewMode === 'favorites') return 'Favorilerim';
     return `Arama (max ${SEARCH_LIMIT_DB} DB sonucu)`;
   }, [dbReady, isNeighborMode, neighborAnchor, viewMode]);
@@ -492,7 +492,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                   setSearchTerm('');
                 }}
                 className="px-3 py-1.5 rounded-lg text-sm font-bold bg-slate-100 text-slate-700 hover:bg-slate-200 transition-colors"
-                title="Komşu modundan çık"
+                title="Benzer modundan çık"
               >
                 Çık
               </button>
@@ -524,7 +524,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
               !dbReady
                 ? 'Veritabanı yükleniyor...'
                 : isNeighborMode
-                ? `Komşu pozlar (±${NEIGHBOR_RADIUS})`
+                ? `Benzer pozlar (±${NEIGHBOR_RADIUS})`
                 : viewMode === 'favorites'
                 ? 'Favorilerim içinde ara...'
                 : 'Poz No veya Tanım ara...'
@@ -658,7 +658,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                           type="button"
                           onClick={() => showNeighbors(item.pos)}
                           className="inline-flex items-center text-xs font-bold text-slate-700 bg-white border border-slate-200 px-3 py-2 rounded-lg hover:bg-slate-50 transition-colors"
-                          title="±5 komşu poz"
+                          title="±5 Benzer poz"
                         >
                           <ArrowUpDown className="w-3.5 h-3.5" />
                         </button>
