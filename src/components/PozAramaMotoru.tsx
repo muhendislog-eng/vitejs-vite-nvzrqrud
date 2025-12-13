@@ -1,6 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Search, Loader, Star, ArrowUpDown, Database, Check, Plus, X, Save } from 'lucide-react';
-import { formatCurrency, loadScript } from '../utils/helpers';
+// DÜZELTME 1: Çift import silindi, tek satırda birleştirildi
+import { parseTurkishMoney, formatCurrency, loadScript } from '../utils/helpers';
 
 declare global {
   interface Window {
@@ -21,7 +22,6 @@ const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 
 const FAVORITES_KEY = 'gkmetraj_favorites';
 
-// Sadece bunlar:
 const UNIT_OPTIONS = ['Kg', 'm', 'm²', 'm³' , 'Ton', 'Adet'] as const;
 type UnitOption = (typeof UNIT_OPTIONS)[number];
 
@@ -38,26 +38,17 @@ type PozItem = {
 
 const escapeSql = (s: string) => s.replace(/'/g, "''").trim();
 
-const toNumberTR = (v: any): number => {
-  if (v === null || v === undefined) return 0;
-  if (typeof v === 'number') return Number.isFinite(v) ? v : 0;
-
-  let s = String(v).trim();
-  if (!s) return 0;
-  s = s.replace(/\s/g, '');
-
-  if (s.includes('.') && s.includes(',')) s = s.replace(/\./g, '').replace(',', '.');
-  else s = s.replace(',', '.');
-
-  const n = Number(s);
-  return Number.isFinite(n) ? n : 0;
-};
+// DÜZELTME 2: Eski 'toNumberTR' fonksiyonunu sildim.
+// Artık her yerde senin yazdığın güçlü 'parseTurkishMoney' fonksiyonunu kullanacağız.
 
 const normalizeItemFromDbRow = (row: any): PozItem => {
   const pos = String(row?.poz_no ?? row?.pos ?? row?.no ?? '---').trim();
   const desc = String(row?.tanim ?? row?.aciklama ?? row?.desc ?? 'Tanımsız');
   const unit = String(row?.birim ?? row?.unit ?? 'm').trim() || 'm';
-  const price = toNumberTR(row?.birim_fiyat ?? row?.fiyat ?? row?.price ?? 0);
+  
+  // DÜZELTME 3: Veritabanından gelen veriyi burada temizliyoruz
+  const price = parseTurkishMoney(row?.birim_fiyat ?? row?.fiyat ?? row?.price ?? 0);
+  
   const rowid = row?.rowid != null ? Number(row.rowid) : undefined;
 
   return { pos, desc, unit, price, source: 'db', rowid };
@@ -178,18 +169,24 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     }
   }, []);
 
+  // DÜZELTME 4: SEÇME İŞLEMİNİN YAPILDIĞI YER BURASI
+  // Burada fiyatı garanti altına alıyoruz.
   const emitSelect = useCallback(
     (item: PozItem) => {
+      // Fiyatı temizle (helper fonksiyonu ile)
+      const cleanPrice = parseTurkishMoney(item.price);
+
       onSelect({
         pos: item.pos,
         desc: item.desc,
         unit: item.unit,
-        price: Number(item.price || 0),
+        price: cleanPrice, // Artık 0 gelmeyecek
 
+        // Eski sistem uyumluluğu için
         poz_no: item.pos,
         tanim: item.desc,
         birim: item.unit,
-        birim_fiyat: Number(item.price || 0),
+        birim_fiyat: cleanPrice, // Artık 0 gelmeyecek
 
         source: item.source,
       });
@@ -417,11 +414,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
     const pos = mPos.trim();
     if (!pos) return;
 
+    // DÜZELTME 5: Manuel eklemede de helper'ı kullanıyoruz
     const item: PozItem = {
       pos,
       desc: (mDesc || '').trim() || 'Tanımsız',
       unit: mUnit,
-      price: toNumberTR(mPrice),
+      price: parseTurkishMoney(mPrice),
       source: 'manual',
     };
 
@@ -624,7 +622,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
                   <div className="text-right flex flex-col items-end gap-2 min-w-[120px]">
                     <div className="font-black text-slate-800 text-lg tracking-tight">
-                      {formatCurrency(Number(item.price || 0))}
+                      {/* DÜZELTME 6: Ekrana yazarken de temizliyoruz */}
+                      {formatCurrency(parseTurkishMoney(item.price))}
                     </div>
 
                     <div className="flex items-center gap-2">
