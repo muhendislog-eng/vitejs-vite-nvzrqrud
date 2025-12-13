@@ -104,4 +104,20 @@ export const getFlattenedLocations = (nodes: any[], prefix = ''): any[] => {
     }
   });
   return options;
+
+
+  // Türkçe para formatını (Örn: 1.578,25) sisteme tanıtan fonksiyon
+export const parseTurkishMoney = (value: any): number => {
+  if (!value) return 0;
+  if (typeof value === 'number') return value; // Zaten sayıysa dokunma
+
+  // 1. Önce string'e çevir
+  let cleanValue = value.toString();
+
+  // 2. Noktaları (binlik ayıraçları) sil (1.578,25 -> 1578,25)
+  cleanValue = cleanValue.replace(/\./g, '');
+
+  // 4. Sayıya çevir
+  return parseFloat(cleanValue) || 0;
+};
 };

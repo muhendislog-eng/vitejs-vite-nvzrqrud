@@ -71,8 +71,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
   const handlePrint = () => window.print();
 
   return (
-    // ✅ dashboard-root kaldırıldı + max-w none
-    <div className="w-full min-w-0 max-w-none">
+    <div className="w-full min-w-0 dashboard-root">
       {/* PRINT: SADECE #print-area yazdırılır */}
       <style>
         {`
@@ -84,9 +83,13 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
           @media print {
             @page { margin: 12mm; }
 
+            /* Uygulamanın tamamını gizle */
             body * { visibility: hidden !important; }
+
+            /* SADECE print-area göster */
             #print-area, #print-area * { visibility: visible !important; }
 
+            /* print-area sayfanın başına yerleşsin */
             #print-area {
               position: absolute;
               left: 0;
@@ -94,15 +97,20 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
               width: 100%;
             }
 
+            /* Yazdırmada üst alan görünmesin */
             .print-hidden { display: none !important; }
+
+            /* Yazdırmada gölgeleri azalt */
             .no-print-shadow { box-shadow: none !important; }
+
+            /* Recharts overflow önle */
             .recharts-wrapper, .recharts-responsive-container { width: 100% !important; }
           }
         `}
       </style>
 
-      {/* ✅ App.tsx zaten p-8 veriyor => burada ekstra padding yok */}
-      <div className="w-full min-w-0 p-0">
+      {/* Sayfa padding (tam ekran genişlik) */}
+      <div className="w-full px-2 sm:px-4 lg:px-6 py-6">
         {/* --- ÜST BİLGİ (Ekranda var, yazdırmada yok) --- */}
         <div className="print-hidden flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 border-b border-slate-100 pb-5 mb-6">
           <div className="min-w-0">
@@ -125,7 +133,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
           </button>
         </div>
 
-        {/* ===== PRINT AREA BAŞLANGIÇ ===== */}
+        {/* ===== PRINT AREA BAŞLANGIÇ (ÇIKTI BURADAN) ===== */}
         <div id="print-area" className="w-full min-w-0">
           {/* --- KPI KARTLARI --- */}
           <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5 mb-6 w-full min-w-0">
@@ -232,7 +240,11 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                       dataKey="value"
                     >
                       {chartData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} strokeWidth={0} />
+                        <Cell
+                          key={`cell-${index}`}
+                          fill={COLORS[index % COLORS.length]}
+                          strokeWidth={0}
+                        />
                       ))}
                     </Pie>
                     <Tooltip formatter={(value: number) => formatCurrency(value)} />
@@ -256,10 +268,30 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
                     layout="vertical"
                     margin={{ top: 5, right: 30, left: 30, bottom: 5 }}
                   >
-                    <CartesianGrid strokeDasharray="3 3" horizontal={true} vertical={false} stroke="#e2e8f0" />
-                    <XAxis type="number" tickFormatter={(val) => `₺${(val / 1_000_000).toFixed(1)}M`} stroke="#94a3b8" fontSize={11} />
-                    <YAxis type="category" dataKey="name" width={110} stroke="#64748b" fontSize={11} fontWeight={600} />
-                    <Tooltip formatter={(value: number) => formatCurrency(value)} cursor={{ fill: '#f8fafc' }} />
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      horizontal={true}
+                      vertical={false}
+                      stroke="#e2e8f0"
+                    />
+                    <XAxis
+                      type="number"
+                      tickFormatter={(val) => `₺${(val / 1_000_000).toFixed(1)}M`}
+                      stroke="#94a3b8"
+                      fontSize={11}
+                    />
+                    <YAxis
+                      type="category"
+                      dataKey="name"
+                      width={110}
+                      stroke="#64748b"
+                      fontSize={11}
+                      fontWeight={600}
+                    />
+                    <Tooltip
+                      formatter={(value: number) => formatCurrency(value)}
+                      cursor={{ fill: '#f8fafc' }}
+                    />
                     <Bar dataKey="value" radius={[0, 4, 4, 0]} barSize={24}>
                       {chartData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
