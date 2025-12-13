@@ -12,7 +12,7 @@ import {
   Box,
   Grid,
   Calculator,
-  FileText
+  FileText // Rapor ikonu eklendi
 } from 'lucide-react';
 
 // --- BİLEŞEN IMPORTLARI ---
@@ -22,8 +22,8 @@ import MetrajTable from './components/MetrajTable';
 import GreenBook from './components/GreenBook';
 import DoorCalculationArea from './components/DoorCalculationArea';
 import WindowCalculationArea from './components/WindowCalculationArea';
-import ProjectReport from './components/ProjectReport';
-import Footer from './components/Footer';
+import ProjectReport from './components/ProjectReport'; // YENİ: Rapor Sayfası
+import Footer from './components/Footer'; // Footer
 import { LoginModal, ProjectInfoModal, PoseSelectorModal } from './components/Modals';
 
 // --- VERİ VE YARDIMCI FONKSİYONLAR ---
@@ -58,10 +58,12 @@ const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }: any)
 );
 
 export default function App() {
+  // --- STATE TANIMLARI ---
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
   const [activeTab, setActiveTab] = useState('static');
   
+  // Ana Veriler
   const [staticItems, setStaticItems] = useState(initialStaticData);
   const [architecturalItems, setArchitecturalItems] = useState(initialArchitecturalData);
   const [doorItems, setDoorItems] = useState<any[]>([]);
@@ -91,6 +93,7 @@ export default function App() {
   const totalArchCost = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const grandTotalCost = totalStaticCost + totalArchCost;
 
+  // --- BAŞLANGIÇ ETKİLERİ ---
   useEffect(() => {
     const loadLibraries = async () => {
       try {
@@ -126,6 +129,8 @@ export default function App() {
     const session = localStorage.getItem('gkmetraj_session');
     if (session === 'active') setIsLoggedIn(true);
   }, []);
+
+  // --- HANDLER FONKSİYONLARI ---
 
   const handleLogin = () => { setIsLoggedIn(true); localStorage.setItem('gkmetraj_session', 'active'); };
   const handleLogout = () => { setIsLoggedIn(false); localStorage.removeItem('gkmetraj_session'); };
@@ -247,8 +252,7 @@ export default function App() {
     e.target.value = "";
   };
 
-  // --- EXCEL İNDİRME FONKSİYONLARI (GÜNCELLENDİ) ---
-
+  // --- EXCEL İNDİRME FONKSİYONLARI ---
   const handleDownloadDescriptions = () => {
     // @ts-ignore
     if (!isXLSXLoaded || !window.XLSX) {
@@ -256,17 +260,10 @@ export default function App() {
         return;
     }
     
-    // Verileri düzleştir
     let flatLibrary: any[] = [];
     Object.keys(posLibrary).forEach(category => {
       // @ts-ignore
-      posLibrary[category].forEach((item: any) => flatLibrary.push({ 
-          "Kategori": category,
-          "Poz No": item.pos,
-          "Tanım": item.desc,
-          "Birim": item.unit,
-          "Birim Fiyat": item.price
-      }));
+      posLibrary[category].forEach((item: any) => flatLibrary.push({ ...item, Kategori: category }));
     });
     
     // @ts-ignore
@@ -274,13 +271,8 @@ export default function App() {
     // @ts-ignore
     const ws = window.XLSX.utils.json_to_sheet(flatLibrary);
     
-    const wscols = [
-      {wch: 25}, {wch: 15}, {wch: 60}, {wch: 10}, {wch: 15}
-    ];
-    ws['!cols'] = wscols;
-
     // @ts-ignore
-    window.XLSX.utils.book_append_sheet(wb, ws, "Poz Tarifleri");
+    window.XLSX.utils.book_append_sheet(wb, ws, "Pozlar");
     // @ts-ignore
     window.XLSX.writeFile(wb, "Poz_Listesi.xlsx");
   };
@@ -295,49 +287,32 @@ export default function App() {
     // @ts-ignore
     const wb = window.XLSX.utils.book_new();
     
-    const wscols = [
-      {wch:10}, {wch:25}, {wch:15}, {wch:60}, {wch:10}, {wch:15}, {wch:15}, {wch:15}
-    ];
-
-    // Statik Sayfası
     // @ts-ignore
-    const wsStatic = window.XLSX.utils.json_to_sheet(staticItems.map(item => ({
-        "ID": item.id,
-        "Kategori": item.category,
-        "Poz No": item.pos,
-        "İmalat Tanımı": item.desc,
-        "Birim": item.unit,
-        "Birim Fiyat": item.price,
-        "Miktar": item.quantity,
-        "Toplam Tutar": item.price * item.quantity
-    })));
-    wsStatic['!cols'] = wscols;
+    const wsStatic = window.XLSX.utils.json_to_sheet(staticItems);
     // @ts-ignore
     window.XLSX.utils.book_append_sheet(wb, wsStatic, "Statik Metraj");
 
-    // Mimari Sayfası
     // @ts-ignore
-    const wsArch = window.XLSX.utils.json_to_sheet(architecturalItems.map(item => ({
-        "ID": item.id,
-        "Kategori": item.category,
-        "Poz No": item.pos,
-        "İmalat Tanımı": item.desc,
-        "Birim": item.unit,
-        "Birim Fiyat": item.price,
-        "Miktar": item.quantity,
-        "Toplam Tutar": item.price * item.quantity
-    })));
-    wsArch['!cols'] = wscols;
+    const wsArch = window.XLSX.utils.json_to_sheet(architecturalItems);
     // @ts-ignore
     window.XLSX.utils.book_append_sheet(wb, wsArch, "Mimari Metraj");
 
     // @ts-ignore
-    window.XLSX.writeFile(wb, "YM_Cetveli.xlsx");
+    window.XLSX.writeFile(wb, "Proje_Metraj.xlsx");
   };
 
+  // Tab Buton Bileşeni (Yerel)
   const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
-    <button onClick={onClick} className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${active ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500' : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'}`}>
-      <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} /> {label}
+    <button 
+      onClick={onClick} 
+      className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
+        active 
+        ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500 z-10' 
+        : 'bg-slate-100 text-slate-500 hover:bg-slate-200 hover:text-slate-800 border-t-4 border-transparent'
+      }`}
+    >
+      <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} /> 
+      {label}
     </button>
   );
 
@@ -371,12 +346,30 @@ export default function App() {
       {/* Ana İçerik */}
       <main className={`flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        {/* ÖZET KARTLARI */}
+        {/* --- ÖZET KARTLARI (Header Altına Geri Geldi) --- */}
         <div className="w-full mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                <SummaryCard title="Statik İmalatlar" value={totalStaticCost} icon={Building} colorClass="text-orange-500" iconBgClass="bg-orange-50" />
-                <SummaryCard title="Mimari İmalatlar" value={totalArchCost} icon={Ruler} colorClass="text-blue-500" iconBgClass="bg-blue-50" />
-                <SummaryCard title="GENEL TOPLAM MALİYET" value={grandTotalCost} icon={Calculator} colorClass="text-green-600" iconBgClass="bg-green-50" />
+                <SummaryCard 
+                    title="Statik İmalatlar" 
+                    value={totalStaticCost} 
+                    icon={Building} 
+                    colorClass="text-orange-500" 
+                    iconBgClass="bg-orange-50"
+                />
+                <SummaryCard 
+                    title="Mimari İmalatlar" 
+                    value={totalArchCost} 
+                    icon={Ruler} 
+                    colorClass="text-blue-500" 
+                    iconBgClass="bg-blue-50"
+                />
+                <SummaryCard 
+                    title="GENEL TOPLAM MALİYET" 
+                    value={grandTotalCost} 
+                    icon={Calculator} 
+                    colorClass="text-green-600" 
+                    iconBgClass="bg-green-50"
+                />
             </div>
         </div>
 
@@ -392,15 +385,63 @@ export default function App() {
              <TabButton active={activeTab === 'report'} onClick={() => setActiveTab('report')} icon={FileText} label="Sonuç Raporu" /> 
           </div>
 
-          {/* Sekme İçerikleri */}
+          {/* Sekme İçerikleri - Tam Genişlik */}
           <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[600px] p-8 relative z-10 w-full">
-            {activeTab === 'static' && <MetrajTable data={staticItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} locations={locations} onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'static')} />}
-            {activeTab === 'architectural' && <MetrajTable data={architecturalItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} locations={locations} onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'architectural')} />}
-            {activeTab === 'door_calculation' && <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />}
-            {activeTab === 'window_calculation' && <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />}
-            {activeTab === 'green_book' && <GreenBook staticItems={staticItems} architecturalItems={architecturalItems} doorItems={doorItems} windowItems={windowItems} />}
-            {activeTab === 'dashboard' && <Dashboard staticItems={staticItems} architecturalItems={architecturalItems} />}
-            {activeTab === 'report' && <ProjectReport staticItems={staticItems} architecturalItems={architecturalItems} projectInfo={projectInfo} />}
+            {activeTab === 'static' && (
+              <MetrajTable 
+                data={staticItems} 
+                onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} 
+                onOpenSelector={handleOpenSelector} 
+                onAddNewItem={handleAddNewItem} 
+                locations={locations}
+                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'static')}
+              />
+            )}
+
+            {activeTab === 'architectural' && (
+              <MetrajTable 
+                data={architecturalItems} 
+                onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} 
+                onOpenSelector={handleOpenSelector} 
+                onAddNewItem={handleAddNewItem} 
+                locations={locations}
+                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'architectural')}
+              />
+            )}
+
+            {activeTab === 'door_calculation' && (
+              <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
+            )}
+
+             {activeTab === 'window_calculation' && (
+              <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
+            )}
+
+             {activeTab === 'green_book' && (
+              <GreenBook 
+                  staticItems={staticItems} 
+                  architecturalItems={architecturalItems} 
+                  doorItems={doorItems} 
+                  windowItems={windowItems} 
+              />
+            )}
+
+             {/* DASHBOARD - Tam Ekran */}
+             {activeTab === 'dashboard' && (
+              <Dashboard 
+                  staticItems={staticItems} 
+                  architecturalItems={architecturalItems} 
+              />
+            )}
+
+            {/* RAPOR - Tam Ekran */}
+            {activeTab === 'report' && (
+              <ProjectReport 
+                  staticItems={staticItems} 
+                  architecturalItems={architecturalItems} 
+                  projectInfo={projectInfo} 
+              />
+            )}
           </div>
         </div>
       </main>
