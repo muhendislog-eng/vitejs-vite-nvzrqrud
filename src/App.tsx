@@ -92,59 +92,48 @@ export default function App() {
   const grandTotalCost = totalStaticCost + totalArchCost;
 
   // --- BAŞLANGIÇ ETKİLERİ ---
- // --- BAŞLANGIÇ ETKİLERİ ---
-useEffect(() => {
-  let cancelled = false;
-
-  const loadLibraries = async () => {
-    setIsLoadingScripts(true);
-
-    try {
-      // 1) XLSX
-      await loadScript("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
-
-      // Script yüklendi mi? (kritik kontrol)
-      const hasXLSX = typeof (window as any).XLSX !== "undefined";
-      if (!hasXLSX) {
-        console.warn(
-          "[GKmetraj] XLSX script yüklendi ama window.XLSX bulunamadı. " +
-            "CSP/AdBlock/CDN bundle farkı olabilir."
+  useEffect(() => {
+    const loadLibraries = async () => {
+      try {
+        setIsLoadingScripts(true);
+  
+        // XLSX
+        await loadScript(
+          "https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js"
         );
-      }
-      if (!cancelled) setIsXLSXLoaded(hasXLSX);
-
-      // 2) PDF.js
-      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
-
-      const pdfjsLib = (window as any).pdfjsLib;
-      const hasPDF = typeof pdfjsLib !== "undefined";
-
-      if (hasPDF) {
-        pdfjsLib.GlobalWorkerOptions.workerSrc =
-          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
-      } else {
-        console.warn("[GKmetraj] pdfjsLib bulunamadı. Script yüklenmemiş olabilir.");
-      }
-
-      if (!cancelled) setIsPDFLoaded(hasPDF);
-    } catch (error) {
-      console.error("Kütüphane hatası:", error);
-      if (!cancelled) {
+  
+        if ((window as any).XLSX) {
+          setIsXLSXLoaded(true);
+        } else {
+          console.error("XLSX yüklendi ama window.XLSX bulunamadı");
+          setIsXLSXLoaded(false);
+        }
+  
+        // PDF.js
+        await loadScript(
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"
+        );
+  
+        if ((window as any).pdfjsLib) {
+          (window as any).pdfjsLib.GlobalWorkerOptions.workerSrc =
+            "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+          setIsPDFLoaded(true);
+        } else {
+          console.error("pdfjsLib bulunamadı");
+          setIsPDFLoaded(false);
+        }
+      } catch (err) {
+        console.error("Kütüphane yükleme hatası:", err);
         setIsXLSXLoaded(false);
         setIsPDFLoaded(false);
+      } finally {
+        setIsLoadingScripts(false);
       }
-    } finally {
-      if (!cancelled) setIsLoadingScripts(false);
-    }
-  };
-
-  loadLibraries();
-
-  return () => {
-    cancelled = true;
-  };
-}, []);
-
+    };
+  
+    loadLibraries();
+  }, []);
+  
 
     const savedData = localStorage.getItem('gkmetraj_data');
     if (savedData) {
