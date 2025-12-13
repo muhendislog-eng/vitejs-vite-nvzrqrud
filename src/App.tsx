@@ -92,25 +92,59 @@ export default function App() {
   const grandTotalCost = totalStaticCost + totalArchCost;
 
   // --- BAŞLANGIÇ ETKİLERİ ---
-  useEffect(() => {
-    const loadLibraries = async () => {
-      try {
-        await loadScript("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
-        setIsXLSXLoaded(true);
-        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
-        // @ts-ignore
-        if (window.pdfjsLib) { 
-          // @ts-ignore
-          window.pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js'; 
-          setIsPDFLoaded(true); 
-        }
-        setIsLoadingScripts(false);
-      } catch (error) { 
-        console.error("Kütüphane hatası:", error); 
-        setIsLoadingScripts(false); 
+ // --- BAŞLANGIÇ ETKİLERİ ---
+useEffect(() => {
+  let cancelled = false;
+
+  const loadLibraries = async () => {
+    setIsLoadingScripts(true);
+
+    try {
+      // 1) XLSX
+      await loadScript("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
+
+      // Script yüklendi mi? (kritik kontrol)
+      const hasXLSX = typeof (window as any).XLSX !== "undefined";
+      if (!hasXLSX) {
+        console.warn(
+          "[GKmetraj] XLSX script yüklendi ama window.XLSX bulunamadı. " +
+            "CSP/AdBlock/CDN bundle farkı olabilir."
+        );
       }
-    };
-    loadLibraries();
+      if (!cancelled) setIsXLSXLoaded(hasXLSX);
+
+      // 2) PDF.js
+      await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
+
+      const pdfjsLib = (window as any).pdfjsLib;
+      const hasPDF = typeof pdfjsLib !== "undefined";
+
+      if (hasPDF) {
+        pdfjsLib.GlobalWorkerOptions.workerSrc =
+          "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js";
+      } else {
+        console.warn("[GKmetraj] pdfjsLib bulunamadı. Script yüklenmemiş olabilir.");
+      }
+
+      if (!cancelled) setIsPDFLoaded(hasPDF);
+    } catch (error) {
+      console.error("Kütüphane hatası:", error);
+      if (!cancelled) {
+        setIsXLSXLoaded(false);
+        setIsPDFLoaded(false);
+      }
+    } finally {
+      if (!cancelled) setIsLoadingScripts(false);
+    }
+  };
+
+  loadLibraries();
+
+  return () => {
+    cancelled = true;
+  };
+}, []);
+
 
     const savedData = localStorage.getItem('gkmetraj_data');
     if (savedData) {
