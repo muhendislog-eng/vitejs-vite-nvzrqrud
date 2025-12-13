@@ -151,46 +151,72 @@ export default function App() {
   }, []);
 
   // --- AUTH ---
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-    localStorage.setItem('gkmetraj_session', 'active');
-  };
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-    localStorage.removeItem('gkmetraj_session');
-  };
+const handleLogin = () => {
+  setIsLoggedIn(true);
+  localStorage.setItem('gkmetraj_session', 'active');
+};
+const handleLogout = () => {
+  setIsLoggedIn(false);
+  localStorage.removeItem('gkmetraj_session');
+};
 
-  // --- SAVE ---
-  const handleSave = () => {
-    const dataToSave = {
-      staticItems,
-      architecturalItems,
-      doorItems,
-      windowItems,
-      projectInfo,
-      locations,
-      lastSaved: new Date().toLocaleTimeString(),
-    };
-    localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
-    alert('Proje başarıyla kaydedildi!');
+// --- SAVE ---
+const handleSave = () => {
+  const dataToSave = {
+    staticItems,
+    architecturalItems,
+    doorItems,
+    windowItems,
+    projectInfo,
+    locations,
+    lastSaved: new Date().toLocaleTimeString(),
   };
+  localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
+  alert('Proje başarıyla kaydedildi!');
+};
 
-  // --- QUANTITY ---
-  const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
-    if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-    else setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-  };
+// --- QUANTITY ---
+const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
+  if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+  else setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+};
 
-  const handleBatchUpdateQuantities = (updates: any) => {
-    const updateList = (list: any[]) =>
-      list.map(item => {
-        if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
-        return item;
-      });
+const handleBatchUpdateQuantities = (updates: any) => {
+  const updateList = (list: any[]) =>
+    list.map(item => {
+      if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
+      return item;
+    });
 
-    setStaticItems(prev => updateList(prev));
-    setArchitecturalItems(prev => updateList(prev));
-  };
+  setStaticItems(prev => updateList(prev));
+  setArchitecturalItems(prev => updateList(prev));
+};
+
+// ✅ BURAYA EKLE: Manuel poz düzenleme patch handler’ı
+const onUpdateManualItem = (id: number | string, patch: any) => {
+  const merge = (list: any[]) =>
+    list.map((it) =>
+      it.id === id ? { ...it, ...patch } : it
+    );
+
+  if (activeTab === 'static') {
+    setStaticItems((prev) => merge(prev));
+  } else {
+    setArchitecturalItems((prev) => merge(prev));
+  }
+};
+
+// ✅ (Eğer yoksa) silme handler’ı da bu bölüme yakın dursun
+const onDeleteManualItem = (id: number | string) => {
+  const remove = (list: any[]) => list.filter((it) => it.id !== id);
+
+  if (activeTab === 'static') {
+    setStaticItems((prev) => remove(prev));
+  } else {
+    setArchitecturalItems((prev) => remove(prev));
+  }
+};
+
 
   // --- LOCATION (SENDE YOKTU -> ÇALIŞAN STUB) ---
   // Eğer lokasyon seçimi gerçekten kullanılıyorsa, burada istediğin modele göre güncellersin.
