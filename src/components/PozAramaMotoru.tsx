@@ -37,40 +37,76 @@ type PozItem = {
 
 const escapeSql = (s: string) => s.replace(/'/g, "''").trim();
 
-// --- KRİTİK DÜZELTME: Veritabanından gelen satırı işleyen fonksiyon ---
+// --- DEDEKTİF MODU: SÜTUN BULUCU ---
 const normalizeItemFromDbRow = (row: any): PozItem => {
-  // 1. Poz No Bul (Farklı yazımları dene)
-  const pos = String(
-    row['Poz No'] ?? row['poz_no'] ?? row['PozNo'] ?? row['poz'] ?? row['pos'] ?? row['no'] ?? '---'
-  ).trim();
+  // Debug için ilk satırı konsola bas (sadece bir kere görmek için uncomment yapabilirsin)
+  // console.log("DB Satırı:", row);
 
-  // 2. Tanım Bul
-  const desc = String(
-    row['Tanım'] ?? row['tanim'] ?? row['Aciklama'] ?? row['aciklama'] ?? row['desc'] ?? 'Tanımsız'
-  );
+  // 1. POZ NO BUL (Otomatik Tarama)
+  let pos = '---';
+  // Önce bilinenlere bak
+  if (row['Poz No']) pos = row['Poz No'];
+  else if (row['poz_no']) pos = row['poz_no'];
+  else {
+    // Bulamazsan içinde 'poz' veya 'no' geçen sütunu ara
+    const key = Object.keys(row).find(k => k.toLowerCase().includes('poz') || k.toLowerCase() === 'no');
+    if (key) pos = row[key];
+  }
 
-  // 3. Birim Bul
-  const unit = String(
-    row['Birim'] ?? row['birim'] ?? row['unit'] ?? 'm'
-  ).trim() || 'm';
+  // 2. TANIM BUL
+  let desc = 'Tanımsız';
+  if (row['Tanım']) desc = row['Tanım'];
+  else if (row['tanim']) desc = row['tanim'];
+  else {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes('tanım') || k.toLowerCase().includes('desc') || k.toLowerCase().includes('aciklama'));
+    if (key) desc = row[key];
+  }
+
+  // 3. BİRİM BUL
+  let unit = 'm';
+  if (row['Birim']) unit = row['Birim'];
+  else if (row['birim']) unit = row['birim'];
+  else {
+    const key = Object.keys(row).find(k => k.toLowerCase().includes('birim') || k.toLowerCase() === 'unit');
+    if (key) unit = row[key];
+  }
+
+  // 4. FİYAT BUL (En Kritiği)
+  let rawPrice: any = 0;
   
-  // 4. FİYAT BUL (En önemlisi burası - Her türlü ihtimali deniyoruz)
-  const rawPrice = 
-    row['Birim Fiyat'] ?? 
-    row['birim_fiyat'] ?? 
-    row['BirimFiyat'] ?? 
-    row['Fiyat'] ?? 
-    row['fiyat'] ?? 
-    row['price'] ?? 
-    row['Unit Price'] ?? 
-    0;
+  // Önce net isimlere bak
+  if (row['Birim Fiyat'] !== undefined) rawPrice = row['Birim Fiyat'];
+  else if (row['BirimFiyat'] !== undefined) rawPrice = row['BirimFiyat'];
+  else if (row['Fiyat'] !== undefined) rawPrice = row['Fiyat'];
+  else if (row['birim_fiyat'] !== undefined) rawPrice = row['birim_fiyat'];
+  else {
+    // Bulamazsan içinde 'fiyat' veya 'price' geçen İLK sütunu al
+    const priceKey = Object.keys(row).find(k => {
+      const low = k.toLowerCase();
+      return low.includes('fiyat') || low.includes('price') || low.includes('tutar');
+    });
+    
+    if (priceKey) {
+      // console.log(`Fiyat sütunu bulundu: ${priceKey} -> Değer: ${row[priceKey]}`);
+      rawPrice = row[priceKey];
+    } else {
+      console.warn("Fiyat sütunu bulunamadı! Satır verisi:", row);
+    }
+  }
 
-  // Gelen veriyi (örn: "1.578,25") sayıya çevir
+  // Bulunan değeri sayıya çevir
   const price = parseTurkishMoney(rawPrice);
   
   const rowid = row?.rowid != null ? Number(row.rowid) : undefined;
 
-  return { pos, desc, unit, price, source: 'db', rowid };
+  return { 
+    pos: String(pos).trim(), 
+    desc: String(desc).trim(), 
+    unit: String(unit).trim(), 
+    price, 
+    source: 'db', 
+    rowid 
+  };
 };
 
 const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos }) => {
@@ -163,7 +199,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
       const { columns, values } = res[0];
       return values.map((row: any[]) => {
         const o: any = {};
-        columns.forEach((c: string, i: number) => (o[c] = row[i])); // c.toLowerCase() kaldırdık, orijinal ismi koruyalım
+        columns.forEach((c: string, i: number) => (o[c] = row[i])); 
         return o;
       });
     } catch (e) {
@@ -189,30 +225,28 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
       setLoading(true);
       setTimeout(() => {
-        // DÜZELTME: "SELECT *" yaparak tüm sütunları çekiyoruz ki isim fark etmesin
+        // HER ŞEYİ GETİR (Sütun ismi derdi olmasın)
         let q = `SELECT rowid as rowid, * FROM "${table}" WHERE 1=1`;
 
         if (safe) {
-          // Arama yaparken de olası sütun isimlerini kontrol edelim
+          // Arama kısmını genişlettik, sütun adını bilmesek de en azından değerlerde arayalım
+          // Not: Sütun adlarını bilmediğimiz için burada biraz risk alıp
+          // "Bütün text sütunlarında ara" diyemiyoruz, mecburen temel isimleri deniyoruz.
           q += ` AND (
-            lower("Poz No") LIKE '%${safe}%' OR 
-            lower(poz_no) LIKE '%${safe}%' OR 
-            lower("Tanım") LIKE '%${safe}%' OR 
-            lower(tanim) LIKE '%${safe}%'
+             lower(poz_no) LIKE '%${safe}%' OR 
+             lower("Poz No") LIKE '%${safe}%' OR 
+             lower(tanim) LIKE '%${safe}%' OR 
+             lower("Tanım") LIKE '%${safe}%'
           )`;
-        } else {
-          // Eğer arama boşsa ve tablo büyükse limit koymak iyidir ama
-          // kullanıcı veritabanı yapısını bilmediğimiz için basit tutuyoruz
         }
 
         q += ` ORDER BY rowid ASC LIMIT ${SEARCH_LIMIT_DB}`;
 
-        // Eğer yukarıdaki sorgu hata verirse (sütun ismi hatası), basit arama yap
         try {
            const rows = execQuery(q);
            setDbCache(rows.map(normalizeItemFromDbRow));
-        } catch {
-           // Yedek sorgu (En basit hali)
+        } catch (e) {
+           console.log("Sorgu hatası, basite dönülüyor:", e);
            const rows = execQuery(`SELECT * FROM "${table}" LIMIT ${SEARCH_LIMIT_DB}`);
            setDbCache(rows.map(normalizeItemFromDbRow));
         }
@@ -231,9 +265,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
     setLoading(true);
     setTimeout(() => {
-      // DÜZELTME: SELECT *
       const rows = execQuery(`SELECT rowid as rowid, * FROM "${table}" WHERE "Poz No" IN (${favList}) OR poz_no IN (${favList})`);
-      
       const items = rows.map(normalizeItemFromDbRow);
       items.sort((a, b) => favorites.indexOf(a.pos) - favorites.indexOf(b.pos));
       setFavoritesItems(items);
@@ -248,21 +280,14 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
       setLoading(true);
       setTimeout(() => {
-        // Hedef rowid bul
         const target = execQuery(`SELECT rowid as rowid FROM "${table}" WHERE "Poz No"='${safePos}' OR poz_no='${safePos}' LIMIT 1`);
-
-        if (!target.length || target[0].rowid == null) {
-          setLoading(false);
-          return;
-        }
+        if (!target.length || target[0].rowid == null) { setLoading(false); return; }
 
         const rid = Number(target[0].rowid);
         const start = rid - NEIGHBOR_RADIUS;
         const end = rid + NEIGHBOR_RADIUS;
 
-        // DÜZELTME: SELECT *
         const rows = execQuery(`SELECT rowid as rowid, * FROM "${table}" WHERE rowid BETWEEN ${start} AND ${end}`);
-
         const neighbors = rows.map(normalizeItemFromDbRow)
           .filter((x) => typeof x.rowid === 'number')
           .sort((a, b) => Number(a.rowid) - Number(b.rowid))
@@ -289,7 +314,6 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
 
   useEffect(() => {
     if (!dbReady) return;
-    // İlk açılışta boş arama yapıp listeyi doldur
     runDbSearch('');
   }, [dbReady, runDbSearch]);
 
@@ -446,8 +470,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                   </div>
                   <div className="text-right flex flex-col items-end gap-2 min-w-[120px]">
                     <div className="font-black text-slate-800 text-lg tracking-tight">
-                        {/* Fiyatı formatlı göster */}
-                        {formatCurrency(parseTurkishMoney(item.price))}
+                        {/* FİYATI GÖSTER */}
+                        {formatCurrency(item.price)}
                     </div>
                     <div className="flex items-center gap-2">
                       <button type="button" onClick={() => toggleFavorite(item.pos)} className={`p-1.5 rounded-lg border transition-colors bg-white ${fav ? 'border-yellow-200 text-yellow-500 hover:bg-yellow-50' : 'border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200 hover:bg-yellow-50'}`}><Star className={`w-4 h-4 ${fav ? 'fill-yellow-500' : ''}`} /></button>
