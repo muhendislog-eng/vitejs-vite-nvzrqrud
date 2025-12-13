@@ -25,11 +25,16 @@ type MetrajItem = {
   [key: string]: any;
 };
 
+// ✅ Birim seçenekleri (manuel poz girerken ne kullandıysan buraya koy)
+const UNIT_OPTIONS = ['m²', 'm³', 'm', 'mt', 'kg', 'Ton', 'Adet', 'sa', 'km'];
+
 const MetrajTable = ({
   data,
   onUpdateQuantity,
   onOpenSelector,
   onAddNewItem,
+
+  // ✅ manuel poz update/sil
   onUpdateManualItem,
   onDeleteManualItem,
 }: {
@@ -37,6 +42,7 @@ const MetrajTable = ({
   onUpdateQuantity: (id: number | string, quantity: number) => void;
   onOpenSelector: (item: MetrajItem) => void;
   onAddNewItem: (category: string) => void;
+
   onUpdateManualItem: (id: number | string, patch: Partial<MetrajItem>) => void;
   onDeleteManualItem: (id: number | string) => void;
 }) => {
@@ -44,34 +50,15 @@ const MetrajTable = ({
   const [draft, setDraft] = useState<{ pos: string; desc: string; unit: string; price: string }>({
     pos: '',
     desc: '',
-    unit: '',
+    unit: UNIT_OPTIONS[0],
     price: '',
   });
 
-  // ✅ Siyah input sorunu için tek tip class
-  const editInputClass =
-    'w-full px-3 py-2 text-sm font-bold bg-white text-slate-900 caret-slate-900 ' +
-    'border-2 border-indigo-200 rounded-lg ' +
-    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
-    'placeholder:text-slate-400';
-
-  const editInputMonoRightClass =
-    'w-full px-3 py-2 text-sm text-right font-mono font-bold bg-white text-slate-900 caret-slate-900 ' +
-    'border-2 border-indigo-200 rounded-lg ' +
-    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
-    'placeholder:text-slate-400';
-
-  const editInputMonoLeftSmallClass =
-    'w-full px-2 py-1 text-xs font-mono font-bold bg-white text-slate-900 caret-slate-900 ' +
-    'border-2 border-indigo-200 rounded-md ' +
-    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
-    'placeholder:text-slate-400';
-
-  const editTextareaClass =
-    'w-full px-3 py-2 text-sm bg-white text-slate-900 caret-slate-900 ' +
-    'border-2 border-indigo-200 rounded-lg ' +
-    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
-    'placeholder:text-slate-400';
+  // ✅ Siyahlaşma fix: dark mode varsa bile inputların içini beyaz tut
+  const inputBase =
+    'bg-white text-slate-900 placeholder:text-slate-400 ' +
+    'dark:bg-white dark:text-slate-900 dark:placeholder:text-slate-400 ' +
+    'border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none';
 
   // 1) Verileri kategorilere göre grupla
   const groupedData = useMemo(() => {
@@ -88,19 +75,18 @@ const MetrajTable = ({
     setDraft({
       pos: item.pos ?? '',
       desc: item.desc ?? '',
-      unit: item.unit ?? '',
+      unit: UNIT_OPTIONS.includes(item.unit) ? item.unit : UNIT_OPTIONS[0],
       price: String(item.price ?? 0),
     });
   };
 
   const cancelEdit = () => {
     setEditingId(null);
-    setDraft({ pos: '', desc: '', unit: '', price: '' });
+    setDraft({ pos: '', desc: '', unit: UNIT_OPTIONS[0], price: '' });
   };
 
   const saveEdit = (item: MetrajItem) => {
     const priceNumber = Number(String(draft.price).replace(',', '.'));
-
     if (!draft.pos.trim()) return alert('Poz No boş olamaz.');
     if (!draft.desc.trim()) return alert('Tanım boş olamaz.');
     if (!draft.unit.trim()) return alert('Birim boş olamaz.');
@@ -125,20 +111,6 @@ const MetrajTable = ({
 
   return (
     <div className="space-y-8 w-full animate-in fade-in duration-500">
-      {/* ✅ Chrome autofill / focus siyah basma fix */}
-      <style>{`
-        input:-webkit-autofill,
-        input:-webkit-autofill:hover,
-        input:-webkit-autofill:focus,
-        textarea:-webkit-autofill,
-        textarea:-webkit-autofill:hover,
-        textarea:-webkit-autofill:focus {
-          -webkit-text-fill-color: #0f172a; /* slate-900 */
-          box-shadow: 0 0 0px 1000px #ffffff inset;
-          transition: background-color 9999s ease-out 0s;
-        }
-      `}</style>
-
       {Object.keys(groupedData).map((category) => {
         const items = groupedData[category];
 
@@ -154,7 +126,7 @@ const MetrajTable = ({
             key={category}
             className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden transition-shadow hover:shadow-md w-full"
           >
-            {/* Kategori başlığı */}
+            {/* --- KATEGORİ BAŞLIĞI --- */}
             <div className="bg-slate-100 px-6 py-4 border-b border-slate-200 flex justify-between items-center">
               <div className="flex items-center space-x-3">
                 <div className="p-2 bg-white rounded-lg border border-slate-200 shadow-sm">
@@ -174,14 +146,12 @@ const MetrajTable = ({
 
                 <div className="bg-slate-800 text-white px-4 py-2 rounded-lg text-sm shadow-md hidden sm:block">
                   Ara Toplam:{' '}
-                  <span className="font-bold text-orange-400 ml-2">
-                    {formatCurrency(categoryTotal)}
-                  </span>
+                  <span className="font-bold text-orange-400 ml-2">{formatCurrency(categoryTotal)}</span>
                 </div>
               </div>
             </div>
 
-            {/* Tablo */}
+            {/* --- TABLO --- */}
             <div className="overflow-x-auto w-full">
               <table className="w-full text-left table-fixed min-w-[1100px]">
                 <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
@@ -204,13 +174,13 @@ const MetrajTable = ({
 
                     return (
                       <tr key={item.id} className="hover:bg-slate-50 transition-colors group">
-                        {/* Poz No */}
+                        {/* Poz No (sticky) */}
                         <td className="px-6 py-4 sticky left-0 bg-white group-hover:bg-slate-50 z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)] border-r border-slate-100">
                           {isEditing ? (
                             <input
                               value={draft.pos}
                               onChange={(e) => setDraft((d) => ({ ...d, pos: e.target.value }))}
-                              className={editInputMonoLeftSmallClass}
+                              className={`w-full px-2 py-1 text-xs font-mono font-bold rounded-md ${inputBase}`}
                               placeholder="Poz No"
                             />
                           ) : (
@@ -226,26 +196,30 @@ const MetrajTable = ({
                             <textarea
                               value={draft.desc}
                               onChange={(e) => setDraft((d) => ({ ...d, desc: e.target.value }))}
-                              className={editTextareaClass}
+                              className={`w-full px-3 py-2 text-sm rounded-lg ${inputBase}`}
                               rows={2}
                               placeholder="Tanım"
                             />
                           ) : (
-                            <div className="text-sm font-medium text-slate-700 leading-relaxed">
-                              {item.desc}
-                            </div>
+                            <div className="text-sm font-medium text-slate-700 leading-relaxed">{item.desc}</div>
                           )}
                         </td>
 
                         {/* Birim */}
                         <td className="px-6 py-4 text-center">
                           {isEditing ? (
-                            <input
+                            // ✅ input yerine select (manuel poz girerkenki mantık)
+                            <select
                               value={draft.unit}
                               onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
-                              className={`${editInputClass} text-center`}
-                              placeholder="Birim"
-                            />
+                              className={`w-full px-3 py-2 text-sm text-center font-bold rounded-lg ${inputBase}`}
+                            >
+                              {UNIT_OPTIONS.map((u) => (
+                                <option key={u} value={u}>
+                                  {u}
+                                </option>
+                              ))}
+                            </select>
                           ) : (
                             <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">
                               {item.unit}
@@ -259,9 +233,9 @@ const MetrajTable = ({
                             <input
                               value={draft.price}
                               onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-                              className={editInputMonoRightClass}
-                              inputMode="decimal"
+                              className={`w-full px-3 py-2 text-sm text-right font-mono font-bold rounded-lg ${inputBase}`}
                               placeholder="0"
+                              inputMode="decimal"
                             />
                           ) : (
                             <span className="font-mono text-sm text-slate-600 font-medium">
@@ -346,9 +320,7 @@ const MetrajTable = ({
 
                         {/* Tutar */}
                         <td className="px-6 py-4 text-right">
-                          <span className="font-bold text-slate-900">
-                            {formatCurrency(item.price * item.quantity)}
-                          </span>
+                          <span className="font-bold text-slate-900">{formatCurrency(item.price * item.quantity)}</span>
                         </td>
                       </tr>
                     );
