@@ -240,22 +240,30 @@ export default function App() {
       unit: newPoseData.unit,
       price: newPoseData.price,
       quantity: isAddingNew ? 0 : (editingItem?.quantity ?? 0),
-      isManual: Boolean(newPoseData?.isManual === true),
+  
+      // 🔴 KRİTİK FIX
+      isManual: isAddingNew
+        ? true
+        : editingItem?.isManual === true,
     };
 
-    if (isAddingNew) {
-      if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
-      else setArchitecturalItems(prev => [...prev, base]);
-    } else if (editingItem) {
-      const updateList = (items: MetrajItem[]) =>
-        items.map(item => (item.id === editingItem.id ? { ...item, ...base, id: item.id } : item));
+   if (isAddingNew) {
+    if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
+    else setArchitecturalItems(prev => [...prev, base]);
+  } else if (editingItem) {
+    const updateList = (items: MetrajItem[]) =>
+      items.map(item =>
+        item.id === editingItem.id
+          ? { ...item, ...base, id: item.id }
+          : item
+      );
 
-      if (activeTab === 'static') setStaticItems(prev => updateList(prev));
-      else setArchitecturalItems(prev => updateList(prev));
-    }
+    if (activeTab === 'static') setStaticItems(prev => updateList(prev));
+    else setArchitecturalItems(prev => updateList(prev));
+  }
 
-    setIsModalOpen(false);
-  };
+  setIsModalOpen(false);
+};
 
   // --- MANUEL POZ: INLINE EDIT/SİL ---
   const handleUpdateManualItem = (id: number | string, patch: Partial<MetrajItem>) => {
@@ -263,9 +271,11 @@ export default function App() {
       list.map(it => {
         if (it.id !== id) return it;
         if (!it.isManual) return it;
-        return { ...it, ...patch }; // ✅ quantity burada korunur
+  
+        // 🔒 isManual asla kaybolmasın
+        return { ...it, ...patch, isManual: true };
       });
-
+  
     if (activeTab === 'static') setStaticItems(prev => guard(prev));
     else if (activeTab === 'architectural') setArchitecturalItems(prev => guard(prev));
   };
