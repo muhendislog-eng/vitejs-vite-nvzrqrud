@@ -132,7 +132,7 @@ export default function App() {
     };
   
     loadLibraries();
-  }, []);
+  },
   
 
     const savedData = localStorage.getItem('gkmetraj_data');
