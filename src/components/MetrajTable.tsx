@@ -21,7 +21,7 @@ type MetrajItem = {
   price: number;
   quantity: number;
   category?: string;
-  isManual?: boolean; // ✅ manuel poz flag'i
+  isManual?: boolean;
   [key: string]: any;
 };
 
@@ -30,8 +30,6 @@ const MetrajTable = ({
   onUpdateQuantity,
   onOpenSelector,
   onAddNewItem,
-
-  // ✅ yeni: manuel poz güncelle/sil
   onUpdateManualItem,
   onDeleteManualItem,
 }: {
@@ -39,7 +37,6 @@ const MetrajTable = ({
   onUpdateQuantity: (id: number | string, quantity: number) => void;
   onOpenSelector: (item: MetrajItem) => void;
   onAddNewItem: (category: string) => void;
-
   onUpdateManualItem: (id: number | string, patch: Partial<MetrajItem>) => void;
   onDeleteManualItem: (id: number | string) => void;
 }) => {
@@ -50,6 +47,31 @@ const MetrajTable = ({
     unit: '',
     price: '',
   });
+
+  // ✅ Siyah input sorunu için tek tip class
+  const editInputClass =
+    'w-full px-3 py-2 text-sm font-bold bg-white text-slate-900 caret-slate-900 ' +
+    'border-2 border-indigo-200 rounded-lg ' +
+    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
+    'placeholder:text-slate-400';
+
+  const editInputMonoRightClass =
+    'w-full px-3 py-2 text-sm text-right font-mono font-bold bg-white text-slate-900 caret-slate-900 ' +
+    'border-2 border-indigo-200 rounded-lg ' +
+    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
+    'placeholder:text-slate-400';
+
+  const editInputMonoLeftSmallClass =
+    'w-full px-2 py-1 text-xs font-mono font-bold bg-white text-slate-900 caret-slate-900 ' +
+    'border-2 border-indigo-200 rounded-md ' +
+    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
+    'placeholder:text-slate-400';
+
+  const editTextareaClass =
+    'w-full px-3 py-2 text-sm bg-white text-slate-900 caret-slate-900 ' +
+    'border-2 border-indigo-200 rounded-lg ' +
+    'focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 ' +
+    'placeholder:text-slate-400';
 
   // 1) Verileri kategorilere göre grupla
   const groupedData = useMemo(() => {
@@ -78,6 +100,7 @@ const MetrajTable = ({
 
   const saveEdit = (item: MetrajItem) => {
     const priceNumber = Number(String(draft.price).replace(',', '.'));
+
     if (!draft.pos.trim()) return alert('Poz No boş olamaz.');
     if (!draft.desc.trim()) return alert('Tanım boş olamaz.');
     if (!draft.unit.trim()) return alert('Birim boş olamaz.');
@@ -102,13 +125,24 @@ const MetrajTable = ({
 
   return (
     <div className="space-y-8 w-full animate-in fade-in duration-500">
+      {/* ✅ Chrome autofill / focus siyah basma fix */}
+      <style>{`
+        input:-webkit-autofill,
+        input:-webkit-autofill:hover,
+        input:-webkit-autofill:focus,
+        textarea:-webkit-autofill,
+        textarea:-webkit-autofill:hover,
+        textarea:-webkit-autofill:focus {
+          -webkit-text-fill-color: #0f172a; /* slate-900 */
+          box-shadow: 0 0 0px 1000px #ffffff inset;
+          transition: background-color 9999s ease-out 0s;
+        }
+      `}</style>
+
       {Object.keys(groupedData).map((category) => {
         const items = groupedData[category];
 
-        const categoryTotal = items.reduce(
-          (sum, it) => sum + (it.price * it.quantity),
-          0
-        );
+        const categoryTotal = items.reduce((sum, it) => sum + it.price * it.quantity, 0);
 
         let CategoryIcon: any = Layers;
         if (category.includes('Hafriyat')) CategoryIcon = Hammer;
@@ -152,7 +186,9 @@ const MetrajTable = ({
               <table className="w-full text-left table-fixed min-w-[1100px]">
                 <thead className="bg-slate-200 text-slate-600 text-xs font-bold uppercase tracking-wider border-b border-slate-300">
                   <tr>
-                    <th className="px-6 py-4 w-28 sticky left-0 bg-slate-200 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">Poz No</th>
+                    <th className="px-6 py-4 w-28 sticky left-0 bg-slate-200 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.1)]">
+                      Poz No
+                    </th>
                     <th className="px-6 py-4 w-auto min-w-[320px]">İmalat Adı</th>
                     <th className="px-6 py-4 w-24 text-center">Birim</th>
                     <th className="px-6 py-4 w-32 text-right">Birim Fiyat</th>
@@ -174,7 +210,7 @@ const MetrajTable = ({
                             <input
                               value={draft.pos}
                               onChange={(e) => setDraft((d) => ({ ...d, pos: e.target.value }))}
-                              className="w-full px-2 py-1 text-xs font-mono font-bold border-2 border-indigo-200 rounded-md focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                              className={editInputMonoLeftSmallClass}
                               placeholder="Poz No"
                             />
                           ) : (
@@ -190,7 +226,7 @@ const MetrajTable = ({
                             <textarea
                               value={draft.desc}
                               onChange={(e) => setDraft((d) => ({ ...d, desc: e.target.value }))}
-                              className="w-full px-3 py-2 text-sm border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                              className={editTextareaClass}
                               rows={2}
                               placeholder="Tanım"
                             />
@@ -207,7 +243,7 @@ const MetrajTable = ({
                             <input
                               value={draft.unit}
                               onChange={(e) => setDraft((d) => ({ ...d, unit: e.target.value }))}
-                              className="w-full px-3 py-2 text-sm text-center font-bold border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                              className={`${editInputClass} text-center`}
                               placeholder="Birim"
                             />
                           ) : (
@@ -223,7 +259,8 @@ const MetrajTable = ({
                             <input
                               value={draft.price}
                               onChange={(e) => setDraft((d) => ({ ...d, price: e.target.value }))}
-                              className="w-full px-3 py-2 text-sm text-right font-mono font-bold border-2 border-indigo-200 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none"
+                              className={editInputMonoRightClass}
+                              inputMode="decimal"
                               placeholder="0"
                             />
                           ) : (
@@ -246,7 +283,7 @@ const MetrajTable = ({
                               <RefreshCw className="w-4 h-4" />
                             </button>
 
-                            {/* ✅ Manuel ise: Edit + Sil */}
+                            {/* Manuel ise: Edit + Sil */}
                             {item.isManual && (
                               <>
                                 {!isEditing ? (
@@ -319,7 +356,6 @@ const MetrajTable = ({
                 </tbody>
               </table>
             </div>
-
           </div>
         );
       })}
