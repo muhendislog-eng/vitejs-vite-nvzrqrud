@@ -1,6 +1,5 @@
 import React, { useRef } from 'react';
 import {
-  Hammer,
   Info,
   BookOpen,
   FileSpreadsheet,
@@ -8,9 +7,12 @@ import {
   Save,
   LogOut,
   LogIn,
-  FileText, // PDF için
+  FileText,
   Loader2,
 } from 'lucide-react';
+
+// --- BURAYA DİKKAT: Logonuzu import ediyoruz ---
+import logo from '../assets/logo.jpeg'; 
 
 // Proje bilgileri için tip tanımı
 export interface ProjectInfo {
@@ -36,8 +38,6 @@ interface HeaderProps {
   onDownloadDescriptions: () => void;
   onExportToXLSX: () => void;
   onImportExcel: (e: React.ChangeEvent<HTMLInputElement>) => void;
-
-  // Opsiyonel (kullanmıyorsan App’te noop geçebilirsin)
   onUpdatePDF: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }
 
@@ -73,9 +73,21 @@ const Header: React.FC<HeaderProps> = ({
       <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* SOL: Logo + Proje */}
         <div className="flex items-center space-x-4 min-w-0">
-          <div className="bg-orange-600 p-2.5 rounded-xl shadow-lg shadow-orange-900/50 shrink-0">
-            <Hammer className="w-8 h-8 text-white" />
+          
+          {/* --- DEĞİŞİKLİK BURADA BAŞLIYOR --- */}
+          {/* Eski turuncu Hammer div'ini sildik, yerine resim koyduk */}
+          <div className="shrink-0">
+            <img 
+              src={logo} 
+              alt="Firma Logosu" 
+              className="h-12 w-auto object-contain rounded-lg" 
+              // h-12: Yüksekliği ayarlar (yaklaşık 48px)
+              // w-auto: Genişliği orantılı ayarlar
+              // object-contain: Resim sıkışmaz, orantılı sığar
+              // rounded-lg: Köşeleri hafif yuvarlar
+            />
           </div>
+          {/* --- DEĞİŞİKLİK BURADA BİTİYOR --- */}
 
           <div className="min-w-0">
             <h1 className="text-2xl font-black text-white tracking-tight leading-none">
@@ -115,11 +127,11 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* SAĞ: Aksiyonlar */}
+        {/* SAĞ: Aksiyonlar (Burası aynı kalıyor) */}
         <div className="flex items-center space-x-3 shrink-0">
+          {/* ... kodun geri kalanı aynı ... */}
           {isLoggedIn && (
             <>
-              {/* Proje Bilgisi */}
               <button
                 onClick={onOpenProjectModal}
                 className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
@@ -132,9 +144,7 @@ const Header: React.FC<HeaderProps> = ({
 
               <div className="h-8 w-px bg-slate-700 mx-1 hidden md:block" />
 
-              {/* Excel + PDF işlemleri (md+ tam, mobil kompakt) */}
               <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
-                {/* Poz Tarifleri */}
                 <button
                   type="button"
                   onClick={onDownloadDescriptions}
@@ -147,7 +157,6 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="hidden lg:inline">Poz</span>
                 </button>
 
-                {/* YM Cetveli */}
                 <button
                   type="button"
                   onClick={onExportToXLSX}
@@ -160,7 +169,6 @@ const Header: React.FC<HeaderProps> = ({
                   <span className="hidden lg:inline">YM</span>
                 </button>
 
-                {/* Excel Yükle */}
                 <div className="relative">
                   <input
                     type="file"
@@ -182,7 +190,6 @@ const Header: React.FC<HeaderProps> = ({
                   </button>
                 </div>
 
-                {/* PDF Güncelle (opsiyonel) */}
                 <div className="relative hidden sm:block">
                   <input
                     type="file"
@@ -207,7 +214,6 @@ const Header: React.FC<HeaderProps> = ({
 
               <div className="h-8 w-px bg-slate-700 mx-2 hidden md:block" />
 
-              {/* Kaydet */}
               <button
                 onClick={onSave}
                 type="button"
@@ -221,7 +227,6 @@ const Header: React.FC<HeaderProps> = ({
 
           <div className="w-2 sm:w-4" />
 
-          {/* Giriş / Çıkış */}
           {isLoggedIn ? (
             <button
               onClick={onLogoutClick}
