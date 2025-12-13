@@ -21,6 +21,7 @@ import MetrajTable from './components/MetrajTable';
 import GreenBook from './components/GreenBook';
 import DoorCalculationArea from './components/DoorCalculationArea';
 import WindowCalculationArea from './components/WindowCalculationArea';
+import Footer from './components/Footer';
 import { LoginModal, ProjectInfoModal, PoseSelectorModal } from './components/Modals';
 
 // --- VERİ VE YARDIMCI FONKSİYONLAR ---
@@ -375,5 +376,20 @@ export default function App() {
         </div>
       )}
     </div>
+        return (
+          <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-0 relative w-full overflow-x-hidden flex flex-col"> {/* pb-0 ve flex-col eklendi */}
+             
+             {/* ... Header, Main vb. ... */}
+      
+             <main className="flex-1 w-full px-4 py-6 ...">
+                {/* ... İçerikler ... */}
+             </main>
+      
+             <Footer /> {/* YENİ EKLENDİ */}
+      
+             {/* ... Modallar ... */}
+          </div>
+  
+  
   );
 }
