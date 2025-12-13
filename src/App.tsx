@@ -12,7 +12,7 @@ import {
   Box,
   Grid,
   Calculator,
-  FileText // Rapor ikonu eklendi
+  FileText
 } from 'lucide-react';
 
 // --- BİLEŞEN IMPORTLARI ---
@@ -22,8 +22,8 @@ import MetrajTable from './components/MetrajTable';
 import GreenBook from './components/GreenBook';
 import DoorCalculationArea from './components/DoorCalculationArea';
 import WindowCalculationArea from './components/WindowCalculationArea';
-import ProjectReport from './components/ProjectReport'; // YENİ: Rapor Sayfası
-import Footer from './components/Footer'; // Footer
+import ProjectReport from './components/ProjectReport';
+import Footer from './components/Footer';
 import { LoginModal, ProjectInfoModal, PoseSelectorModal } from './components/Modals';
 
 // --- VERİ VE YARDIMCI FONKSİYONLAR ---
@@ -97,8 +97,10 @@ export default function App() {
   useEffect(() => {
     const loadLibraries = async () => {
       try {
-        await loadScript("https://cdn.sheetjs.com/xlsx-0.20.1/package/dist/xlsx.full.min.js");
+        // XLSX kütüphanesi için daha kararlı bir CDN (cdnjs) kullanıyoruz
+        await loadScript("https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js");
         setIsXLSXLoaded(true);
+        
         await loadScript("https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js");
         // @ts-ignore
         if (window.pdfjsLib) { 
@@ -252,18 +254,24 @@ export default function App() {
     e.target.value = "";
   };
 
-  // --- EXCEL İNDİRME FONKSİYONLARI ---
+  // --- EXCEL İNDİRME FONKSİYONLARI (DÜZELTİLDİ) ---
   const handleDownloadDescriptions = () => {
     // @ts-ignore
     if (!isXLSXLoaded || !window.XLSX) {
-        alert("Excel modülü henüz yüklenmedi.");
+        alert("Excel modülü henüz yüklenmedi. Lütfen sayfayı yenileyiniz.");
         return;
     }
     
     let flatLibrary: any[] = [];
     Object.keys(posLibrary).forEach(category => {
       // @ts-ignore
-      posLibrary[category].forEach((item: any) => flatLibrary.push({ ...item, Kategori: category }));
+      posLibrary[category].forEach((item: any) => flatLibrary.push({ 
+          "Kategori": category,
+          "Poz No": item.pos,
+          "Tanım": item.desc,
+          "Birim": item.unit,
+          "Birim Fiyat": item.price
+      }));
     });
     
     // @ts-ignore
@@ -271,8 +279,13 @@ export default function App() {
     // @ts-ignore
     const ws = window.XLSX.utils.json_to_sheet(flatLibrary);
     
+    const wscols = [
+      {wch: 25}, {wch: 15}, {wch: 80}, {wch: 10}, {wch: 15}
+    ];
+    ws['!cols'] = wscols;
+
     // @ts-ignore
-    window.XLSX.utils.book_append_sheet(wb, ws, "Pozlar");
+    window.XLSX.utils.book_append_sheet(wb, ws, "Poz Tarifleri");
     // @ts-ignore
     window.XLSX.writeFile(wb, "Poz_Listesi.xlsx");
   };
@@ -280,25 +293,46 @@ export default function App() {
   const handleExportToXLSX = () => {
     // @ts-ignore
     if (!isXLSXLoaded || !window.XLSX) {
-        alert("Excel modülü henüz yüklenmedi.");
+        alert("Excel modülü henüz yüklenmedi. Lütfen sayfayı yenileyiniz.");
         return;
     }
 
     // @ts-ignore
     const wb = window.XLSX.utils.book_new();
     
+    // Veri hazırlama yardımcı fonksiyonu
+    const prepareData = (items: any[]) => items.map(item => ({
+        "Poz No": item.pos,
+        "İmalatın Cinsi": item.desc,
+        "Birim": item.unit,
+        "Birim Fiyat": item.price,
+        "Miktar": item.quantity,
+        "Toplam Tutar": item.price * item.quantity,
+        "Kategori": item.category
+    }));
+
+    const wscols = [
+      {wch: 15}, {wch: 50}, {wch: 10}, {wch: 15}, {wch: 15}, {wch: 20}, {wch: 20}
+    ];
+
+    // Statik Sayfası
+    const staticData = prepareData(staticItems);
     // @ts-ignore
-    const wsStatic = window.XLSX.utils.json_to_sheet(staticItems);
+    const wsStatic = window.XLSX.utils.json_to_sheet(staticData);
+    wsStatic['!cols'] = wscols;
     // @ts-ignore
     window.XLSX.utils.book_append_sheet(wb, wsStatic, "Statik Metraj");
 
+    // Mimari Sayfası
+    const archData = prepareData(architecturalItems);
     // @ts-ignore
-    const wsArch = window.XLSX.utils.json_to_sheet(architecturalItems);
+    const wsArch = window.XLSX.utils.json_to_sheet(archData);
+    wsArch['!cols'] = wscols;
     // @ts-ignore
     window.XLSX.utils.book_append_sheet(wb, wsArch, "Mimari Metraj");
 
     // @ts-ignore
-    window.XLSX.writeFile(wb, "Proje_Metraj.xlsx");
+    window.XLSX.writeFile(wb, "Yaklasik_Maliyet_Cetveli.xlsx");
   };
 
   // Tab Buton Bileşeni (Yerel)
@@ -346,7 +380,7 @@ export default function App() {
       {/* Ana İçerik */}
       <main className={`flex-1 w-full px-4 sm:px-6 lg:px-8 py-8 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''}`}>
         
-        {/* --- ÖZET KARTLARI (Header Altına Geri Geldi) --- */}
+        {/* --- ÖZET KARTLARI --- */}
         <div className="w-full mb-8">
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 <SummaryCard 
@@ -387,61 +421,13 @@ export default function App() {
 
           {/* Sekme İçerikleri - Tam Genişlik */}
           <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[600px] p-8 relative z-10 w-full">
-            {activeTab === 'static' && (
-              <MetrajTable 
-                data={staticItems} 
-                onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} 
-                onOpenSelector={handleOpenSelector} 
-                onAddNewItem={handleAddNewItem} 
-                locations={locations}
-                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'static')}
-              />
-            )}
-
-            {activeTab === 'architectural' && (
-              <MetrajTable 
-                data={architecturalItems} 
-                onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} 
-                onOpenSelector={handleOpenSelector} 
-                onAddNewItem={handleAddNewItem} 
-                locations={locations}
-                onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'architectural')}
-              />
-            )}
-
-            {activeTab === 'door_calculation' && (
-              <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
-            )}
-
-             {activeTab === 'window_calculation' && (
-              <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} locations={locations} />
-            )}
-
-             {activeTab === 'green_book' && (
-              <GreenBook 
-                  staticItems={staticItems} 
-                  architecturalItems={architecturalItems} 
-                  doorItems={doorItems} 
-                  windowItems={windowItems} 
-              />
-            )}
-
-             {/* DASHBOARD - Tam Ekran */}
-             {activeTab === 'dashboard' && (
-              <Dashboard 
-                  staticItems={staticItems} 
-                  architecturalItems={architecturalItems} 
-              />
-            )}
-
-            {/* RAPOR - Tam Ekran */}
-            {activeTab === 'report' && (
-              <ProjectReport 
-                  staticItems={staticItems} 
-                  architecturalItems={architecturalItems} 
-                  projectInfo={projectInfo} 
-              />
-            )}
+            {activeTab === 'static' && <MetrajTable data={staticItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'static')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} locations={locations} onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'static')} />}
+            {activeTab === 'architectural' && <MetrajTable data={architecturalItems} onUpdateQuantity={(id, val) => handleUpdateQuantity(id, val, 'architectural')} onOpenSelector={handleOpenSelector} onAddNewItem={handleAddNewItem} locations={locations} onUpdateLocation={(id, loc) => handleUpdateLocation(id, loc, 'architectural')} />}
+            {activeTab === 'door_calculation' && <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} />}
+            {activeTab === 'window_calculation' && <WindowCalculationArea items={windowItems} setItems={setWindowItems} onUpdateQuantities={handleBatchUpdateQuantities} />}
+            {activeTab === 'green_book' && <GreenBook staticItems={staticItems} architecturalItems={architecturalItems} doorItems={doorItems} windowItems={windowItems} />}
+            {activeTab === 'dashboard' && <Dashboard staticItems={staticItems} architecturalItems={architecturalItems} />}
+            {activeTab === 'report' && <ProjectReport staticItems={staticItems} architecturalItems={architecturalItems} projectInfo={projectInfo} />}
           </div>
         </div>
       </main>
