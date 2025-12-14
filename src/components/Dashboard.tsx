@@ -35,27 +35,27 @@ interface MetrajItem {
 interface DashboardProps {
   staticItems: MetrajItem[];
   architecturalItems: MetrajItem[];
+  mechanicalItems: MetrajItem[];
+  electricalItems: MetrajItem[];
 }
 
 const COLORS = ['#F97316', '#3B82F6', '#EAB308', '#6366F1'];
 
-const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }) => {
+const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems, mechanicalItems, electricalItems }) => {
   const { staticTotal, archTotal, electricTotal, mechanicalTotal, estimatedGrandTotal, chartData } =
     useMemo(() => {
       const sTotal = staticItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
       const aTotal = architecturalItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const mTotal = mechanicalItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
+      const eTotal = electricalItems.reduce((acc, item) => acc + item.price * item.quantity, 0);
 
-      const subTotal = sTotal + aTotal;
-      const grandTotal = subTotal > 0 ? subTotal / 0.8 : 0;
-
-      const eTotal = grandTotal * 0.1;
-      const mTotal = grandTotal * 0.1;
+      const grandTotal = sTotal + aTotal + mTotal + eTotal;
 
       const data = [
         { name: 'Kaba İnşaat', value: sTotal, percent: grandTotal > 0 ? (sTotal / grandTotal) * 100 : 0 },
         { name: 'Mimari İmalat', value: aTotal, percent: grandTotal > 0 ? (aTotal / grandTotal) * 100 : 0 },
-        { name: 'Elektrik', value: eTotal, percent: 10 },
-        { name: 'Mekanik', value: mTotal, percent: 10 },
+        { name: 'Elektrik', value: eTotal, percent: grandTotal > 0 ? (eTotal / grandTotal) * 100 : 0 },
+        { name: 'Mekanik', value: mTotal, percent: grandTotal > 0 ? (mTotal / grandTotal) * 100 : 0 },
       ];
 
       return {
@@ -66,7 +66,7 @@ const Dashboard: React.FC<DashboardProps> = ({ staticItems, architecturalItems }
         estimatedGrandTotal: grandTotal,
         chartData: data,
       };
-    }, [staticItems, architecturalItems]);
+    }, [staticItems, architecturalItems, mechanicalItems, electricalItems]);
 
   const handlePrint = () => window.print();
 

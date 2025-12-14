@@ -8,6 +8,8 @@ import {
   LayoutDashboard,
   ShieldCheck,
   Calculator,
+  Zap,
+  Wrench,
 } from 'lucide-react';
 
 // --- BİLEŞEN IMPORTLARI ---
@@ -26,6 +28,8 @@ import {
   INITIAL_LOCATIONS,
   initialStaticData,
   initialArchitecturalData,
+  initialMechanicalData,
+  initialElectricalData,
 } from './data/constants';
 
 import { loadScript, formatCurrency } from './utils/helpers';
@@ -51,6 +55,8 @@ const SummaryCard = ({ title, value, icon: Icon, colorClass, iconBgClass }: any)
 type ActiveTab =
   | 'static'
   | 'architectural'
+  | 'mechanical'
+  | 'electrical'
   | 'door_calculation'
   | 'window_calculation'
   | 'green_book'
@@ -82,6 +88,8 @@ export default function App() {
   // Veriler
   const [staticItems, setStaticItems] = useState<MetrajItem[]>(initialStaticData as any);
   const [architecturalItems, setArchitecturalItems] = useState<MetrajItem[]>(initialArchitecturalData as any);
+  const [mechanicalItems, setMechanicalItems] = useState<MetrajItem[]>(initialMechanicalData as any);
+  const [electricalItems, setElectricalItems] = useState<MetrajItem[]>(initialElectricalData as any);
   const [doorItems, setDoorItems] = useState<any[]>([]);
   const [windowItems, setWindowItems] = useState<any[]>([]);
 
@@ -105,7 +113,9 @@ export default function App() {
   // --- ÖZET HESAPLAR ---
   const totalStaticCost = staticItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const totalArchCost = architecturalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
-  const grandTotalCost = totalStaticCost + totalArchCost;
+  const totalMechCost = mechanicalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const totalElecCost = electricalItems.reduce((acc, item) => acc + (item.price * item.quantity), 0);
+  const grandTotalCost = totalStaticCost + totalArchCost + totalMechCost + totalElecCost;
 
   // --- BAŞLANGIÇ ---
   useEffect(() => {
@@ -137,6 +147,8 @@ export default function App() {
         const parsed = JSON.parse(savedData);
         if (parsed.staticItems) setStaticItems(parsed.staticItems);
         if (parsed.architecturalItems) setArchitecturalItems(parsed.architecturalItems);
+        if (parsed.mechanicalItems) setMechanicalItems(parsed.mechanicalItems);
+        if (parsed.electricalItems) setElectricalItems(parsed.electricalItems);
         if (parsed.doorItems) setDoorItems(parsed.doorItems);
         if (parsed.windowItems) setWindowItems(parsed.windowItems);
         if (parsed.projectInfo) setProjectInfo(parsed.projectInfo);
@@ -151,79 +163,84 @@ export default function App() {
   }, []);
 
   // --- AUTH ---
-const handleLogin = () => {
-  setIsLoggedIn(true);
-  localStorage.setItem('gkmetraj_session', 'active');
-};
-const handleLogout = () => {
-  setIsLoggedIn(false);
-  localStorage.removeItem('gkmetraj_session');
-};
-
-// --- SAVE ---
-const handleSave = () => {
-  const dataToSave = {
-    staticItems,
-    architecturalItems,
-    doorItems,
-    windowItems,
-    projectInfo,
-    locations,
-    lastSaved: new Date().toLocaleTimeString(),
+  const handleLogin = () => {
+    setIsLoggedIn(true);
+    localStorage.setItem('gkmetraj_session', 'active');
   };
-  localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
-  alert('Proje başarıyla kaydedildi!');
-};
+  const handleLogout = () => {
+    setIsLoggedIn(false);
+    localStorage.removeItem('gkmetraj_session');
+  };
 
-// --- QUANTITY ---
-const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural') => {
-  if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-  else setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
-};
+  // --- SAVE ---
+  const handleSave = () => {
+    const dataToSave = {
+      staticItems,
+      architecturalItems,
+      mechanicalItems,
+      electricalItems,
+      doorItems,
+      windowItems,
+      projectInfo,
+      locations,
+      lastSaved: new Date().toLocaleTimeString(),
+    };
+    localStorage.setItem('gkmetraj_data', JSON.stringify(dataToSave));
+    alert('Proje başarıyla kaydedildi!');
+  };
 
-const handleBatchUpdateQuantities = (updates: any) => {
-  const updateList = (list: any[]) =>
-    list.map(item => {
-      if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
-      return item;
-    });
+  // --- QUANTITY ---
+  const handleUpdateQuantity = (id: number | string, quantity: number, type: 'static' | 'architectural' | 'mechanical' | 'electrical') => {
+    if (type === 'static') setStaticItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+    else if (type === 'architectural') setArchitecturalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+    else if (type === 'mechanical') setMechanicalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+    else setElectricalItems(prev => prev.map(item => (item.id === id ? { ...item, quantity } : item)));
+  };
 
-  setStaticItems(prev => updateList(prev));
-  setArchitecturalItems(prev => updateList(prev));
-};
+  const handleBatchUpdateQuantities = (updates: any) => {
+    const updateList = (list: any[]) =>
+      list.map(item => {
+        if (updates[item.pos] !== undefined) return { ...item, quantity: updates[item.pos] };
+        return item;
+      });
 
-// ✅ BURAYA EKLE: Manuel poz düzenleme patch handler’ı
-const onUpdateManualItem = (id: number | string, patch: any) => {
-  const merge = (list: any[]) =>
-    list.map((it) =>
-      it.id === id ? { ...it, ...patch } : it
-    );
+    setStaticItems(prev => updateList(prev));
+    setArchitecturalItems(prev => updateList(prev));
+    setMechanicalItems(prev => updateList(prev));
+    setElectricalItems(prev => updateList(prev));
+  };
 
-  if (activeTab === 'static') {
-    setStaticItems((prev) => merge(prev));
-  } else {
-    setArchitecturalItems((prev) => merge(prev));
-  }
-};
+  // ✅ BURAYA EKLE: Manuel poz düzenleme patch handler’ı
+  const handleUpdateManualItem = (id: number | string, patch: any) => {
+    const merge = (list: any[]) =>
+      list.map((it) =>
+        it.id === id ? { ...it, ...patch } : it
+      );
 
-// ✅ (Eğer yoksa) silme handler’ı da bu bölüme yakın dursun
-const onDeleteManualItem = (id: number | string) => {
-  const remove = (list: any[]) => list.filter((it) => it.id !== id);
+    if (activeTab === 'static') setStaticItems((prev) => merge(prev));
+    else if (activeTab === 'architectural') setArchitecturalItems((prev) => merge(prev));
+    else if (activeTab === 'mechanical') setMechanicalItems((prev) => merge(prev));
+    else if (activeTab === 'electrical') setElectricalItems((prev) => merge(prev));
+  };
 
-  if (activeTab === 'static') {
-    setStaticItems((prev) => remove(prev));
-  } else {
-    setArchitecturalItems((prev) => remove(prev));
-  }
-};
+  const handleDeleteManualItem = (id: number | string) => {
+    const remove = (list: any[]) => list.filter((it) => it.id !== id);
+
+    if (activeTab === 'static') setStaticItems((prev) => remove(prev));
+    else if (activeTab === 'architectural') setArchitecturalItems((prev) => remove(prev));
+    else if (activeTab === 'mechanical') setMechanicalItems((prev) => remove(prev));
+    else if (activeTab === 'electrical') setElectricalItems((prev) => remove(prev));
+  };
 
 
   // --- LOCATION (SENDE YOKTU -> ÇALIŞAN STUB) ---
   // Eğer lokasyon seçimi gerçekten kullanılıyorsa, burada istediğin modele göre güncellersin.
-  const handleUpdateLocation = (id: number | string, locId: any, type: 'static' | 'architectural') => {
+  const handleUpdateLocation = (id: number | string, locId: any, type: 'static' | 'architectural' | 'mechanical' | 'electrical') => {
     const patch = (list: MetrajItem[]) => list.map(it => (it.id === id ? { ...it, locationId: locId } : it));
     if (type === 'static') setStaticItems(prev => patch(prev));
-    else setArchitecturalItems(prev => patch(prev));
+    else if (type === 'architectural') setArchitecturalItems(prev => patch(prev));
+    else if (type === 'mechanical') setMechanicalItems(prev => patch(prev));
+    else setElectricalItems(prev => patch(prev));
   };
 
   // --- POZ SELECTOR ---
@@ -252,62 +269,31 @@ const onDeleteManualItem = (id: number | string) => {
       quantity: isAddingNew ? 0 : (editingItem?.quantity ?? 0),
 
       // ✅ Manuel ekleme için flag
-      // Eğer senin PoseSelector "manuel ekleme" yapıyorsa:
-      // newPoseData.isManual true gelmiyorsa bile, isAddingNew senin "Poz Ekle" akışında çalışıyor.
-      // İstersen: sadece manual eklemelerde true yap.
       isManual: Boolean(newPoseData?.isManual === true),
     };
 
-    // Eğer sen "Poz Ekle" ile manuel ekliyorsan ama modal isManual göndermiyorsa:
-    // burada güvenli yaklaşım: manuel akışta true bas.
     if (isAddingNew && newPoseData?.source === 'manual') {
       base.isManual = true;
     }
 
     if (isAddingNew) {
-      // Eğer gerçekten manuel ekleme istiyorsan ve modal bunu ayırmıyorsa:
-      // base.isManual = true;
-
       if (activeTab === 'static') setStaticItems(prev => [...prev, base]);
-      else setArchitecturalItems(prev => [...prev, base]);
+      else if (activeTab === 'architectural') setArchitecturalItems(prev => [...prev, base]);
+      else if (activeTab === 'mechanical') setMechanicalItems(prev => [...prev, base]);
+      else if (activeTab === 'electrical') setElectricalItems(prev => [...prev, base]);
     } else if (editingItem) {
       const updateList = (items: MetrajItem[]) =>
         items.map(item => (item.id === editingItem.id ? { ...item, ...base, id: item.id } : item));
 
       if (activeTab === 'static') setStaticItems(prev => updateList(prev));
-      else setArchitecturalItems(prev => updateList(prev));
+      else if (activeTab === 'architectural') setArchitecturalItems(prev => updateList(prev));
+      else if (activeTab === 'mechanical') setMechanicalItems(prev => updateList(prev));
+      else if (activeTab === 'electrical') setElectricalItems(prev => updateList(prev));
     }
 
     setIsModalOpen(false);
   };
 
-  // --- MANUEL POZ: INLINE EDIT/SİL (MetrajTable FINAL ile uyumlu) ---
-  const updateManualInList = (list: MetrajItem[], id: number | string, patch: Partial<MetrajItem>) =>
-    list.map(it => (it.id === id ? { ...it, ...patch } : it));
-
-  const deleteManualFromList = (list: MetrajItem[], id: number | string) =>
-    list.filter(it => it.id !== id);
-
-  const handleUpdateManualItem = (id: number | string, patch: Partial<MetrajItem>) => {
-    // Sadece manuel öğelerin editlenmesine izin ver
-    const guard = (list: MetrajItem[]) =>
-      list.map(it => {
-        if (it.id !== id) return it;
-        if (!it.isManual) return it; // DB pozuna dokunma
-        return { ...it, ...patch };
-      });
-
-    if (activeTab === 'static') setStaticItems(prev => guard(prev));
-    else if (activeTab === 'architectural') setArchitecturalItems(prev => guard(prev));
-  };
-
-  const handleDeleteManualItem = (id: number | string) => {
-    // Sadece manuel öğelerin silinmesine izin ver
-    const guard = (list: MetrajItem[]) => list.filter(it => !(it.id === id && it.isManual));
-
-    if (activeTab === 'static') setStaticItems(prev => guard(prev));
-    else if (activeTab === 'architectural') setArchitecturalItems(prev => guard(prev));
-  };
 
   // --- PDF ---
   const handleUpdateFromPDF = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -353,6 +339,8 @@ const onDeleteManualItem = (id: number | string) => {
 
       setStaticItems(prev => updateList(prev));
       setArchitecturalItems(prev => updateList(prev));
+      setMechanicalItems(prev => updateList(prev));
+      setElectricalItems(prev => updateList(prev));
       alert(`PDF Tarandı: ${updatedCount} adet poz güncellendi.`);
     } catch (error) {
       console.error('PDF Hatası:', error);
@@ -390,11 +378,10 @@ const onDeleteManualItem = (id: number | string) => {
   const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
     <button
       onClick={onClick}
-      className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${
-        active
+      className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${active
           ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
           : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
-      }`}
+        }`}
     >
       <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
       {label}
@@ -447,27 +434,42 @@ const onDeleteManualItem = (id: number | string) => {
 
       {/* Ana İçerik */}
       <main
-        className={`w-full px-4 py-6 transition-all duration-500 ${
-          !isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''
-        }`}
+        className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''
+          }`}
       >
         {/* Özet Kartlar */}
         <div className="w-full mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <SummaryCard
-              title="Statik İmalatlar"
+              title="Statik"
               value={totalStaticCost}
               icon={Building}
               colorClass="text-orange-500"
               iconBgClass="bg-orange-50"
             />
             <SummaryCard
-              title="Mimari İmalatlar"
+              title="Mimari"
               value={totalArchCost}
               icon={Ruler}
               colorClass="text-blue-500"
               iconBgClass="bg-blue-50"
             />
+            <SummaryCard
+              title="Mekanik"
+              value={totalMechCost}
+              icon={Wrench}
+              colorClass="text-slate-500" // Gri
+              iconBgClass="bg-slate-100"
+            />
+            <SummaryCard
+              title="Elektrik"
+              value={totalElecCost}
+              icon={Zap}
+              colorClass="text-yellow-500"
+              iconBgClass="bg-yellow-50"
+            />
+          </div>
+          <div className="mt-4">
             <SummaryCard
               title="GENEL TOPLAM MALİYET"
               value={grandTotalCost}
@@ -483,6 +485,8 @@ const onDeleteManualItem = (id: number | string) => {
           <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full no-scrollbar">
             <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
             <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
+            <TabButton active={activeTab === 'mechanical'} onClick={() => setActiveTab('mechanical')} icon={Wrench} label="Mekanik Metraj" />
+            <TabButton active={activeTab === 'electrical'} onClick={() => setActiveTab('electrical')} icon={Zap} label="Elektrik Metraj" />
             <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
             <TabButton active={activeTab === 'window_calculation'} onClick={() => setActiveTab('window_calculation')} icon={Maximize} label="Pencere Metrajı" />
             <TabButton active={activeTab === 'green_book'} onClick={() => setActiveTab('green_book')} icon={Book} label="Yeşil Defter" />
@@ -516,6 +520,32 @@ const onDeleteManualItem = (id: number | string) => {
               />
             )}
 
+            {activeTab === 'mechanical' && (
+              <MetrajTable
+                data={mechanicalItems}
+                onUpdateQuantity={(id: any, val: any) => handleUpdateQuantity(id, val, 'mechanical')}
+                onOpenSelector={handleOpenSelector}
+                onAddNewItem={handleAddNewItem}
+                locations={locations}
+                onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'mechanical')}
+                onUpdateManualItem={handleUpdateManualItem}
+                onDeleteManualItem={handleDeleteManualItem}
+              />
+            )}
+
+            {activeTab === 'electrical' && (
+              <MetrajTable
+                data={electricalItems}
+                onUpdateQuantity={(id: any, val: any) => handleUpdateQuantity(id, val, 'electrical')}
+                onOpenSelector={handleOpenSelector}
+                onAddNewItem={handleAddNewItem}
+                locations={locations}
+                onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'electrical')}
+                onUpdateManualItem={handleUpdateManualItem}
+                onDeleteManualItem={handleDeleteManualItem}
+              />
+            )}
+
             {activeTab === 'door_calculation' && (
               <DoorCalculationArea
                 items={doorItems}
@@ -538,6 +568,8 @@ const onDeleteManualItem = (id: number | string) => {
               <GreenBook
                 staticItems={staticItems}
                 architecturalItems={architecturalItems}
+                mechanicalItems={mechanicalItems}
+                electricalItems={electricalItems}
                 doorItems={doorItems}
                 windowItems={windowItems}
               />
@@ -547,6 +579,8 @@ const onDeleteManualItem = (id: number | string) => {
               <Dashboard
                 staticItems={staticItems}
                 architecturalItems={architecturalItems}
+                mechanicalItems={mechanicalItems}
+                electricalItems={electricalItems}
               />
             )}
           </div>
