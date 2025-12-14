@@ -22,7 +22,7 @@ const NEIGHBOR_LIMIT = NEIGHBOR_RADIUS * 2 + 1;
 const FAVORITES_KEY = 'gkmetraj_favorites';
 
 // Sadece bunlar:
-const UNIT_OPTIONS = ['Kg', 'm', 'm²', 'm³' , 'Ton', 'Adet'] as const;
+const UNIT_OPTIONS = ['Kg', 'm', 'm²', 'm³', 'Ton', 'Adet'] as const;
 type UnitOption = (typeof UNIT_OPTIONS)[number];
 
 type ViewMode = 'all' | 'favorites';
@@ -463,9 +463,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
             <button
               type="button"
               onClick={() => setViewMode('all')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-                viewMode === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${viewMode === 'all' ? 'bg-blue-600 text-white' : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
             >
               <Database className="w-4 h-4 inline mr-1" />
               Tüm Pozlar
@@ -474,11 +473,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
             <button
               type="button"
               onClick={() => setViewMode('favorites')}
-              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${
-                viewMode === 'favorites'
+              className={`px-3 py-1.5 rounded-lg text-sm font-bold transition-colors ${viewMode === 'favorites'
                   ? 'bg-orange-500 text-white'
                   : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
-              }`}
+                }`}
             >
               <Star className="w-4 h-4 inline mr-1" />
               Favorilerim <span className="ml-1 opacity-90">({favorites.length})</span>
@@ -524,10 +522,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
               !dbReady
                 ? 'Veritabanı yükleniyor...'
                 : isNeighborMode
-                ? `Benzer pozlar (±${NEIGHBOR_RADIUS})`
-                : viewMode === 'favorites'
-                ? 'Favorilerim içinde ara...'
-                : 'Poz No veya Tanım ara...'
+                  ? `Benzer pozlar (±${NEIGHBOR_RADIUS})`
+                  : viewMode === 'favorites'
+                    ? 'Favorilerim içinde ara...'
+                    : 'Poz No veya Tanım ara...'
             }
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
@@ -574,13 +572,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
             return (
               <div
                 key={`${item.pos}-${idx}`}
-                className={`p-3 rounded-xl border bg-white transition-colors ${
-                  isAnchor
+                className={`p-3 rounded-xl border bg-white transition-colors ${isAnchor
                     ? 'border-blue-400 bg-blue-50/40'
                     : isCurrent
-                    ? 'border-emerald-300'
-                    : 'border-slate-200 hover:border-orange-300'
-                }`}
+                      ? 'border-emerald-300'
+                      : 'border-slate-200 hover:border-orange-300'
+                  }`}
                 style={{
                   contentVisibility: 'auto' as any,
                   contain: 'content',
@@ -591,13 +588,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                   <div className="min-w-0 flex-1">
                     <div className="flex items-center gap-2 flex-wrap mb-1.5">
                       <span
-                        className={`font-mono text-sm font-black px-2 py-0.5 rounded-lg border ${
-                          isAnchor
+                        className={`font-mono text-sm font-black px-2 py-0.5 rounded-lg border ${isAnchor
                             ? 'text-blue-700 bg-blue-100 border-blue-200'
                             : isCurrent
-                            ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
-                            : 'text-orange-700 bg-orange-50 border-orange-100'
-                        }`}
+                              ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
+                              : 'text-orange-700 bg-orange-50 border-orange-100'
+                          }`}
                       >
                         {item.pos}
                       </span>
@@ -631,11 +627,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                       <button
                         type="button"
                         onClick={() => toggleFavorite(item.pos)}
-                        className={`p-1.5 rounded-lg border transition-colors bg-white ${
-                          fav
+                        className={`p-1.5 rounded-lg border transition-colors bg-white ${fav
                             ? 'border-yellow-200 text-yellow-500 hover:bg-yellow-50'
                             : 'border-slate-200 text-slate-400 hover:text-yellow-500 hover:border-yellow-200 hover:bg-yellow-50'
-                        }`}
+                          }`}
                         title={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                       >
                         <Star className={`w-4 h-4 ${fav ? 'fill-yellow-500' : ''}`} />
@@ -644,9 +639,8 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                       <button
                         type="button"
                         onClick={() => emitSelect(item)}
-                        className={`inline-flex items-center text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors ${
-                          isCurrent ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-green-600 hover:bg-green-700'
-                        }`}
+                        className={`inline-flex items-center text-xs font-bold text-white px-3 py-2 rounded-lg transition-colors ${isCurrent ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-green-600 hover:bg-green-700'
+                          }`}
                         title="Seç"
                       >
                         <Check className="w-3.5 h-3.5 mr-1.5" />
@@ -749,11 +743,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                 type="button"
                 onClick={() => saveManual(false)}
                 disabled={!mPos.trim()}
-                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${
-                  !mPos.trim()
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-bold text-sm transition-colors ${!mPos.trim()
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
                     : 'bg-white border border-slate-200 text-slate-700 hover:bg-slate-100'
-                }`}
+                  }`}
               >
                 <Save className="w-4 h-4" />
                 Kaydet
@@ -763,11 +756,10 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos })
                 type="button"
                 onClick={() => saveManual(true)}
                 disabled={!mPos.trim()}
-                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-black text-sm transition-colors ${
-                  !mPos.trim()
+                className={`inline-flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-black text-sm transition-colors ${!mPos.trim()
                     ? 'bg-emerald-200 text-emerald-400 cursor-not-allowed'
                     : 'bg-emerald-600 text-white hover:bg-emerald-700'
-                }`}
+                  }`}
               >
                 <Check className="w-4 h-4" />
                 Kaydet ve Seç

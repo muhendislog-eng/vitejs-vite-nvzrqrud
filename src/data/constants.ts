@@ -142,3 +142,36 @@ export const initialArchitecturalData = [
   { id: 22, category: "Cephe İşleri", pos: "15.540.1602", desc: "Saf akrilik esaslı Dış Cephe Boyası yapılması", unit: "m²", price: 378.53, quantity: 0, mahal: "" },
   { id: 23, category: "Cephe İşleri", pos: "77.105.1001", desc: "Mineral dolgulu kompozit alüminyum levhalar ile cephe kaplaması", unit: "m²", price: 3995.34, quantity: 0, mahal: "" },
 ];
+
+// --- MEKANİK METRAJ BAŞLANGIÇ VERİSİ ---
+export const initialMechanicalData = [
+  // 1) Sıhhi Tesisat
+  { id: 101, category: "Sıhhi Tesisat", pos: "25.100.1002", desc: "28x35 cm vidalı.", unit: "Adet", price: 890.63, quantity: 0, mahal: "" },
+  { id: 102, category: "Sıhhi Tesisat", pos: "25.125.1101", desc: "Akrilik boy küveti beyaz 70x150x40 cm.", unit: "Adet", price: 8031.25, quantity: 0, mahal: "" },
+
+  // 2) Isıtma Tesisatı
+  { id: 201, category: "Isıtma Tesisatı", pos: "25.218.1102", desc: "500 KW ' a kadar", unit: "Adet", price: 2893.13, quantity: 0, mahal: "" },
+  { id: 202, category: "Isıtma Tesisatı", pos: "25.245.5201", desc: "6 adet oda termostatına kadar bağlantı", unit: "Adet", price: 2379.38, quantity: 0, mahal: "" },
+
+  // 3) Müşterek Tesisat
+  { id: 301, category: "Müşterek Tesisat", pos: "25.312.1101", desc: "Pis Su Geri Tepme Valfi (Lavabo için; 50 Ø mm)", unit: "Adet", price: 181.88, quantity: 0, mahal: "" },
+  { id: 302, category: "Müşterek Tesisat", pos: "25.312.2201", desc: "Otomatik Pis Su Havalık Cihazı Ø 50 mm'ye kadar (Ø 50 mm dahil)", unit: "Adet", price: 2535.00, quantity: 0, mahal: "" },
+
+  // 4) Havalandırma ve Klima Tesisatı
+  { id: 401, category: "Havalandırma ve Klima Tesisatı", pos: "25.480.2101", desc: "1,5 cm kalınlıkta 24 kg/m³ yoğunlukta akrilen kaplı cam yünü şilte", unit: "m²", price: 195.50, quantity: 0, mahal: "" },
+  { id: 402, category: "Havalandırma ve Klima Tesisatı", pos: "25.489.1101", desc: "Duvar Tipi Split klimalar(Soğutma kapasitesi (nom):2.5 kW., ısıtma kapasitesi (nom):2.8 kW.)", unit: "Adet", price: 36393.75, quantity: 0, mahal: "" },
+
+  // 5) Otomatik Kontrol Tesisatı
+  { id: 501, category: "Otomatik Kontrol Tesisatı", pos: "25.550.1101", desc: "Mekanik Mahal Termostatı", unit: "Adet", price: 1790.00, quantity: 0, mahal: "" },
+  { id: 502, category: "Otomatik Kontrol Tesisatı", pos: "25.552.1602", desc: "Hava Sensörleri(Karbonmonoksit (CO) Sensörü)", unit: "Adet", price: 36712.50, quantity: 0, mahal: "" },
+
+  // 6) Yangın Tesisatı
+  { id: 601, category: "Yangın Tesisatı", pos: "25.705.3201", desc: "Sabit Tek Parça Rozet", unit: "Adet", price: 56.63, quantity: 0, mahal: "" },
+  { id: 602, category: "Yangın Tesisatı", pos: "25.710.1301", desc: "Yangın püskürtücüsü (lansı): (TS 3145) (Kumandasız)", unit: "Adet", price: 981.25, quantity: 0, mahal: "" },
+];
+
+// --- ELEKTRİK METRAJ BAŞLANGIÇ VERİSİ ---
+export const initialElectricalData = [
+  // Layout bozulmaması için örnek veri (Kullanıcı henüz detay vermedi)
+  { id: 701, category: "Elektrik Tesisatı", pos: "35.100.1000", desc: "Elektrik Tesisatı Örnek Poz", unit: "Adet", price: 0, quantity: 0, mahal: "" },
+];
