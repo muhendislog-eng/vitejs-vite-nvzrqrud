@@ -171,7 +171,17 @@ export const initialMechanicalData = [
 ];
 
 // --- ELEKTRİK METRAJ BAŞLANGIÇ VERİSİ ---
+// --- ELEKTRİK METRAJ BAŞLANGIÇ VERİSİ ---
 export const initialElectricalData = [
-  // Layout bozulmaması için örnek veri (Kullanıcı henüz detay vermedi)
-  { id: 701, category: "Elektrik Tesisatı", pos: "35.100.1000", desc: "Elektrik Tesisatı Örnek Poz", unit: "Adet", price: 0, quantity: 0, mahal: "" },
+  // 1) Kuvvetli Akım İç Tesisatı
+  { id: 701, category: "Kuvvetli Akım İç Tesisatı", pos: "35.100.1301", desc: "En ölçüsü en az 400 mm olan galvanizli ilave dikili tip sac pano.", unit: "Adet", price: 23442.73, quantity: 0, mahal: "" },
+  { id: 702, category: "Kuvvetli Akım İç Tesisatı", pos: "35.100.6101", desc: "Sac panolar (1.pano): (Ölçü: Ad.) (TS EN IEC 61439-1/2). (800 mm. genişliğinde)", unit: "Adet", price: 36684.35, quantity: 0, mahal: "" },
+
+  // 2) Zayıf Akım İç Tesisatı
+  { id: 703, category: "Zayıf Akım İç Tesisatı", pos: "35.405.1020", desc: "Kompanzasyonlu ana saat", unit: "Adet", price: 50337.75, quantity: 0, mahal: "" },
+  { id: 704, category: "Zayıf Akım İç Tesisatı", pos: "35.410.1540", desc: "Adresli yangın alarm santralı BACnet haberleşme modülü", unit: "Adet", price: 27107.44, quantity: 0, mahal: "" },
+
+  // 3) Asansör Tesisatı
+  { id: 705, category: "Asansör Tesisatı", pos: "35.710.1201", desc: "Sınıf I asansörü 2 Duraklı 1,00 m/sn hızlı", unit: "Adet", price: 985544.20, quantity: 0, mahal: "" },
+  { id: 706, category: "Asansör Tesisatı", pos: "35.715.2351", desc: "Hidrolik yük asansörü, Kaldırma kapasitesi : 2500 kg, Kabin hızı : 0.40 m/s, 2 duraklı", unit: "Adet", price: 1604479.10, quantity: 0, mahal: "" },
 ];

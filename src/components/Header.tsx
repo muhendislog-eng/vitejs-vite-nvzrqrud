@@ -12,7 +12,7 @@ import {
 } from 'lucide-react';
 
 // --- BURAYA DİKKAT: Logonuzu import ediyoruz ---
-import logo from '../assets/logo.jpg'; 
+import logo from '../assets/gk_logo_new.png';
 
 // Proje bilgileri için tip tanımı
 export interface ProjectInfo {
@@ -65,32 +65,32 @@ const Header: React.FC<HeaderProps> = ({
   const disabledHint = isLoadingScripts
     ? 'Modüller yükleniyor...'
     : !isXLSXLoaded
-    ? 'Excel modülü yüklenemedi'
-    : '';
+      ? 'Excel modülü yüklenemedi'
+      : '';
 
   return (
     <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
         {/* SOL: Logo + Proje */}
         <div className="flex items-center space-x-4 min-w-0">
-          
+
           {/* --- DEĞİŞİKLİK BURADA BAŞLIYOR --- */}
           {/* Eski turuncu Hammer div'ini sildik, yerine resim koyduk */}
           <div className="shrink-0">
-            <img 
-              src={logo} 
-              alt="Firma Logosu" 
-              className="h-12 w-auto object-contain rounded-lg" 
-              // h-12: Yüksekliği ayarlar (yaklaşık 48px)
-              // w-auto: Genişliği orantılı ayarlar
-              // object-contain: Resim sıkışmaz, orantılı sığar
-              // rounded-lg: Köşeleri hafif yuvarlar
+            <img
+              src={logo}
+              alt="Firma Logosu"
+              className="h-16 w-auto object-contain p-1"
+            // h-12: Yüksekliği ayarlar (yaklaşık 48px)
+            // w-auto: Genişliği orantılı ayarlar
+            // object-contain: Resim sıkışmaz, orantılı sığar
+            // rounded-lg: Köşeleri hafif yuvarlar
             />
           </div>
           {/* --- DEĞİŞİKLİK BURADA BİTİYOR --- */}
 
           <div className="min-w-0">
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none">
+            <h1 className="text-2xl font-black text-white tracking-tight leading-none hidden">
               GK<span className="text-orange-500">metraj</span>
             </h1>
 

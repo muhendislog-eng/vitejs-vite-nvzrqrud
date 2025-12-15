@@ -376,7 +376,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
                         <div>
                             <h2 className="text-2xl font-black text-slate-800 tracking-tight">Yeşil Defter</h2>
                             <p className="text-sm text-slate-500 font-medium mt-1">
-                                Tüm metrajların (Statik, Mimari, Kapı, Pencere) detaylı icmali
+                                Tüm metrajların detaylı icmali
                             </p>
                         </div>
                     </div>

@@ -26,18 +26,18 @@ export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md transition-all">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden border border-slate-200">
         <div className="bg-orange-600 p-6 flex flex-col items-center">
-            <div className="bg-white/20 p-3 rounded-full mb-3">
-              <Lock className="w-8 h-8 text-white" />
-            </div>
-            <h2 className="text-2xl font-black text-white">Güvenli Giriş</h2>
-            <p className="text-orange-100 text-sm">Sisteme erişmek için kimliğinizi doğrulayın</p>
+          <div className="bg-white/20 p-3 rounded-full mb-3">
+            <Lock className="w-8 h-8 text-white" />
+          </div>
+          <h2 className="text-2xl font-black text-white">Güvenli Giriş</h2>
+          <p className="text-orange-100 text-sm">Sisteme erişmek için kimliğinizi doğrulayın</p>
         </div>
-        
+
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Kullanıcı Adı</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"
@@ -46,8 +46,8 @@ export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Şifre</label>
-            <input 
-              type="password" 
+            <input
+              type="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-orange-500 outline-none transition-all"
@@ -106,23 +106,23 @@ export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) 
             <input type="text" name="name" value={info.name} onChange={handleChange} className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Mavişehir Konutları" />
           </div>
           <div className="grid grid-cols-2 gap-4">
-             <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Kapalı Alan (m²)</label>
-                <div className="relative">
-                   <PieChartIcon className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-                   <input type="number" name="area" value={info.area} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1500" />
-                </div>
-             </div>
-             <div>
-                <label className="block text-sm font-bold text-slate-700 mb-1">Kat Sayısı</label>
-                <input type="number" name="floors" value={info.floors} onChange={handleChange} className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="5" />
-             </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Kapalı Alan (m²)</label>
+              <div className="relative">
+                <PieChartIcon className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+                <input type="number" name="area" value={info.area} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1500" />
+              </div>
+            </div>
+            <div>
+              <label className="block text-sm font-bold text-slate-700 mb-1">Kat Sayısı</label>
+              <input type="number" name="floors" value={info.floors} onChange={handleChange} className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="5" />
+            </div>
           </div>
           <div>
             <label className="block text-sm font-bold text-slate-700 mb-1">Şehir</label>
             <div className="relative">
-               <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400"/>
-               <input type="text" name="city" value={info.city} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İstanbul" />
+              <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
+              <input type="text" name="city" value={info.city} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İstanbul" />
             </div>
           </div>
           <div className="pt-4">
@@ -135,45 +135,63 @@ export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) 
 };
 
 // --- YENİ POZ SEÇİM MODALI ---
-// currentPos prop'unu alıp PozAramaMotoru'na iletiyoruz
+import { motion, AnimatePresence } from 'framer-motion';
+
 export const PoseSelectorModal = ({ isOpen, onClose, category, onSelect, currentPos }: any) => {
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col max-h-[90vh] border border-slate-200">
-        
-        {/* Başlık Alanı */}
-        <div className="px-6 py-4 bg-white border-b border-slate-200 flex justify-between items-center">
-          <div>
-            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <div className="p-2 bg-orange-100 rounded-lg">
-                <RefreshCw className="w-5 h-5 text-orange-600"/>
-              </div>
-              Poz Seçimi
-            </h3>
-            <p className="text-sm text-slate-500 mt-0.5">
-              {category ? `${category} için poz arayın` : 'Tüm veritabanında arama yapın'}
-            </p>
-          </div>
-          <button 
-            onClick={onClose} 
-            className="p-2 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+    <AnimatePresence>
+      {isOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={onClose}
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+          />
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95, y: 20 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 20 }}
+            transition={{ type: "spring", duration: 0.5 }}
+            className="relative bg-white/90 backdrop-blur-xl rounded-[2rem] shadow-2xl w-full max-w-5xl overflow-hidden flex flex-col h-[85vh] border border-slate-200/60 shadow-slate-900/20"
           >
-            <X className="w-6 h-6" />
-          </button>
-        </div>
+            {/* Arka plan dekorasyonu */}
+            <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-orange-500/10 rounded-full blur-3xl pointer-events-none -translate-y-1/2 translate-x-1/2" />
 
-        {/* Yeni Arama Motorunu Buraya Entegre Ettik */}
-        <div className="flex-1 bg-slate-50 p-4 overflow-hidden">
-            <PozAramaMotoru 
-                onSelect={onSelect} 
-                category={category} 
-                currentPos={currentPos} 
-            />
-        </div>
+            {/* Başlık Alanı */}
+            <div className="px-8 py-6 border-b border-slate-200/60 flex justify-between items-center relative z-10">
+              <div>
+                <h3 className="text-2xl font-black text-slate-800 flex items-center gap-3 tracking-tight">
+                  <div className="p-3 bg-gradient-to-br from-orange-100 to-orange-50 rounded-2xl shadow-inner border border-orange-100/50">
+                    <RefreshCw className="w-6 h-6 text-orange-600" />
+                  </div>
+                  Poz Seçimi
+                </h3>
+                <p className="text-sm font-medium text-slate-500 mt-1 ml-1">
+                  {category ? <><span className="text-slate-800 font-bold">{category}</span> için en uygun pozu seçin</> : 'Tüm veritabanında arama yapın'}
+                </p>
+              </div>
+              <button
+                onClick={onClose}
+                className="p-3 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-all hover:rotate-90 duration-300"
+              >
+                <X className="w-6 h-6" />
+              </button>
+            </div>
 
-      </div>
-    </div>
+            {/* Yeni Arama Motorunu Buraya Entegre Ettik */}
+            <div className="flex-1 bg-slate-50/50 p-6 overflow-hidden relative z-10">
+              <PozAramaMotoru
+                onSelect={onSelect}
+                category={category}
+                currentPos={currentPos}
+              />
+            </div>
+          </motion.div>
+        </div>
+      )}
+    </AnimatePresence>
   );
 };

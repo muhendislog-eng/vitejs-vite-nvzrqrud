@@ -11,10 +11,11 @@ import {
   Zap,
   Wrench,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // --- BİLEŞEN IMPORTLARI ---
 import Header from './components/Header';
-import Dashboard from './components/Dashboard';
+import ProjectResults from './components/ProjectResults';
 import MetrajTable from './components/MetrajTable';
 import GreenBook from './components/GreenBook';
 import DoorCalculationArea from './components/DoorCalculationArea';
@@ -60,7 +61,7 @@ type ActiveTab =
   | 'door_calculation'
   | 'window_calculation'
   | 'green_book'
-  | 'dashboard';
+  | 'project_results';
 
 type MetrajItem = {
   id: number | string;
@@ -365,31 +366,109 @@ export default function App() {
     e.target.value = '';
   };
 
+  // ✅ POZ LİSTESİ İNDİR (Tüm Kategoriler)
   const handleDownloadDescriptions = () => {
     if (!isXLSXLoaded) return;
-    alert('Poz listesi indiriliyor...');
+
+    // Tüm pozları topla
+    const allItems = [
+      ...staticItems.map(i => ({ category: 'Statik', ...i })),
+      ...architecturalItems.map(i => ({ category: 'Mimari', ...i })),
+      ...mechanicalItems.map(i => ({ category: 'Mekanik', ...i })),
+      ...electricalItems.map(i => ({ category: 'Elektrik', ...i })),
+    ];
+
+    const data = allItems.map(item => ({
+      'Kategori': item.category,
+      'Poz No': item.pos,
+      'Tanım': item.desc,
+      'Birim': item.unit,
+      'Birim Fiyat': item.price
+    }));
+
+    // @ts-ignore
+    const ws = window.XLSX.utils.json_to_sheet(data);
+    // @ts-ignore
+    const wb = window.XLSX.utils.book_new();
+    // @ts-ignore
+    window.XLSX.utils.book_append_sheet(wb, ws, 'Poz Listesi');
+
+    // @ts-ignore
+    window.XLSX.writeFile(wb, `Poz_Listesi_${new Date().toLocaleDateString()}.xlsx`);
   };
 
+  // ✅ METRAJ CETVELİ İNDİR (YM Cetveli)
   const handleExportToXLSX = () => {
     if (!isXLSXLoaded) return;
-    alert('Metraj cetveli indiriliyor...');
+
+    // @ts-ignore
+    const wb = window.XLSX.utils.book_new();
+
+    const createSheet = (name: string, items: MetrajItem[]) => {
+      if (items.length === 0) return;
+      const data = items.map(item => ({
+        'Poz No': item.pos,
+        'Tanım': item.desc,
+        'Birim': item.unit,
+        'Birim Fiyat': item.price,
+        'Miktar': item.quantity,
+        'Tutar': item.price * item.quantity,
+        'Kategori': item.category || 'Genel'
+      }));
+      // @ts-ignore
+      const ws = window.XLSX.utils.json_to_sheet(data);
+      // @ts-ignore
+      window.XLSX.utils.book_append_sheet(wb, ws, name);
+    };
+
+    createSheet('Statik', staticItems);
+    createSheet('Mimari', architecturalItems);
+    createSheet('Mekanik', mechanicalItems);
+    createSheet('Elektrik', electricalItems);
+
+    // @ts-ignore
+    window.XLSX.writeFile(wb, `Metraj_Cetveli_${new Date().toLocaleDateString()}.xlsx`);
   };
 
-  const TabButton = ({ active, onClick, icon: Icon, label }: any) => (
+  // --- TAB BUTTON COMPONENT (PREMIUM) ---
+  const TabButton = ({ active, onClick, icon: Icon, label, id }: any) => (
     <button
       onClick={onClick}
-      className={`flex items-center px-6 py-3 md:px-8 md:py-4 font-bold text-sm transition-all duration-300 rounded-t-xl relative overflow-hidden group whitespace-nowrap ${active
-          ? 'bg-white text-orange-600 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.05)] border-t-4 border-orange-500'
-          : 'bg-slate-200 text-slate-600 hover:bg-slate-300 hover:text-slate-800 border-t-4 border-transparent'
+      className={`relative px-4 py-2.5 rounded-xl font-bold text-sm transition-all duration-300 flex items-center gap-2 z-10 ${active
+        ? 'text-slate-900'
+        : 'text-slate-500 hover:text-slate-700 hover:bg-slate-200/50'
         }`}
     >
-      <Icon className={`w-5 h-5 mr-2 transition-transform ${active ? 'scale-110' : 'group-hover:scale-110'}`} />
-      {label}
+      {active && (
+        <motion.div
+          layoutId="activeTab"
+          className="absolute inset-0 bg-white rounded-xl shadow-sm border border-slate-200/60"
+          initial={false}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
+      )}
+      <span className="relative z-10 flex items-center gap-2">
+        <Icon className={`w-4 h-4 ${active ? 'text-orange-500' : 'text-slate-400'}`} />
+        {label}
+      </span>
     </button>
   );
 
   return (
-    <div className="min-h-screen bg-slate-100 font-sans text-slate-800 pb-20 relative w-full overflow-x-hidden">
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-800 pb-20 relative w-full overflow-x-hidden selection:bg-orange-500 selection:text-white">
+      <style>
+        {`
+          @media print {
+            footer {
+              display: none !important;
+              visibility: hidden !important;
+              height: 0 !important;
+              margin: 0 !important;
+              padding: 0 !important;
+            }
+          }
+        `}
+      </style>
       {/* Modallar */}
       <LoginModal
         isOpen={isLoginModalOpen}
@@ -434,66 +513,33 @@ export default function App() {
 
       {/* Ana İçerik */}
       <main
-        className={`w-full px-4 py-6 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''
+        className={`w-full max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8 py-8 transition-all duration-500 ${!isLoggedIn ? 'blur-sm pointer-events-none select-none opacity-50 overflow-hidden h-screen' : ''
           }`}
       >
-        {/* Özet Kartlar */}
+
+        {/* Sekmeler Container */}
         <div className="w-full mb-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <SummaryCard
-              title="Statik"
-              value={totalStaticCost}
-              icon={Building}
-              colorClass="text-orange-500"
-              iconBgClass="bg-orange-50"
-            />
-            <SummaryCard
-              title="Mimari"
-              value={totalArchCost}
-              icon={Ruler}
-              colorClass="text-blue-500"
-              iconBgClass="bg-blue-50"
-            />
-            <SummaryCard
-              title="Mekanik"
-              value={totalMechCost}
-              icon={Wrench}
-              colorClass="text-slate-500" // Gri
-              iconBgClass="bg-slate-100"
-            />
-            <SummaryCard
-              title="Elektrik"
-              value={totalElecCost}
-              icon={Zap}
-              colorClass="text-yellow-500"
-              iconBgClass="bg-yellow-50"
-            />
-          </div>
-          <div className="mt-4">
-            <SummaryCard
-              title="GENEL TOPLAM MALİYET"
-              value={grandTotalCost}
-              icon={Calculator}
-              colorClass="text-green-600"
-              iconBgClass="bg-green-50"
-            />
+          <div className="flex flex-wrap items-center gap-1 p-1 bg-slate-100/80 backdrop-blur-md rounded-2xl border border-slate-200/60 w-fit mx-auto sm:mx-0 overflow-x-auto no-scrollbar max-w-full">
+            <TabButton id="static" active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik" />
+            <TabButton id="architectural" active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari" />
+            <TabButton id="mechanical" active={activeTab === 'mechanical'} onClick={() => setActiveTab('mechanical')} icon={Wrench} label="Mekanik" />
+            <TabButton id="electrical" active={activeTab === 'electrical'} onClick={() => setActiveTab('electrical')} icon={Zap} label="Elektrik" />
+
+            <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
+
+            <TabButton id="door" active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı" />
+            <TabButton id="window" active={activeTab === 'window_calculation'} onClick={() => setActiveTab('window_calculation')} icon={Maximize} label="Pencere" />
+
+            <div className="w-px h-6 bg-slate-300 mx-1 hidden sm:block"></div>
+
+            <TabButton id="greenbook" active={activeTab === 'green_book'} onClick={() => setActiveTab('green_book')} icon={Book} label="Yeşil Defter" />
+            <TabButton id="results" active={activeTab === 'project_results'} onClick={() => setActiveTab('project_results')} icon={LayoutDashboard} label="Sonuçlar" />
           </div>
         </div>
 
-        {/* Sekmeler */}
-        <div className="flex flex-col space-y-0 w-full">
-          <div className="flex items-end px-2 space-x-2 overflow-x-auto pb-1 w-full no-scrollbar">
-            <TabButton active={activeTab === 'static'} onClick={() => setActiveTab('static')} icon={Building} label="Statik Metraj" />
-            <TabButton active={activeTab === 'architectural'} onClick={() => setActiveTab('architectural')} icon={Ruler} label="Mimari Metraj" />
-            <TabButton active={activeTab === 'mechanical'} onClick={() => setActiveTab('mechanical')} icon={Wrench} label="Mekanik Metraj" />
-            <TabButton active={activeTab === 'electrical'} onClick={() => setActiveTab('electrical')} icon={Zap} label="Elektrik Metraj" />
-            <TabButton active={activeTab === 'door_calculation'} onClick={() => setActiveTab('door_calculation')} icon={DoorOpen} label="Kapı Metrajı" />
-            <TabButton active={activeTab === 'window_calculation'} onClick={() => setActiveTab('window_calculation')} icon={Maximize} label="Pencere Metrajı" />
-            <TabButton active={activeTab === 'green_book'} onClick={() => setActiveTab('green_book')} icon={Book} label="Yeşil Defter" />
-            <TabButton active={activeTab === 'dashboard'} onClick={() => setActiveTab('dashboard')} icon={LayoutDashboard} label="Proje Özeti" />
-          </div>
-
-          <div className="bg-white rounded-b-2xl rounded-tr-2xl shadow-xl border border-slate-200 min-h-[500px] p-8 relative z-10 w-full">
+        {/* --- İÇERİK ALANI --- */}
+        <div className="bg-white/80 backdrop-blur-xl rounded-[2.5rem] shadow-xl shadow-slate-200/20 border border-white/40 p-1">
+          <div className="bg-white/50 rounded-[2.3rem] p-6 sm:p-8 min-h-[500px]">
             {activeTab === 'static' && (
               <MetrajTable
                 data={staticItems}
@@ -551,7 +597,6 @@ export default function App() {
                 items={doorItems}
                 setItems={setDoorItems}
                 onUpdateQuantities={handleBatchUpdateQuantities}
-                locations={locations}
               />
             )}
 
@@ -560,7 +605,6 @@ export default function App() {
                 items={windowItems}
                 setItems={setWindowItems}
                 onUpdateQuantities={handleBatchUpdateQuantities}
-                locations={locations}
               />
             )}
 
@@ -575,8 +619,8 @@ export default function App() {
               />
             )}
 
-            {activeTab === 'dashboard' && (
-              <Dashboard
+            {activeTab === 'project_results' && (
+              <ProjectResults
                 staticItems={staticItems}
                 architecturalItems={architecturalItems}
                 mechanicalItems={mechanicalItems}
