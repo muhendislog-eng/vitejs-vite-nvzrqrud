@@ -70,26 +70,20 @@ const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
-      <div className="w-full px-4 sm:px-6 lg:px-8 h-20 flex items-center justify-between gap-4">
+      <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
         {/* SOL: Logo + Proje */}
-        <div className="flex items-center space-x-4 min-w-0">
+        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
 
-          {/* --- DEĞİŞİKLİK BURADA BAŞLIYOR --- */}
-          {/* Eski turuncu Hammer div'ini sildik, yerine resim koyduk */}
+          {/* Logo */}
           <div className="shrink-0">
             <img
               src={logo}
               alt="Firma Logosu"
-              className="h-16 w-auto object-contain p-1"
-            // h-12: Yüksekliği ayarlar (yaklaşık 48px)
-            // w-auto: Genişliği orantılı ayarlar
-            // object-contain: Resim sıkışmaz, orantılı sığar
-            // rounded-lg: Köşeleri hafif yuvarlar
+              className="h-10 sm:h-12 md:h-16 w-auto object-contain p-1"
             />
           </div>
-          {/* --- DEĞİŞİKLİK BURADA BİTİYOR --- */}
 
-          <div className="min-w-0">
+          <div className="min-w-0 hidden sm:block">
             <h1 className="text-2xl font-black text-white tracking-tight leading-none hidden">
               GK<span className="text-orange-500">metraj</span>
             </h1>
@@ -97,18 +91,18 @@ const Header: React.FC<HeaderProps> = ({
             <div className="text-xs text-slate-400 font-medium tracking-wide mt-1 flex items-center gap-2 min-w-0 flex-wrap">
               {projectInfo?.name ? (
                 <>
-                  <span className="text-orange-400 font-bold truncate max-w-[220px]">
+                  <span className="text-orange-400 font-bold truncate max-w-[120px] sm:max-w-[220px]">
                     {projectInfo.name}
                   </span>
 
                   {projectInfo.city && (
-                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300">
+                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300 hidden md:inline">
                       {projectInfo.city}
                     </span>
                   )}
 
                   {projectInfo.area && (
-                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300">
+                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300 hidden lg:inline">
                       {projectInfo.area} m²
                     </span>
                   )}
@@ -127,34 +121,33 @@ const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* SAĞ: Aksiyonlar (Burası aynı kalıyor) */}
-        <div className="flex items-center space-x-3 shrink-0">
-          {/* ... kodun geri kalanı aynı ... */}
+        {/* SAĞ: Aksiyonlar - Mobile Responsive */}
+        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 shrink-0">
           {isLoggedIn && (
             <>
               <button
                 onClick={onOpenProjectModal}
-                className="hidden md:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
+                className="hidden lg:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
                 title="Proje Bilgileri Düzenle"
                 type="button"
               >
                 <Info className="w-4 h-4" />
-                <span className="hidden lg:inline">Proje Bilgisi</span>
+                <span className="hidden xl:inline">Proje Bilgisi</span>
               </button>
 
-              <div className="h-8 w-px bg-slate-700 mx-1 hidden md:block" />
+              <div className="h-8 w-px bg-slate-700 mx-1 hidden lg:block" />
 
-              <div className="flex bg-slate-800 p-1 rounded-xl border border-slate-700">
+              <div className="flex bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-700">
                 <button
                   type="button"
                   onClick={onDownloadDescriptions}
                   disabled={!excelEnabled}
                   aria-disabled={!excelEnabled}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                  className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
                   title={excelEnabled ? 'Poz Tarifleri' : disabledHint || 'Devre dışı'}
                 >
-                  <BookOpen className="w-4 h-4" />
-                  <span className="hidden lg:inline">Poz</span>
+                  <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xl:inline">Poz</span>
                 </button>
 
                 <button
@@ -162,14 +155,14 @@ const Header: React.FC<HeaderProps> = ({
                   onClick={onExportToXLSX}
                   disabled={!excelEnabled}
                   aria-disabled={!excelEnabled}
-                  className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-green-400 hover:bg-slate-700 hover:text-green-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                  className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-green-400 hover:bg-slate-700 hover:text-green-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
                   title={excelEnabled ? 'YM Cetveli İndir' : disabledHint || 'Devre dışı'}
                 >
-                  <FileSpreadsheet className="w-4 h-4" />
-                  <span className="hidden lg:inline">YM</span>
+                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                  <span className="hidden xl:inline">YM</span>
                 </button>
 
-                <div className="relative">
+                <div className="relative hidden sm:block">
                   <input
                     type="file"
                     ref={excelInputRef}
@@ -182,15 +175,15 @@ const Header: React.FC<HeaderProps> = ({
                     onClick={() => excelInputRef.current?.click()}
                     disabled={!excelEnabled}
                     aria-disabled={!excelEnabled}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-blue-400 hover:bg-slate-700 hover:text-blue-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-blue-400 hover:bg-slate-700 hover:text-blue-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
                     title={excelEnabled ? 'Excel Yükle' : disabledHint || 'Devre dışı'}
                   >
-                    <Upload className="w-4 h-4" />
-                    <span className="hidden lg:inline">Yükle</span>
+                    <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xl:inline">Yükle</span>
                   </button>
                 </div>
 
-                <div className="relative hidden sm:block">
+                <div className="relative hidden md:block">
                   <input
                     type="file"
                     ref={pdfInputRef}
@@ -203,47 +196,47 @@ const Header: React.FC<HeaderProps> = ({
                     onClick={() => pdfInputRef.current?.click()}
                     disabled={!pdfEnabled}
                     aria-disabled={!pdfEnabled}
-                    className="flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-medium text-amber-300 hover:bg-slate-700 hover:text-amber-200 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
+                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-amber-300 hover:bg-slate-700 hover:text-amber-200 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
                     title={pdfEnabled ? 'PDF ile Güncelle' : isLoadingScripts ? 'Modüller yükleniyor...' : 'PDF modülü yok'}
                   >
-                    <FileText className="w-4 h-4" />
-                    <span className="hidden lg:inline">PDF</span>
+                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                    <span className="hidden xl:inline">PDF</span>
                   </button>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-slate-700 mx-2 hidden md:block" />
+              <div className="h-8 w-px bg-slate-700 mx-1 hidden md:block" />
 
               <button
                 onClick={onSave}
                 type="button"
-                className="flex items-center space-x-2 bg-orange-600 hover:bg-orange-500 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all shadow-lg shadow-orange-900/30 active:scale-95"
+                className="flex items-center space-x-1 sm:space-x-2 bg-orange-600 hover:bg-orange-500 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg shadow-orange-900/30 active:scale-95"
               >
-                <Save className="w-4 h-4" />
-                <span>Kaydet</span>
+                <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+                <span className="hidden sm:inline">Kaydet</span>
               </button>
             </>
           )}
 
-          <div className="w-2 sm:w-4" />
+          <div className="w-1 sm:w-2 md:w-4" />
 
           {isLoggedIn ? (
             <button
               onClick={onLogoutClick}
               type="button"
-              className="flex items-center space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all border border-slate-600"
+              className="flex items-center space-x-1 sm:space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all border border-slate-600"
             >
-              <LogOut className="w-4 h-4" />
-              <span>Çıkış</span>
+              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Çıkış</span>
             </button>
           ) : (
             <button
               onClick={onLoginClick}
               type="button"
-              className="flex items-center space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-4 py-2 rounded-xl text-sm font-bold transition-all border border-slate-600 animate-pulse"
+              className="flex items-center space-x-1 sm:space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all border border-slate-600 animate-pulse"
             >
-              <LogIn className="w-4 h-4" />
-              <span>Giriş Yap</span>
+              <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+              <span className="hidden sm:inline">Giriş Yap</span>
             </button>
           )}
         </div>
