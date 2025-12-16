@@ -147,7 +147,7 @@ const MetrajTable = ({
           </div>
           <div>
             <h2 className="text-sm font-bold text-slate-400 uppercase tracking-widest mb-1">Sayfa Toplamı</h2>
-            <div className="text-4xl sm:text-5xl font-black text-slate-800 tracking-tighter tabular-nums">
+            <div className="text-3xl sm:text-5xl font-black text-slate-800 tracking-tighter tabular-nums">
               {formatCurrency(pageGrandTotal)}
             </div>
           </div>
@@ -194,7 +194,7 @@ const MetrajTable = ({
               <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-white/40 rounded-full blur-3xl opacity-50 pointer-events-none -translate-y-1/2 translate-x-1/2"></div>
 
               {/* --- HEADER --- */}
-              <div className={`px-8 py-6 border-b ${style.border} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-30 bg-white/60 backdrop-blur-xl transition-all`}>
+              <div className={`px-4 sm:px-8 py-4 sm:py-6 border-b ${style.border} flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 sticky top-0 z-30 bg-white/60 backdrop-blur-xl transition-all`}>
                 <div className="flex items-center space-x-4">
                   <div className={`p-3 rounded-2xl shadow-sm ${style.iconBg} group-hover:scale-110 transition-transform`}>
                     <CategoryIcon className={`w-6 h-6 ${style.iconColor}`} />
@@ -224,16 +224,16 @@ const MetrajTable = ({
               {/* --- TABLE --- */}
               <div className="overflow-x-auto w-full">
                 <table className="w-full text-left table-fixed min-w-[1100px]">
-                  <thead className={`text-slate-500 text-[11px] font-extrabold uppercase tracking-widest border-b ${style.border}`}>
+                  <thead className={`text-slate-500 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest border-b ${style.border}`}>
                     <tr>
-                      <th className={`px-8 py-4 w-32 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-white/80 backdrop-blur-md`}>Poz No</th>
+                      <th className={`px-3 sm:px-8 py-3 sm:py-4 w-24 sm:w-32 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-white/80 backdrop-blur-md`}>Poz No</th>
 
-                      <th className="px-8 py-4 w-auto min-w-[320px]">İmalat Adı</th>
-                      <th className="px-8 py-4 w-28 text-center">Birim</th>
-                      <th className="px-8 py-4 w-40 text-right">Birim Fiyat</th>
-                      <th className="px-8 py-4 w-40 text-center">İşlem</th>
-                      <th className="px-8 py-4 w-32 text-center">Miktar</th>
-                      <th className="px-8 py-4 w-40 text-right">Tutar</th>
+                      <th className="px-3 sm:px-8 py-3 sm:py-4 w-auto min-w-[200px] sm:min-w-[320px]">İmalat Adı</th>
+                      <th className="px-2 sm:px-8 py-3 sm:py-4 w-20 sm:w-28 text-center">Birim</th>
+                      <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-40 text-right">Birim Fiyat</th>
+                      <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-40 text-center">İşlem</th>
+                      <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-48 text-center bg-orange-50/50 text-orange-600">Miktar</th>
+                      <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-40 text-right">Tutar</th>
                     </tr>
                   </thead>
 
@@ -249,7 +249,7 @@ const MetrajTable = ({
                           className="hover:bg-slate-50/80 transition-colors group relative"
                         >
                           {/* Poz No */}
-                          <td className="px-8 py-5 sticky left-0 bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5 sticky left-0 bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50">
                             {isEditing ? (
                               <input
                                 value={draft.pos}
@@ -266,7 +266,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* Tanım */}
-                          <td className="px-8 py-5">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5">
                             {isEditing ? (
                               <textarea
                                 value={draft.desc}
@@ -283,7 +283,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* Birim */}
-                          <td className="px-8 py-5 text-center">
+                          <td className="px-2 sm:px-8 py-3 sm:py-5 text-center">
                             {isEditing ? (
                               <select
                                 value={draft.unit}
@@ -304,7 +304,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* Fiyat */}
-                          <td className="px-8 py-5 text-right">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5 text-right">
                             {isEditing ? (
                               <input
                                 value={draft.price}
@@ -320,7 +320,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* İşlem Butonları */}
-                          <td className="px-8 py-5">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5">
                             <div className="flex items-center justify-center gap-1 opacity-0 group-hover:opacity-100 transition-all duration-200 transform translate-y-2 group-hover:translate-y-0">
                               <button
                                 onClick={() => onOpenSelector(item)}
@@ -351,7 +351,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* Miktar Input */}
-                          <td className="px-8 py-5">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5">
                             <div className="relative group/input">
                               <input
                                 type="number"
@@ -366,7 +366,7 @@ const MetrajTable = ({
                           </td>
 
                           {/* Tutar */}
-                          <td className="px-8 py-5 text-right">
+                          <td className="px-3 sm:px-8 py-3 sm:py-5 text-right">
                             <div className="font-bold text-slate-800 tabular-nums tracking-tight">
                               {item.quantity > 0 ? formatCurrency(item.price * item.quantity) : <span className="text-slate-300">-</span>}
                             </div>

@@ -160,10 +160,10 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/80 backdrop-blur-md p-6 rounded-[2rem] border border-white/20 shadow-xl shadow-indigo-500/5 relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-4">
-          <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 shadow-inner">
+          <div className="p-4 bg-orange-50 rounded-2xl text-orange-600 shadow-inner">
             <Maximize className="w-8 h-8" />
           </div>
           <div>
@@ -178,7 +178,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
             <button
               key={type}
               onClick={() => setWindowType(type)}
-              className={`relative px-6 py-2.5 text-sm font-bold rounded-lg transition-colors z-10 ${windowType === type ? 'text-indigo-700' : 'text-slate-500 hover:text-slate-700'}`}
+              className={`relative px-6 py-2.5 text-sm font-bold rounded-lg transition-colors z-10 ${windowType === type ? 'text-slate-800' : 'text-slate-500 hover:text-slate-700'}`}
             >
               {type === 'pvc' ? 'PVC Doğrama' : 'Alüminyum'}
               {windowType === type && (
@@ -217,7 +217,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
 
           <div className="flex items-center justify-between mb-8 relative z-10">
             <div className="flex items-center gap-2">
-              <div className={`p-2 rounded-lg ${editingId ? 'bg-orange-100 text-orange-600' : 'bg-indigo-100 text-indigo-600'}`}>
+              <div className={`p-2 rounded-lg ${editingId ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
                 {editingId ? <Pencil className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
               </div>
               <h3 className="font-bold text-slate-800 text-lg">
@@ -238,7 +238,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
                 type="text"
                 value={newItem.label}
                 onChange={e => setNewItem({ ...newItem, label: e.target.value })}
-                className="w-full px-4 py-3.5 bg-slate-50/50 border-2 border-slate-100 rounded-xl focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-300"
+                className="w-full px-4 py-3.5 bg-slate-50/50 border-2 border-slate-100 rounded-xl focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-300"
                 placeholder="P1"
               />
             </div>
@@ -294,7 +294,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
               onClick={handleAddOrUpdateItem}
               className={`h-[54px] w-full rounded-xl font-black text-sm transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${editingId
                 ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-orange-500/30 hover:shadow-orange-500/40'
-                : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-indigo-500/30 hover:shadow-indigo-500/40'
+                : 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-slate-900/30 hover:shadow-slate-900/40'
                 }`}
             >
               {editingId ? (
@@ -352,7 +352,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
-            className="col-span-1 sm:col-span-2 bg-gradient-to-br from-indigo-500 to-violet-600 p-6 rounded-[2rem] text-white shadow-xl shadow-indigo-500/20 relative overflow-hidden group"
+            className="col-span-1 sm:col-span-2 bg-gradient-to-br from-slate-800 via-slate-900 to-slate-800 p-6 rounded-[2rem] text-white shadow-xl shadow-slate-900/20 relative overflow-hidden group"
           >
             <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -mr-12 -mt-12 pointer-events-none group-hover:scale-110 transition-transform duration-700" />
 
@@ -362,24 +362,24 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
                   <div className="p-2 bg-white/20 rounded-lg backdrop-blur-sm">
                     <Maximize className="w-6 h-6 text-white" />
                   </div>
-                  <span className="text-sm font-bold text-indigo-100 uppercase tracking-wider">Toplam Isıcam Alanı</span>
+                  <span className="text-sm font-bold text-slate-200 uppercase tracking-wider">Toplam Isıcam Alanı</span>
                 </div>
                 <span className="text-5xl font-black text-white tracking-tighter mb-1">{totalGlassArea.toFixed(2)}</span>
-                <span className="text-lg font-medium text-indigo-100/80">Metrekare (m²)</span>
+                <span className="text-lg font-medium text-slate-400">Metrekare (m²)</span>
               </div>
 
               <div className="hidden sm:flex flex-col items-end text-right">
-                <div className="text-xs font-medium text-indigo-200 mb-1">Otomatik Hesaplanan Poz</div>
+                <div className="text-xs font-medium text-slate-400 mb-1">Otomatik Hesaplanan Poz</div>
                 <div className="font-mono text-xl font-bold text-white bg-white/10 px-4 py-2 rounded-xl backdrop-blur-md border border-white/10">
                   15.470.1010
                 </div>
                 <div className="mt-4 flex gap-4">
                   <div>
-                    <span className="block text-xs text-indigo-200">PVC Adet</span>
+                    <span className="block text-xs text-slate-400">PVC Adet</span>
                     <span className="text-xl font-bold">{totalPVCCount}</span>
                   </div>
                   <div>
-                    <span className="block text-xs text-indigo-200">ALU Adet</span>
+                    <span className="block text-xs text-slate-400">ALU Adet</span>
                     <span className="text-xl font-bold">{totalAluCount}</span>
                   </div>
                 </div>
@@ -497,7 +497,7 @@ const WindowCalculationArea: React.FC<WindowCalculationAreaProps> = ({
 
       <div className="mt-8 w-full">
         <h3 className="text-lg font-bold text-slate-800 mb-4 flex items-center">
-          <Settings className="w-5 h-5 mr-2 text-indigo-500" />
+          <Settings className="w-5 h-5 mr-2 text-orange-500" />
           Pencere Aksesuarları (Listeye Aktarılacak)
         </h3>
 

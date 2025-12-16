@@ -123,10 +123,10 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
         animate={{ opacity: 1, y: 0 }}
         className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white/80 backdrop-blur-md p-6 rounded-[2rem] border border-white/20 shadow-xl shadow-indigo-500/5 relative overflow-hidden"
       >
-        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-indigo-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
+        <div className="absolute top-0 right-0 w-[400px] h-[400px] bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none" />
 
         <div className="relative z-10 flex items-center gap-4">
-          <div className="p-4 bg-indigo-50 rounded-2xl text-indigo-600 shadow-inner">
+          <div className="p-4 bg-orange-50 rounded-2xl text-orange-600 shadow-inner">
             <DoorOpen className="w-8 h-8" />
           </div>
           <div>
@@ -155,7 +155,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
       >
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center gap-2">
-            <div className={`p-2 rounded-lg ${editingId ? 'bg-orange-100 text-orange-600' : 'bg-indigo-100 text-indigo-600'}`}>
+            <div className={`p-2 rounded-lg ${editingId ? 'bg-orange-100 text-orange-600' : 'bg-slate-100 text-slate-600'}`}>
               {editingId ? <Pencil className="w-5 h-5" /> : <Plus className="w-5 h-5" />}
             </div>
             <h3 className="font-bold text-slate-800 text-lg">
@@ -176,7 +176,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
               type="text"
               value={newItem.label}
               onChange={e => setNewItem({ ...newItem, label: e.target.value })}
-              className="w-full px-4 py-3.5 bg-slate-50/50 border-2 border-slate-100 rounded-xl focus:border-indigo-500/50 focus:ring-4 focus:ring-indigo-500/10 outline-none transition-all font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-300"
+              className="w-full px-4 py-3.5 bg-slate-50/50 border-2 border-slate-100 rounded-xl focus:border-orange-500/50 focus:ring-4 focus:ring-orange-500/10 outline-none transition-all font-bold text-slate-700 placeholder:font-normal placeholder:text-slate-300"
               placeholder="Örn: K1"
             />
           </div>
@@ -217,8 +217,8 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
           <button
             onClick={handleAddOrUpdateItem}
             className={`h-[54px] w-full rounded-xl font-black text-sm transition-all shadow-lg active:scale-95 flex items-center justify-center gap-2 ${editingId
-                ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-orange-500/30 hover:shadow-orange-500/40'
-                : 'bg-gradient-to-r from-indigo-600 to-violet-600 text-white shadow-indigo-500/30 hover:shadow-indigo-500/40'
+              ? 'bg-gradient-to-r from-orange-500 to-rose-500 text-white shadow-orange-500/30 hover:shadow-orange-500/40'
+              : 'bg-gradient-to-r from-slate-800 to-slate-900 text-white shadow-slate-900/30 hover:shadow-slate-900/40'
               }`}
           >
             {editingId ? (
@@ -272,8 +272,8 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
                       transition={{ delay: index * 0.05 }}
                       className={`group transition-colors ${editingId === item.id ? 'bg-orange-50/50' : 'hover:bg-slate-50/80'}`}
                     >
-                      <td className="px-8 py-5 font-black text-indigo-900 sticky left-0 bg-white group-hover:bg-slate-50/80 transition-colors border-r border-transparent group-hover:border-slate-100">
-                        <span className="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg border border-indigo-100">{item.label}</span>
+                      <td className="px-8 py-5 font-black text-slate-800 sticky left-0 bg-white group-hover:bg-slate-50/80 transition-colors border-r border-transparent group-hover:border-slate-100">
+                        <span className="bg-slate-100 text-slate-600 px-3 py-1 rounded-lg border border-slate-200">{item.label}</span>
                       </td>
                       <td className="px-8 py-5 font-medium text-slate-600">
                         <div className="flex items-center gap-2">
@@ -311,7 +311,7 @@ const DoorCalculationArea: React.FC<DoorCalculationAreaProps> = ({ items, setIte
               <tfoot className="bg-slate-50 border-t-2 border-slate-200">
                 <tr>
                   <td className="px-8 py-6 text-right font-black text-slate-500 uppercase tracking-widest text-xs" colSpan={2}>Toplamlar:</td>
-                  <td className="px-8 py-6 text-center font-black text-xl text-indigo-600">{totalDoorCount}</td>
+                  <td className="px-8 py-6 text-center font-black text-xl text-slate-800">{totalDoorCount}</td>
                   <td className="px-8 py-6 text-right font-black text-lg text-slate-800">{totalLeafArea.toFixed(2)} <span className="text-sm font-normal text-slate-400">m²</span></td>
                   <td className="px-8 py-6 text-right font-black text-lg text-slate-800">{totalFrameArea.toFixed(2)} <span className="text-sm font-normal text-slate-400">m²</span></td>
                   <td></td>

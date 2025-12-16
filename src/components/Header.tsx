@@ -1,4 +1,4 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState, useEffect } from 'react';
 import {
   Info,
   BookOpen,
@@ -9,12 +9,15 @@ import {
   LogIn,
   FileText,
   Loader2,
+  FolderOpen,
+  Command,
+  ChevronDown,
+  Sparkles
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
-// --- BURAYA DİKKAT: Logonuzu import ediyoruz ---
 import logo from '../assets/gk_logo_new.png';
 
-// Proje bilgileri için tip tanımı
 export interface ProjectInfo {
   name: string;
   area: string;
@@ -23,15 +26,13 @@ export interface ProjectInfo {
 }
 
 interface HeaderProps {
-  // Durum Verileri
   isLoggedIn: boolean;
   projectInfo: ProjectInfo;
   isPDFLoaded: boolean;
   isXLSXLoaded: boolean;
   isLoadingScripts: boolean;
-
-  // Aksiyon Fonksiyonları
   onOpenProjectModal: () => void;
+  onOpenProjectManager: () => void;
   onLoginClick: () => void;
   onLogoutClick: () => void;
   onSave: () => void;
@@ -48,6 +49,7 @@ const Header: React.FC<HeaderProps> = ({
   isXLSXLoaded,
   isLoadingScripts,
   onOpenProjectModal,
+  onOpenProjectManager,
   onLoginClick,
   onLogoutClick,
   onSave,
@@ -58,190 +60,164 @@ const Header: React.FC<HeaderProps> = ({
 }) => {
   const excelInputRef = useRef<HTMLInputElement>(null);
   const pdfInputRef = useRef<HTMLInputElement>(null);
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      setIsScrolled(window.scrollY > 10);
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const excelEnabled = isLoggedIn && isXLSXLoaded && !isLoadingScripts;
   const pdfEnabled = isLoggedIn && isPDFLoaded && !isLoadingScripts;
 
-  const disabledHint = isLoadingScripts
-    ? 'Modüller yükleniyor...'
-    : !isXLSXLoaded
-      ? 'Excel modülü yüklenemedi'
-      : '';
+  // -- Components --
+
+  const IconButton = ({ onClick, disabled, icon: Icon, label, active, title, danger, primary }: any) => (
+    <button
+      onClick={onClick}
+      disabled={disabled}
+      title={title}
+      className={`
+        group relative flex items-center justify-center gap-2 h-10 px-3 rounded-xl transition-all duration-300
+        ${disabled
+          ? 'opacity-30 cursor-not-allowed'
+          : danger
+            ? 'hover:bg-red-500/20 text-slate-400 hover:text-red-400'
+            : primary
+              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/30 hover:shadow-blue-500/50 hover:scale-105'
+              : 'hover:bg-white/10 text-slate-400 hover:text-white'
+        }
+      `}
+    >
+      <Icon className="w-5 h-5 shrink-0" />
+
+      {/* Label - Hidden on mobile, valid on desktop */}
+      {!primary && <span className="hidden xl:block text-sm font-medium opacity-80 group-hover:opacity-100 whitespace-nowrap">{label}</span>}
+
+      {/* Tooltip (Only for Mobile or when label is hidden) */}
+      {!disabled && !primary && (
+        <span className="xl:hidden absolute top-full mt-2 px-2 py-1 rounded bg-slate-900 border border-slate-700 text-[10px] font-medium text-white opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+          {label}
+        </span>
+      )}
+    </button>
+  );
 
   return (
-    <header className="bg-slate-900 shadow-xl sticky top-0 z-20 border-b border-slate-800">
-      <div className="w-full px-2 sm:px-4 md:px-6 lg:px-8 h-16 sm:h-20 flex items-center justify-between gap-2 sm:gap-4">
-        {/* SOL: Logo + Proje */}
-        <div className="flex items-center space-x-2 sm:space-x-4 min-w-0 flex-1">
+    <>
+      <div className="fixed top-0 left-0 right-0 z-50 flex justify-center py-4 px-4 pointer-events-none">
+        <motion.header
+          initial={{ y: -100, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          className={`
+            pointer-events-auto
+            relative max-w-[95%] xl:max-w-[1800px] w-full mx-auto
+            bg-[#0B1121]/80 backdrop-blur-2xl
+            border border-white/5 shadow-[0_0_40px_-10px_rgba(0,0,0,0.5)]
+            rounded-2xl transition-all duration-500 ease-out
+            ${isScrolled ? 'py-2 px-3 bg-[#0B1121]/90 shadow-2xl scale-[0.99] origin-top' : 'py-3 px-4'}
+          `}
+        >
+          {/* Inner Glow */}
+          <div className="absolute inset-0 rounded-2xl bg-gradient-to-r from-blue-500/10 via-transparent to-purple-500/10 opacity-50 pointer-events-none"></div>
 
-          {/* Logo */}
-          <div className="shrink-0">
-            <img
-              src={logo}
-              alt="Firma Logosu"
-              className="h-10 sm:h-12 md:h-16 w-auto object-contain p-1"
-            />
-          </div>
+          <div className="relative flex items-center justify-between gap-4">
 
-          <div className="min-w-0 hidden sm:block">
-            <h1 className="text-2xl font-black text-white tracking-tight leading-none hidden">
-              GK<span className="text-orange-500">metraj</span>
-            </h1>
-
-            <div className="text-xs text-slate-400 font-medium tracking-wide mt-1 flex items-center gap-2 min-w-0 flex-wrap">
-              {projectInfo?.name ? (
-                <>
-                  <span className="text-orange-400 font-bold truncate max-w-[120px] sm:max-w-[220px]">
-                    {projectInfo.name}
-                  </span>
-
-                  {projectInfo.city && (
-                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300 hidden md:inline">
-                      {projectInfo.city}
-                    </span>
-                  )}
-
-                  {projectInfo.area && (
-                    <span className="bg-slate-800 px-1.5 py-0.5 rounded text-[10px] text-slate-300 hidden lg:inline">
-                      {projectInfo.area} m²
-                    </span>
-                  )}
-                </>
-              ) : (
-                'İnşaat Metraj Modülü'
-              )}
-
-              {isLoadingScripts && (
-                <span className="inline-flex items-center gap-1 text-[10px] font-bold text-slate-300 bg-slate-800 border border-slate-700 px-2 py-0.5 rounded-full">
-                  <Loader2 className="w-3 h-3 animate-spin" />
-                  Hazırlanıyor
-                </span>
-              )}
-            </div>
-          </div>
-        </div>
-
-        {/* SAĞ: Aksiyonlar - Mobile Responsive */}
-        <div className="flex items-center space-x-1 sm:space-x-2 md:space-x-3 shrink-0">
-          {isLoggedIn && (
-            <>
-              <button
-                onClick={onOpenProjectModal}
-                className="hidden lg:flex items-center space-x-2 px-3 py-2 rounded-lg text-xs font-bold transition-all border bg-slate-800 hover:bg-slate-700 text-blue-300 border-slate-700 hover:border-blue-500/50"
-                title="Proje Bilgileri Düzenle"
-                type="button"
-              >
-                <Info className="w-4 h-4" />
-                <span className="hidden xl:inline">Proje Bilgisi</span>
-              </button>
-
-              <div className="h-8 w-px bg-slate-700 mx-1 hidden lg:block" />
-
-              <div className="flex bg-slate-800 p-0.5 sm:p-1 rounded-lg sm:rounded-xl border border-slate-700">
-                <button
-                  type="button"
-                  onClick={onDownloadDescriptions}
-                  disabled={!excelEnabled}
-                  aria-disabled={!excelEnabled}
-                  className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-slate-300 hover:bg-slate-700 hover:text-white transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-                  title={excelEnabled ? 'Poz Tarifleri' : disabledHint || 'Devre dışı'}
-                >
-                  <BookOpen className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden xl:inline">Poz</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={onExportToXLSX}
-                  disabled={!excelEnabled}
-                  aria-disabled={!excelEnabled}
-                  className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-green-400 hover:bg-slate-700 hover:text-green-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-                  title={excelEnabled ? 'YM Cetveli İndir' : disabledHint || 'Devre dışı'}
-                >
-                  <FileSpreadsheet className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                  <span className="hidden xl:inline">YM</span>
-                </button>
-
-                <div className="relative hidden sm:block">
-                  <input
-                    type="file"
-                    ref={excelInputRef}
-                    onChange={onImportExcel}
-                    accept=".xlsx,.xls"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => excelInputRef.current?.click()}
-                    disabled={!excelEnabled}
-                    aria-disabled={!excelEnabled}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-blue-400 hover:bg-slate-700 hover:text-blue-300 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-                    title={excelEnabled ? 'Excel Yükle' : disabledHint || 'Devre dışı'}
-                  >
-                    <Upload className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden xl:inline">Yükle</span>
-                  </button>
+            {/* LEFT: Identity */}
+            <div className="flex items-center gap-4 md:gap-6 shrink-0">
+              {/* Logo */}
+              <div className="flex items-center gap-3 cursor-pointer group">
+                <div className="relative flex items-center justify-center w-14 h-14 rounded-xl">
+                  <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                  <img src={logo} alt="GK" className="w-full h-full object-contain relative z-10 opacity-90 group-hover:opacity-100 transition-opacity scale-150" />
                 </div>
-
-                <div className="relative hidden md:block">
-                  <input
-                    type="file"
-                    ref={pdfInputRef}
-                    onChange={onUpdatePDF}
-                    accept=".pdf"
-                    className="hidden"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => pdfInputRef.current?.click()}
-                    disabled={!pdfEnabled}
-                    aria-disabled={!pdfEnabled}
-                    className="flex items-center space-x-1 sm:space-x-2 px-2 sm:px-3 py-1.5 sm:py-2 rounded-lg text-xs font-medium text-amber-300 hover:bg-slate-700 hover:text-amber-200 transition-colors disabled:opacity-50 disabled:hover:bg-transparent"
-                    title={pdfEnabled ? 'PDF ile Güncelle' : isLoadingScripts ? 'Modüller yükleniyor...' : 'PDF modülü yok'}
-                  >
-                    <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                    <span className="hidden xl:inline">PDF</span>
-                  </button>
+                <div className="hidden sm:block">
+                  <h1 className="text-lg font-bold text-white tracking-tight group-hover:text-blue-200 transition-colors">
+                    GK<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">metraj</span>
+                  </h1>
                 </div>
               </div>
 
-              <div className="h-8 w-px bg-slate-700 mx-1 hidden md:block" />
+              {/* Vertical Divider */}
+              <div className="w-px h-8 bg-white/5 hidden md:block"></div>
 
-              <button
-                onClick={onSave}
-                type="button"
-                className="flex items-center space-x-1 sm:space-x-2 bg-orange-600 hover:bg-orange-500 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all shadow-lg shadow-orange-900/30 active:scale-95"
-              >
-                <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-                <span className="hidden sm:inline">Kaydet</span>
-              </button>
-            </>
-          )}
+              {/* Active Project Capsule */}
+              {projectInfo?.name && (
+                <div
+                  onClick={onOpenProjectManager}
+                  className="hidden md:flex items-center gap-3 px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/5 rounded-xl transition-all cursor-pointer group"
+                >
+                  <div className="relative flex items-center justify-center w-2 h-2">
+                    <span className="absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75 animate-ping"></span>
+                    <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[10px] text-slate-500 uppercase font-bold tracking-wider leading-none mb-0.5 group-hover:text-slate-400 transition-colors">Aktif</span>
+                    <span className="text-xs font-bold text-slate-200 truncate max-w-[150px]">{projectInfo.name}</span>
+                  </div>
+                  <ChevronDown className="w-3 h-3 text-slate-600 group-hover:text-slate-400 transition-colors" />
+                </div>
+              )}
+            </div>
 
-          <div className="w-1 sm:w-2 md:w-4" />
+            {/* RIGHT: Command Center */}
+            <div className="flex items-center gap-3 min-w-0">
 
-          {isLoggedIn ? (
-            <button
-              onClick={onLogoutClick}
-              type="button"
-              className="flex items-center space-x-1 sm:space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all border border-slate-600"
-            >
-              <LogOut className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Çıkış</span>
-            </button>
-          ) : (
-            <button
-              onClick={onLoginClick}
-              type="button"
-              className="flex items-center space-x-1 sm:space-x-2 bg-slate-700 hover:bg-slate-600 text-white px-3 sm:px-4 py-2 rounded-lg sm:rounded-xl text-xs sm:text-sm font-bold transition-all border border-slate-600 animate-pulse"
-            >
-              <LogIn className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-              <span className="hidden sm:inline">Giriş Yap</span>
-            </button>
-          )}
-        </div>
+              {isLoggedIn ? (
+                <>
+                  {/* Utility Group */}
+                  <div className="flex items-center p-0.5 sm:p-1 bg-white/5 border border-white/5 rounded-xl gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide max-w-[calc(100vw-120px)] sm:max-w-none">
+
+                    <IconButton onClick={onOpenProjectManager} icon={Command} label="Yönet" title="Proje Yöneticisi" />
+                    <IconButton onClick={onOpenProjectModal} icon={Info} label="Bilgi" title="Proje Detayları" />
+
+                    <div className="w-px h-6 bg-white/10 mx-0.5 sm:mx-1 shrink-0"></div>
+
+                    <IconButton onClick={onDownloadDescriptions} disabled={!excelEnabled} icon={BookOpen} label="Pozlar" title="Poz Tarifleri" />
+                    <IconButton onClick={onExportToXLSX} disabled={!excelEnabled} icon={FileSpreadsheet} label="İndir" title="Excel İndir" />
+
+                    <input type="file" ref={excelInputRef} onChange={onImportExcel} accept=".xlsx,.xls" className="hidden" />
+                    <IconButton onClick={() => excelInputRef.current?.click()} disabled={!excelEnabled} icon={Upload} label="Yükle" title="Excel Yükle" />
+
+                    <input type="file" ref={pdfInputRef} onChange={onUpdatePDF} accept=".pdf" className="hidden" />
+                    <IconButton onClick={() => pdfInputRef.current?.click()} disabled={!pdfEnabled} icon={FileText} label="PDF" title="PDF Yükle" />
+
+                  </div>
+
+                  {/* Save Action */}
+                  <button
+                    onClick={onSave}
+                    className="hidden sm:flex group items-center gap-2 px-5 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-900/40 hover:shadow-blue-500/40 hover:scale-105 active:scale-95 transition-all duration-300 shrink-0"
+                  >
+                    <Save className="w-4 h-4" />
+                    <span className="text-sm font-bold">Kaydet</span>
+                  </button>
+
+                  {/* Logout */}
+                  <IconButton onClick={onLogoutClick} icon={LogOut} label="Çıkış" danger />
+                </>
+              ) : (
+                <button
+                  onClick={onLoginClick}
+                  className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-white text-slate-900 font-bold hover:bg-blue-50 hover:scale-105 transition-all shadow-lg shadow-white/10"
+                >
+                  <LogIn className="w-4 h-4" />
+                  <span>Giriş</span>
+                </button>
+              )}
+
+            </div>
+
+          </div>
+        </motion.header>
       </div>
-    </header>
+
+      {/* Spacer is not strictly needed with 'fixed top-0' pointer-events-none wrapper, 
+        but we need to ensure App.tsx has padding-top ~120px to clear this floating header */}
+    </>
   );
 };
 

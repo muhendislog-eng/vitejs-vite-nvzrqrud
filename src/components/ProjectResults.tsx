@@ -206,7 +206,7 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
             {/* HEADER SECTION */}
             <motion.div
                 variants={itemVariants}
-                className="print-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-6 rounded-3xl shadow-sm border border-slate-200/60 sticky top-24 z-10"
+                className="print-hidden flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white/80 backdrop-blur-xl p-4 sm:p-6 rounded-3xl shadow-sm border border-slate-200/60 sticky top-24 z-10"
             >
                 <div>
                     <h1 className="text-3xl font-black text-slate-800 tracking-tight flex items-center gap-3">
@@ -235,7 +235,7 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                 {/* --- HERO SECTION: TOTAL COST --- */}
                 <motion.div
                     variants={itemVariants}
-                    className="w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2.5rem] p-8 sm:p-12 shadow-2xl shadow-slate-900/30 text-white relative overflow-hidden print-card group"
+                    className="w-full bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] sm:rounded-[2.5rem] p-6 sm:p-12 shadow-2xl shadow-slate-900/30 text-white relative overflow-hidden print-card group"
                 >
                     {/* Animated Background Mesh */}
                     <div className="absolute top-0 right-0 w-[500px] h-[500px] bg-indigo-500/20 rounded-full blur-[100px] -translate-y-1/2 translate-x-1/2 group-hover:bg-indigo-500/30 transition-colors duration-700"></div>
@@ -256,37 +256,37 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                                 </div>
                             </div>
                             <div className="flex items-baseline gap-2">
-                                <span className="text-6xl sm:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-400 drop-shadow-sm">
+                                <span className="text-4xl sm:text-6xl md:text-7xl font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-white via-white to-slate-400 drop-shadow-sm">
                                     {formatCurrency(estimatedGrandTotal).replace('₺', '')}
                                 </span>
-                                <span className="text-3xl sm:text-4xl text-slate-400 font-light">₺</span>
+                                <span className="text-2xl sm:text-4xl text-slate-400 font-light">₺</span>
                             </div>
                             <p className="mt-4 text-slate-400 text-sm max-w-lg font-medium leading-relaxed border-l-2 border-white/10 pl-4">
                                 * Bu tutar Statik, Mimari, Mekanik ve Elektrik imalat kalemlerinin anlık hesaplanan toplam maliyetini ifade eder.
                             </p>
                         </div>
 
-                        <div className="flex flex-col sm:flex-row gap-4">
+                        <div className="grid grid-cols-2 sm:flex sm:flex-row gap-2 sm:gap-4 w-full sm:w-auto mt-6 md:mt-0">
                             {/* Stat Card 1 */}
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center min-w-[140px] hover:bg-white/10 transition-colors cursor-default">
-                                <div className="flex justify-center mb-2">
-                                    <div className="p-2 bg-indigo-500/20 rounded-xl text-indigo-300">
-                                        <TrendingUp className="w-6 h-6" />
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl sm:rounded-3xl p-3 sm:p-6 text-center min-w-[auto] sm:min-w-[140px] hover:bg-white/10 transition-colors cursor-default">
+                                <div className="flex justify-center mb-1 sm:mb-2">
+                                    <div className="p-1.5 sm:p-2 bg-indigo-500/20 rounded-lg sm:rounded-xl text-indigo-300">
+                                        <TrendingUp className="w-4 h-4 sm:w-6 sm:h-6" />
                                     </div>
                                 </div>
-                                <div className="text-3xl font-bold text-white mb-1">{chartData.length}</div>
-                                <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Kategori</div>
+                                <div className="text-xl sm:text-3xl font-bold text-white mb-0.5 sm:mb-1">{chartData.length}</div>
+                                <div className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Kategori</div>
                             </div>
 
                             {/* Stat Card 2 */}
-                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-3xl p-6 text-center min-w-[140px] hover:bg-white/10 transition-colors cursor-default">
-                                <div className="flex justify-center mb-2">
-                                    <div className="p-2 bg-emerald-500/20 rounded-xl text-emerald-300">
-                                        <CheckCircle2 className="w-6 h-6" />
+                            <div className="bg-white/5 backdrop-blur-md border border-white/10 rounded-2xl sm:rounded-3xl p-3 sm:p-6 text-center min-w-[auto] sm:min-w-[140px] hover:bg-white/10 transition-colors cursor-default">
+                                <div className="flex justify-center mb-1 sm:mb-2">
+                                    <div className="p-1.5 sm:p-2 bg-emerald-500/20 rounded-lg sm:rounded-xl text-emerald-300">
+                                        <CheckCircle2 className="w-4 h-4 sm:w-6 sm:h-6" />
                                     </div>
                                 </div>
-                                <div className="text-3xl font-bold text-emerald-400 mb-1">%100</div>
-                                <div className="text-xs text-slate-400 font-bold uppercase tracking-wider">Tamamlanan</div>
+                                <div className="text-xl sm:text-3xl font-bold text-emerald-400 mb-0.5 sm:mb-1">%100</div>
+                                <div className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">Tamamlanan</div>
                             </div>
                         </div>
                     </div>
@@ -354,20 +354,22 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                             <ResponsiveContainer width="100%" height="100%">
                                 <PieChart>
                                     <Pie
-                                        data={chartData}
+                                        data={chartData.filter(d => d.value > 0)}
                                         cx="50%"
                                         cy="50%"
-                                        innerRadius={80}
-                                        outerRadius={120}
-                                        paddingAngle={6}
+                                        innerRadius={60}
+                                        outerRadius={90}
+                                        paddingAngle={4}
                                         dataKey="value"
                                         cornerRadius={8}
+                                        startAngle={90}
+                                        endAngle={-270}
                                         isAnimationActive={false}
                                     >
-                                        {chartData.map((entry, index) => (
+                                        {chartData.filter(d => d.value > 0).map((entry, index) => (
                                             <Cell
                                                 key={`cell-${index}`}
-                                                fill={COLORS[index % COLORS.length]}
+                                                fill={entry.barColor}
                                                 stroke="white"
                                                 strokeWidth={2}
                                             />
@@ -397,7 +399,7 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                     </motion.div>
 
                     {/* Bar Chart */}
-                    <motion.div variants={itemVariants} className="print-card no-print-shadow bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-8 flex flex-col h-[420px]">
+                    <motion.div variants={itemVariants} className="print-card no-print-shadow bg-white rounded-[2.5rem] border border-slate-200 shadow-xl shadow-slate-200/50 p-4 sm:p-8 flex flex-col h-[350px] sm:h-[420px]">
                         <div className="flex items-center justify-between mb-8">
                             <div>
                                 <h3 className="text-xl font-bold text-slate-800 flex items-center gap-3">
@@ -428,7 +430,7 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                                         tickLine={false}
                                     />
                                     <Tooltip
-                                        formatter={(value: number) => formatCurrency(value)}
+                                        formatter={(value: number) => [formatCurrency(value), 'Tutar']}
                                         cursor={{ fill: '#f8fafc', radius: 8 }}
                                         contentStyle={{
                                             borderRadius: '16px',
@@ -440,7 +442,7 @@ const ProjectResults: React.FC<ProjectResultsProps> = ({ staticItems, architectu
                                         }}
                                         itemStyle={{ color: '#1e293b', fontWeight: 600 }}
                                     />
-                                    <Bar dataKey="value" radius={[0, 12, 12, 0]} isAnimationActive={false}>
+                                    <Bar name="Tutar" dataKey="value" radius={[0, 12, 12, 0]} isAnimationActive={false}>
                                         {chartData.map((entry, index) => (
                                             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                                         ))}

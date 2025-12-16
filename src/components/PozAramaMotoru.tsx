@@ -460,29 +460,29 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
     <div className="flex flex-col h-full bg-slate-50/50 relative overflow-hidden">
       {/* HEADER */}
       <div className="shrink-0 p-6 border-b border-slate-200/60 bg-white/40 ">
-        <div className="flex items-center justify-between gap-4 mb-4">
-          <div className="flex items-center gap-2 p-1 bg-slate-100/50 rounded-xl border border-slate-200/60">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 sm:gap-4 mb-4">
+          <div className="flex items-center gap-1 p-1 bg-slate-100/50 rounded-xl border border-slate-200/60 overflow-x-auto">
             <button
               type="button"
               onClick={() => setViewMode('all')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'all'
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${viewMode === 'all'
                 ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                 }`}
             >
-              <Database className="w-4 h-4 inline mr-2 text-blue-500" />
+              <Database className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1.5 text-blue-500" />
               Tüm Pozlar
             </button>
 
             <button
               type="button"
               onClick={() => setViewMode('favorites')}
-              className={`px-4 py-2 rounded-lg text-sm font-bold transition-all ${viewMode === 'favorites'
+              className={`flex-1 sm:flex-none px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold transition-all whitespace-nowrap ${viewMode === 'favorites'
                 ? 'bg-white text-slate-800 shadow-sm ring-1 ring-slate-200'
                 : 'text-slate-500 hover:text-slate-700 hover:bg-white/50'
                 }`}
             >
-              <Star className="w-4 h-4 inline mr-2 text-orange-500" />
+              <Star className="w-3.5 h-3.5 sm:w-4 sm:h-4 inline mr-1.5 text-orange-500" />
               Favorilerim <span className="ml-1 opacity-60">({favorites.length})</span>
             </button>
 
@@ -493,7 +493,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
                   exitNeighborMode();
                   setSearchTerm('');
                 }}
-                className="px-4 py-2 rounded-lg text-sm font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-200"
+                className="px-3 sm:px-4 py-2 rounded-lg text-xs sm:text-sm font-bold bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors ring-1 ring-blue-200 whitespace-nowrap"
               >
                 Normal Görünüm
               </button>
@@ -506,7 +506,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
               resetManual();
               setManualOpen(true);
             }}
-            className="px-5 py-2.5 rounded-xl text-sm font-bold bg-slate-800 text-white hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/10 flex items-center gap-2 active:scale-95"
+            className="w-full sm:w-auto px-4 sm:px-5 py-2.5 rounded-xl text-xs sm:text-sm font-bold bg-slate-800 text-white hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/10 flex items-center justify-center gap-2 active:scale-95 whitespace-nowrap"
           >
             <Plus className="w-4 h-4" />
             Manuel Poz Ekle
@@ -576,7 +576,7 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
             return (
               <div
                 key={`${item.pos}-${idx}`}
-                className={`group p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${isAnchor
+                className={`group p-3 sm:p-4 rounded-2xl border transition-all duration-200 relative overflow-hidden ${isAnchor
                   ? 'border-blue-400 bg-blue-50/30'
                   : isCurrent
                     ? 'border-emerald-500 ring-1 ring-emerald-500 bg-emerald-50/30'
@@ -585,11 +585,11 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
               >
                 {isCurrent && <div className="absolute left-0 top-0 bottom-0 w-1 bg-emerald-500" />}
 
-                <div className="flex items-start gap-5">
+                <div className="flex items-start gap-3 sm:gap-5">
                   <div className="min-w-0 flex-1">
-                    <div className="flex items-center gap-3 flex-wrap mb-2">
+                    <div className="flex items-center gap-2 sm:gap-3 flex-wrap mb-1.5 sm:mb-2">
                       <span
-                        className={`font-mono text-base font-black px-2.5 py-1 rounded-lg border shadow-sm ${isAnchor
+                        className={`font-mono text-xs sm:text-base font-black px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-lg border shadow-sm ${isAnchor
                           ? 'text-blue-700 bg-blue-50 border-blue-200'
                           : isCurrent
                             ? 'text-emerald-700 bg-emerald-50 border-emerald-200'
@@ -599,64 +599,64 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
                         {item.pos}
                       </span>
 
-                      <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100/80 px-2 py-1 rounded-md border border-slate-200">
+                      <span className="text-[10px] sm:text-[11px] font-bold text-slate-500 uppercase tracking-wider bg-slate-100/80 px-2 py-1 rounded-md border border-slate-200">
                         {item.unit}
                       </span>
 
                       {item.source === 'manual' && (
-                        <span className="text-[10px] font-black text-white bg-slate-400 px-2 py-0.5 rounded-md">
+                        <span className="text-[9px] sm:text-[10px] font-black text-white bg-slate-400 px-1.5 sm:px-2 py-0.5 rounded-md">
                           MANUEL
                         </span>
                       )}
 
                       {isAnchor && (
-                        <span className="text-[10px] font-black text-white bg-blue-500 px-2 py-0.5 rounded-md shadow-sm shadow-blue-500/20">
+                        <span className="text-[9px] sm:text-[10px] font-black text-white bg-blue-500 px-1.5 sm:px-2 py-0.5 rounded-md shadow-sm shadow-blue-500/20">
                           MERKEZ
                         </span>
                       )}
                     </div>
 
-                    <p className="text-[15px] text-slate-600 leading-relaxed font-medium line-clamp-2 group-hover:text-slate-900 transition-colors">{item.desc}</p>
+                    <p className="text-xs sm:text-[15px] text-slate-600 leading-relaxed font-medium line-clamp-2 group-hover:text-slate-900 transition-colors">{item.desc}</p>
                   </div>
 
-                  <div className="flex flex-col items-end gap-3 min-w-[140px]">
-                    <div className="font-black text-slate-800 text-2xl tracking-tighter tabular-nums text-right">
+                  <div className="flex flex-col items-end gap-2 sm:gap-3 min-w-[100px] sm:min-w-[140px]">
+                    <div className="font-black text-slate-800 text-lg sm:text-2xl tracking-tighter tabular-nums text-right">
                       {formatCurrency(Number(item.price || 0))}
                     </div>
 
-                    <div className="flex items-center gap-2 w-full justify-end">
+                    <div className="flex items-center gap-1.5 sm:gap-2 w-full justify-end">
                       <button
                         type="button"
                         onClick={() => toggleFavorite(item.pos)}
-                        className={`p-2 rounded-xl border transition-colors ${fav
+                        className={`p-1.5 sm:p-2 rounded-xl border transition-colors ${fav
                           ? 'border-yellow-200 bg-yellow-50 text-yellow-500'
                           : 'border-slate-100 bg-slate-50 text-slate-400 hover:text-yellow-500 hover:bg-yellow-50 hover:border-yellow-200'
                           }`}
                         title={fav ? 'Favorilerden çıkar' : 'Favorilere ekle'}
                       >
-                        <Star className={`w-4 h-4 ${fav ? 'fill-yellow-500' : ''}`} />
+                        <Star className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${fav ? 'fill-yellow-500' : ''}`} />
                       </button>
 
                       {item.source === 'db' && (
                         <button
                           type="button"
                           onClick={() => showNeighbors(item.pos)}
-                          className="p-2 rounded-xl text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 transition-colors"
+                          className="p-1.5 sm:p-2 rounded-xl text-slate-500 hover:text-blue-600 bg-slate-50 hover:bg-blue-50 border border-slate-100 hover:border-blue-200 transition-colors"
                           title="Benzer pozları bul"
                         >
-                          <ArrowUpDown className="w-4 h-4" />
+                          <ArrowUpDown className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       )}
 
                       <button
                         type="button"
                         onClick={() => emitSelect(item)}
-                        className={`flex-1 inline-flex items-center justify-center text-xs font-bold text-white px-4 py-2.5 rounded-xl transition-all shadow-md active:scale-95 ${isCurrent
+                        className={`flex-1 inline-flex items-center justify-center text-[10px] sm:text-xs font-bold text-white px-2 sm:px-4 py-1.5 sm:py-2.5 rounded-xl transition-all shadow-md active:scale-95 ${isCurrent
                           ? 'bg-emerald-600 hover:bg-emerald-700 shadow-emerald-500/20'
                           : 'bg-slate-900 hover:bg-slate-800 shadow-slate-900/20 group-hover:bg-orange-600 group-hover:shadow-orange-500/20'
                           }`}
                       >
-                        <Check className="w-4 h-4 mr-1.5" />
+                        <Check className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1 sm:mr-1.5" />
                         SEÇ
                       </button>
                     </div>
@@ -682,87 +682,87 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+            className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4 z-50 overflow-y-auto"
           >
             <motion.div
               initial={{ scale: 0.95, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.95, opacity: 0, y: 20 }}
-              className="w-full max-w-lg bg-white/95 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden"
+              className="w-full max-w-md sm:max-w-lg bg-white/95 backdrop-blur-xl rounded-2xl border border-white/20 shadow-2xl overflow-hidden my-auto"
             >
               {/* Header */}
-              <div className="flex items-center justify-between px-6 py-5 border-b border-slate-200/50 bg-white/50">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-lg shadow-slate-900/20">
-                    <Plus className="w-5 h-5 text-white" />
+              <div className="flex items-center justify-between px-3 py-3 sm:px-6 sm:py-5 border-b border-slate-200/50 bg-white/50">
+                <div className="flex items-center gap-2 sm:gap-3">
+                  <div className="p-1.5 sm:p-2 bg-gradient-to-br from-slate-800 to-slate-900 rounded-lg shadow-lg shadow-slate-900/20">
+                    <Plus className="w-4 h-4 sm:w-5 sm:h-5 text-white" />
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-800 text-lg tracking-tight">Manuel Poz Ekle</h3>
-                    <p className="text-xs font-bold text-slate-500">Veritabanında olmayan özel poz tanımı</p>
+                    <h3 className="font-black text-slate-800 text-sm sm:text-lg tracking-tight">Manuel Poz Ekle</h3>
+                    <p className="text-[9px] sm:text-xs font-bold text-slate-500">Veritabanında olmayan özel poz tanımı</p>
                   </div>
                 </div>
                 <button
                   type="button"
                   onClick={() => setManualOpen(false)}
-                  className="p-2 rounded-full hover:bg-slate-100 transition-colors group"
+                  className="p-1.5 sm:p-2 rounded-full hover:bg-slate-100 transition-colors group"
                 >
-                  <X className="w-5 h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
+                  <X className="w-4 h-4 sm:w-5 sm:h-5 text-slate-400 group-hover:text-slate-600 transition-colors" />
                 </button>
               </div>
 
               {/* Body */}
-              <div className="p-6 space-y-5">
+              <div className="p-3 sm:p-6 space-y-3 sm:space-y-5">
                 {/* Poz No */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Poz No</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Poz No</label>
                   <input
                     value={mPos}
                     onChange={(e) => setMPos(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-bold placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono"
+                    className="w-full px-3 py-1.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-bold placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all font-mono text-xs sm:text-base"
                     placeholder="Örn: 15.105.1108"
                     autoFocus
                   />
                 </div>
 
                 {/* Tanim */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Poz Tanımı</label>
+                <div className="space-y-1">
+                  <label className="text-[9px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Poz Tanımı</label>
                   <textarea
                     value={mDesc}
                     onChange={(e) => setMDesc(e.target.value)}
-                    className="w-full px-4 py-3 rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-medium placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all min-h-[100px] resize-none"
+                    className="w-full px-3 py-1.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-medium placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all min-h-[60px] sm:min-h-[100px] resize-none text-xs sm:text-base"
                     placeholder="Örn: 200 dozlu demirsiz beton (kırma taş ile)"
                   />
                 </div>
 
                 {/* Grid */}
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-2 gap-2 sm:gap-4">
                   {/* Birim */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Birim</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Birim</label>
                     <div className="relative">
                       <select
                         value={mUnit}
                         onChange={(e) => setMUnit(e.target.value as UnitOption)}
-                        className="w-full px-4 py-3 rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-bold appearance-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all"
+                        className="w-full px-3 py-1.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-bold appearance-none focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all text-xs sm:text-base"
                       >
                         {UNIT_OPTIONS.map((u) => (
                           <option key={u} value={u}>{u}</option>
                         ))}
                       </select>
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none">
-                        <ArrowUpDown className="w-4 h-4 text-slate-400" />
+                      <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
+                        <ArrowUpDown className="w-3 h-3 sm:w-4 sm:h-4 text-slate-400" />
                       </div>
                     </div>
                   </div>
 
                   {/* Fiyat */}
-                  <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Birim Fiyat (TL)</label>
+                  <div className="space-y-1">
+                    <label className="text-[9px] sm:text-xs font-bold text-slate-500 uppercase tracking-wider ml-1">Birim Fiyat (TL)</label>
                     <input
                       value={mPrice}
                       onChange={(e) => setMPrice(e.target.value)}
-                      className="w-full px-4 py-3 rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-black text-right placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all tabular-nums"
+                      className="w-full px-3 py-1.5 sm:px-4 sm:py-3 rounded-lg sm:rounded-xl border-2 border-slate-200/60 bg-white/80 outline-none text-slate-800 font-black text-right placeholder:font-normal placeholder:text-slate-400 focus:border-emerald-500/50 focus:ring-4 focus:ring-emerald-500/10 transition-all tabular-nums text-xs sm:text-base"
                       placeholder="0,00"
                     />
                   </div>
@@ -770,17 +770,17 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
               </div>
 
               {/* Footer */}
-              <div className="p-6 pt-2 bg-gradient-to-b from-transparent to-slate-50/50 flex flex-col sm:flex-row gap-3">
+              <div className="p-3 sm:p-6 pt-2 bg-gradient-to-b from-transparent to-slate-50/50 flex flex-col sm:flex-row gap-2 sm:gap-3">
                 <button
                   type="button"
                   onClick={() => saveManual(false)}
                   disabled={!mPos.trim()}
-                  className={`flex-1 py-3.5 rounded-xl font-bold text-sm transition-all flex items-center justify-center gap-2 ${!mPos.trim()
+                  className={`flex-1 py-2 sm:py-3.5 rounded-lg sm:rounded-xl font-bold text-xs sm:text-sm transition-all flex items-center justify-center gap-2 ${!mPos.trim()
                     ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                     : 'bg-white border-2 border-slate-200 text-slate-700 hover:border-slate-300 hover:bg-slate-50 shadow-sm'
                     }`}
                 >
-                  <Save className="w-4 h-4" />
+                  <Save className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   Listeye Ekle
                 </button>
 
@@ -788,12 +788,12 @@ const PozAramaMotoru: React.FC<PozAramaMotoruProps> = ({ onSelect, currentPos, c
                   type="button"
                   onClick={() => saveManual(true)}
                   disabled={!mPos.trim()}
-                  className={`flex-[2] py-3.5 rounded-xl font-black text-sm transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 ${!mPos.trim()
+                  className={`flex-[2] py-2 sm:py-3.5 rounded-lg sm:rounded-xl font-black text-xs sm:text-sm transition-all shadow-lg active:scale-[0.98] flex items-center justify-center gap-2 ${!mPos.trim()
                     ? 'bg-slate-200 text-slate-400 cursor-not-allowed shadow-none'
                     : 'bg-gradient-to-r from-emerald-600 to-teal-600 text-white hover:shadow-emerald-500/30'
                     }`}
                 >
-                  <Check className="w-5 h-5" />
+                  <Check className="w-4 h-4 sm:w-5 sm:h-5" />
                   Kaydet ve Kullan
                 </button>
               </div>

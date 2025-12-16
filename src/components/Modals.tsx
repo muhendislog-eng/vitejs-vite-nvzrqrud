@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Lock, LogIn, X, Info, PieChart as PieChartIcon, Grid, MapPin, RefreshCw } from 'lucide-react';
+import { Lock, LogIn, X, Info, PieChart as PieChartIcon, MapPin, RefreshCw } from 'lucide-react';
 import PozAramaMotoru from './PozAramaMotoru'; // Arama motorunu import ettik
 
 // --- GİRİŞ MODALI ---
@@ -69,6 +69,7 @@ export const LoginModal = ({ isOpen, onClose, onLogin }: any) => {
 };
 
 // --- PROJE BİLGİSİ MODALI ---
+// --- PROJE BİLGİSİ MODALI ---
 export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) => {
   const [info, setInfo] = useState({ name: '', area: '', floors: '', city: '' });
 
@@ -91,42 +92,108 @@ export const ProjectInfoModal = ({ isOpen, onClose, onSave, initialData }: any) 
 
   if (!isOpen) return null;
 
+  const inputClass = "w-full pl-10 p-3 bg-slate-900/50 border border-slate-700 rounded-xl focus:ring-2 focus:ring-orange-500/50 focus:border-orange-500 text-white placeholder:text-slate-500 outline-none transition-all";
+  const labelClass = "block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider";
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-md transition-all">
-      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-200">
-        <div className="px-6 py-5 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
-          <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-            <Info className="w-5 h-5 text-blue-500" /> Proje Bilgileri
-          </h3>
-          <button onClick={onClose} className="p-2 rounded-full hover:bg-slate-200 text-slate-400 hover:text-slate-600 transition-colors"><X className="w-6 h-6" /></button>
-        </div>
-        <form onSubmit={handleSubmit} className="p-6 space-y-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm transition-all">
+      <div className="relative bg-[#0B1121] rounded-3xl shadow-2xl w-full max-w-lg overflow-hidden border border-slate-800">
+
+        {/* Background Gradients */}
+        <div className="absolute top-0 right-0 w-64 h-64 bg-orange-500/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-blue-500/10 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 pointer-events-none"></div>
+
+        {/* Header */}
+        <div className="relative px-8 py-6 border-b border-slate-800 flex justify-between items-center bg-slate-900/50 backdrop-blur-md">
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Proje İsmi</label>
-            <input type="text" name="name" value={info.name} onChange={handleChange} className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="Örn: Mavişehir Konutları" />
+            <h3 className="text-xl font-bold text-white flex items-center gap-2">
+              <Info className="w-5 h-5 text-orange-500" />
+              Proje Bilgileri
+            </h3>
+            <p className="text-xs text-slate-400 mt-1">Aktif proje detaylarını düzenleyin</p>
           </div>
-          <div className="grid grid-cols-2 gap-4">
+          <button
+            onClick={onClose}
+            className="p-2 rounded-full hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Content */}
+        <form onSubmit={handleSubmit} className="relative p-8 space-y-6">
+
+          {/* Proje İsmi */}
+          <div>
+            <label className={labelClass}>Proje İsmi</label>
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                <div className="w-1.5 h-1.5 rounded-full bg-orange-500/50 group-focus-within:bg-orange-500 transition-colors"></div>
+              </div>
+              <input
+                type="text"
+                name="name"
+                value={info.name}
+                onChange={handleChange}
+                className={inputClass}
+                placeholder="Örn: Mavişehir Konutları"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-6">
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Kapalı Alan (m²)</label>
+              <label className={labelClass}>Kapalı Alan (m²)</label>
               <div className="relative">
-                <PieChartIcon className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-                <input type="number" name="area" value={info.area} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="1500" />
+                <PieChartIcon className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+                <input
+                  type="number"
+                  name="area"
+                  value={info.area}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="1500"
+                />
               </div>
             </div>
             <div>
-              <label className="block text-sm font-bold text-slate-700 mb-1">Kat Sayısı</label>
-              <input type="number" name="floors" value={info.floors} onChange={handleChange} className="w-full p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="5" />
+              <label className={labelClass}>Kat Sayısı</label>
+              <div className="relative">
+                <div className="absolute left-3 top-3.5 w-4 h-4 flex items-center justify-center text-slate-500 text-[10px] font-bold border border-slate-600 rounded">K</div>
+                <input
+                  type="number"
+                  name="floors"
+                  value={info.floors}
+                  onChange={handleChange}
+                  className={inputClass}
+                  placeholder="5"
+                />
+              </div>
             </div>
           </div>
+
           <div>
-            <label className="block text-sm font-bold text-slate-700 mb-1">Şehir</label>
+            <label className={labelClass}>Şehir / Lokasyon</label>
             <div className="relative">
-              <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-400" />
-              <input type="text" name="city" value={info.city} onChange={handleChange} className="w-full pl-10 p-3 bg-slate-100 border border-slate-200 rounded-lg focus:ring-2 focus:ring-blue-500 outline-none" placeholder="İstanbul" />
+              <MapPin className="absolute left-3 top-3.5 w-4 h-4 text-slate-500" />
+              <input
+                type="text"
+                name="city"
+                value={info.city}
+                onChange={handleChange}
+                className={inputClass}
+                placeholder="İstanbul"
+              />
             </div>
           </div>
+
           <div className="pt-4">
-            <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 shadow-lg shadow-blue-200 transition-all">Kaydet</button>
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 text-white py-3.5 rounded-xl font-bold shadow-lg shadow-orange-900/20 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
+            >
+              <span>Kaydet ve Güncelle</span>
+            </button>
           </div>
         </form>
       </div>

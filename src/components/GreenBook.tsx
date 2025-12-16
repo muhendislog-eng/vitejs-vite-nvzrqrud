@@ -365,7 +365,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
             </style>
 
             {/* --- KAPSAYICI (BEYAZ KUTU) --- */}
-            <div className="green-book-container w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-6 md:p-8">
+            <div className="green-book-container w-full bg-white rounded-2xl shadow-sm border border-slate-200 p-4 md:p-8">
 
                 {/* --- BAŞLIK VE BUTONLAR --- */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4 print-hidden">
@@ -381,16 +381,16 @@ const GreenBook: React.FC<GreenBookProps> = ({
                         </div>
                     </div>
 
-                    <div className="flex w-full md:w-auto gap-3">
+                    <div className="flex flex-col sm:flex-row w-full md:w-auto gap-3">
                         <button
                             onClick={handleExportToExcel}
-                            className="flex-1 md:flex-none items-center justify-center px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-900/20 active:scale-95 font-bold text-sm"
+                            className="flex-1 md:flex-none items-center justify-center px-4 sm:px-5 py-2.5 bg-green-600 text-white rounded-xl hover:bg-green-700 transition-all shadow-lg shadow-green-900/20 active:scale-95 font-bold text-xs sm:text-sm whitespace-nowrap"
                         >
-                            <FileSpreadsheet className="w-4 h-4 mr-2" /> Excel İndir
+                            <FileSpreadsheet className="w-4 h-4 mr-2 inline-block" /> Excel İndir
                         </button>
                         <button
                             onClick={handlePrint}
-                            className="flex-1 md:flex-none items-center justify-center px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/20 active:scale-95 font-bold text-sm"
+                            className="flex-1 md:flex-none items-center justify-center px-4 sm:px-5 py-2.5 bg-slate-800 text-white rounded-xl hover:bg-slate-700 transition-all shadow-lg shadow-slate-900/20 active:scale-95 font-bold text-xs sm:text-sm whitespace-nowrap"
                         >
                             <Printer className="w-4 h-4 mr-2" /> Yazdır
                         </button>
@@ -411,15 +411,15 @@ const GreenBook: React.FC<GreenBookProps> = ({
                     <table className="w-full text-left border-collapse text-sm table-fixed min-w-[1000px]">
                         <thead>
                             <tr className="bg-slate-100 text-slate-700 border-b border-slate-200">
-                                <th className="px-4 py-3 font-bold w-24">Kaynak</th>
-                                <th className="px-4 py-3 font-bold w-32 border-l border-slate-200">Poz No</th>
-                                <th className="px-4 py-3 font-bold w-auto border-l border-slate-200">İmalatın Cinsi / Açıklama</th>
-                                <th className="px-2 py-3 font-bold w-16 text-center border-l border-slate-200">Birim</th>
-                                <th className="px-2 py-3 font-bold w-16 text-center border-l border-slate-200">En</th>
-                                <th className="px-2 py-3 font-bold w-16 text-center border-l border-slate-200">Boy</th>
-                                <th className="px-2 py-3 font-bold w-16 text-center border-l border-slate-200">Adet</th>
-                                <th className="px-4 py-3 font-bold w-24 text-right border-l border-slate-200">Azı (Minha)</th>
-                                <th className="px-4 py-3 font-bold w-28 text-right bg-green-50 border-l border-green-100 text-green-800">Çoğu (Toplam)</th>
+                                <th className="px-2 sm:px-4 py-3 font-bold w-20 sm:w-24">Kaynak</th>
+                                <th className="px-2 sm:px-4 py-3 font-bold w-24 sm:w-32 border-l border-slate-200">Poz No</th>
+                                <th className="px-2 sm:px-4 py-3 font-bold w-auto min-w-[200px] border-l border-slate-200">İmalatın Cinsi / Açıklama</th>
+                                <th className="px-1 sm:px-2 py-3 font-bold w-12 sm:w-16 text-center border-l border-slate-200">Birim</th>
+                                <th className="px-1 sm:px-2 py-3 font-bold w-12 sm:w-16 text-center border-l border-slate-200">En</th>
+                                <th className="px-1 sm:px-2 py-3 font-bold w-12 sm:w-16 text-center border-l border-slate-200">Boy</th>
+                                <th className="px-1 sm:px-2 py-3 font-bold w-12 sm:w-16 text-center border-l border-slate-200">Adet</th>
+                                <th className="px-2 sm:px-4 py-3 font-bold w-20 sm:w-24 text-right border-l border-slate-200">Azı</th>
+                                <th className="px-2 sm:px-4 py-3 font-bold w-24 sm:w-28 text-right bg-green-50 border-l border-green-100 text-green-800">Çoğu</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-100">
@@ -428,7 +428,7 @@ const GreenBook: React.FC<GreenBookProps> = ({
                             ) : (
                                 data.map((row: any, index: number) => (
                                     <tr key={index} className="hover:bg-slate-50 break-inside-avoid transition-colors">
-                                        <td className="px-4 py-3 font-medium text-slate-500 text-xs uppercase tracking-wide">
+                                        <td className="px-2 sm:px-4 py-3 font-medium text-slate-500 text-[10px] sm:text-xs uppercase tracking-wide">
                                             <span className={`px-2 py-1 rounded-md text-[10px] font-bold ${row.source === 'Statik' ? 'bg-orange-100 text-orange-700' :
                                                 row.source === 'Mimari' ? 'bg-blue-100 text-blue-700' :
                                                     row.source === 'Mekanik' ? 'bg-slate-100 text-slate-700' :
@@ -439,14 +439,14 @@ const GreenBook: React.FC<GreenBookProps> = ({
                                                 {row.source}
                                             </span>
                                         </td>
-                                        <td className="px-4 py-3 font-mono text-xs font-bold text-slate-600 border-l border-slate-100">{row.pos}</td>
-                                        <td className="px-4 py-3 text-slate-700 border-l border-slate-100">{row.desc}</td>
-                                        <td className="px-2 py-3 text-center text-slate-500 border-l border-slate-100">{row.unit}</td>
-                                        <td className="px-2 py-3 text-center font-mono text-slate-500 border-l border-slate-100">{row.width}</td>
-                                        <td className="px-2 py-3 text-center font-mono text-slate-500 border-l border-slate-100">{row.height}</td>
-                                        <td className="px-2 py-3 text-center font-bold text-slate-700 border-l border-slate-100">{row.count}</td>
-                                        <td className="px-4 py-3 text-right font-mono text-red-500 border-l border-slate-100">{row.deduction !== '-' ? row.deduction : '-'}</td>
-                                        <td className="px-4 py-3 text-right font-bold bg-green-50/50 text-green-700 font-mono border-l border-green-50">{formatCurrency(row.total).replace('₺', '')}</td>
+                                        <td className="px-2 sm:px-4 py-3 font-mono text-[10px] sm:text-xs font-bold text-slate-600 border-l border-slate-100">{row.pos}</td>
+                                        <td className="px-2 sm:px-4 py-3 text-slate-700 border-l border-slate-100 text-xs sm:text-sm">{row.desc}</td>
+                                        <td className="px-1 sm:px-2 py-3 text-center text-slate-500 border-l border-slate-100 text-xs">{row.unit}</td>
+                                        <td className="px-1 sm:px-2 py-3 text-center font-mono text-slate-500 border-l border-slate-100 text-xs">{row.width}</td>
+                                        <td className="px-1 sm:px-2 py-3 text-center font-mono text-slate-500 border-l border-slate-100 text-xs">{row.height}</td>
+                                        <td className="px-1 sm:px-2 py-3 text-center font-bold text-slate-700 border-l border-slate-100 text-xs">{row.count}</td>
+                                        <td className="px-2 sm:px-4 py-3 text-right font-mono text-red-500 border-l border-slate-100 text-xs">{row.deduction !== '-' ? row.deduction : '-'}</td>
+                                        <td className="px-2 sm:px-4 py-3 text-right font-bold bg-green-50/50 text-green-700 font-mono border-l border-green-50 text-xs sm:text-sm">{formatCurrency(row.total).replace('₺', '')}</td>
                                     </tr>
                                 ))
                             )}
