@@ -81,7 +81,7 @@ const Header: React.FC<HeaderProps> = ({
       disabled={disabled}
       title={title}
       className={`
-        group relative flex items-center justify-center gap-2 h-10 px-3 rounded-xl transition-all duration-300
+        group relative flex items-center justify-center gap-1.5 h-8 sm:h-10 px-2 sm:px-3 rounded-xl transition-all duration-300
         ${disabled
           ? 'opacity-30 cursor-not-allowed'
           : danger
@@ -92,7 +92,7 @@ const Header: React.FC<HeaderProps> = ({
         }
       `}
     >
-      <Icon className="w-5 h-5 shrink-0" />
+      <Icon className="w-4 h-4 sm:w-5 sm:h-5 shrink-0" />
 
       {/* Label - Hidden on mobile, valid on desktop */}
       {!primary && <span className="hidden xl:block text-sm font-medium opacity-80 group-hover:opacity-100 whitespace-nowrap">{label}</span>}
@@ -169,7 +169,7 @@ const Header: React.FC<HeaderProps> = ({
               {isLoggedIn ? (
                 <>
                   {/* Utility Group */}
-                  <div className="flex items-center p-0.5 sm:p-1 bg-white/5 border border-white/5 rounded-xl gap-0.5 sm:gap-1 overflow-x-auto scrollbar-hide max-w-[calc(100vw-120px)] sm:max-w-none">
+                  <div className="flex items-center p-0.5 sm:p-1 bg-white/5 border border-white/5 rounded-xl gap-0.5 sm:gap-1 flex-wrap justify-end">
 
                     <IconButton onClick={onOpenProjectManager} icon={Command} label="Yönet" title="Proje Yöneticisi" />
                     <IconButton onClick={onOpenProjectModal} icon={Info} label="Bilgi" title="Proje Detayları" />

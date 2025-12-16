@@ -589,24 +589,24 @@ export const PaymentModule: React.FC<PaymentModuleProps> = ({ contractItems, mea
                 </div>
 
                 {/* Navigation Tabs */}
-                <div className="flex p-1.5 bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 overflow-x-auto max-w-full">
+                <div className="flex flex-wrap items-center justify-center p-1 bg-white rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 w-full md:w-auto">
                     <button
                         onClick={() => setActiveTab('dashboard')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'dashboard' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
-                        <TrendingUp className="w-4 h-4" /> Genel Bakış
+                        <TrendingUp className="w-3.5 h-3.5 md:w-4 md:h-4" /> Genel Bakış
                     </button>
                     <button
                         onClick={() => setActiveTab('greenbook')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'greenbook' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'greenbook' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
-                        <FileText className="w-4 h-4" /> Yeşil Defter
+                        <FileText className="w-3.5 h-3.5 md:w-4 md:h-4" /> Yeşil Defter
                     </button>
                     <button
                         onClick={() => setActiveTab('report')}
-                        className={`flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'report' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
+                        className={`flex-1 md:flex-none flex items-center justify-center gap-2 px-3 py-2 md:px-6 md:py-3 rounded-xl text-xs md:text-sm font-bold transition-all whitespace-nowrap ${activeTab === 'report' ? 'bg-slate-900 text-white shadow-lg shadow-slate-900/20' : 'text-slate-500 hover:text-slate-900 hover:bg-slate-50'}`}
                     >
-                        <CreditCard className="w-4 h-4" /> Hakediş Raporu
+                        <CreditCard className="w-3.5 h-3.5 md:w-4 md:h-4" /> Hakediş
                     </button>
                 </div>
             </div>
