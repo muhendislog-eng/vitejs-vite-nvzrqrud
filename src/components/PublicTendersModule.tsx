@@ -50,6 +50,8 @@ export interface Tender {
     highestBid?: number;
     contract?: Contract;
     payments?: ProgressPayment[];
+    responsible?: string; // Sorumlu Personel
+    adminNotes?: string; // İdari Notlar
 }
 
 interface PublicTendersModuleProps {
@@ -151,6 +153,15 @@ export const PublicTendersModule: React.FC<PublicTendersModuleProps> = ({ tender
     const contractedTenders = tenders.filter(t => t.contract);
 
     const formatCurrency = (val: number) => `₺${val.toLocaleString('tr-TR')}`;
+
+    const calculateRemainingDays = (endDate: string) => {
+        if (!endDate) return null;
+        const end = new Date(endDate);
+        const today = new Date();
+        const diffTime = end.getTime() - today.getTime();
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        return diffDays;
+    };
 
     return (
         <div className="w-full space-y-8">
@@ -342,6 +353,7 @@ export const PublicTendersModule: React.FC<PublicTendersModuleProps> = ({ tender
                                         <th className="px-6 py-5 text-right">Sözleşme Bedeli</th>
                                         <th className="px-6 py-5">İmza Tarihi</th>
                                         <th className="px-6 py-5">Bitiş Tarihi</th>
+                                        <th className="px-6 py-5 text-center">Kalan Süre</th>
                                         <th className="px-6 py-5 text-center">Durum</th>
                                         <th className="px-6 py-5 text-center">İşlem</th>
                                     </tr>
@@ -362,6 +374,16 @@ export const PublicTendersModule: React.FC<PublicTendersModuleProps> = ({ tender
                                                     <td className="px-6 py-5 text-right font-mono font-bold text-emerald-600">{formatCurrency(contract.amount || 0)}</td>
                                                     <td className="px-6 py-5 text-slate-500 tabular-nums">{contract.signDate ? new Date(contract.signDate).toLocaleDateString('tr-TR') : '-'}</td>
                                                     <td className="px-6 py-5 text-slate-500 tabular-nums">{contract.endDate ? new Date(contract.endDate).toLocaleDateString('tr-TR') : '-'}</td>
+                                                    <td className="px-6 py-5 text-center">
+                                                        {(() => {
+                                                            const days = calculateRemainingDays(contract.endDate);
+                                                            if (days === null) return <span className="text-slate-400">-</span>;
+                                                            if (days < 0) return <span className="text-rose-600 font-bold text-xs uppercase">Süresi Geçti ({Math.abs(days)} gün)</span>;
+                                                            if (days <= 30) return <span className="text-orange-600 font-bold text-xs uppercase">{days} Gün Kaldı</span>;
+                                                            return <span className="text-emerald-600 font-bold text-xs">{days} Gün</span>;
+
+                                                        })()}
+                                                    </td>
                                                     <td className="px-6 py-5 text-center">
                                                         <span className={`px-3 py-1.5 rounded-lg text-xs font-bold bg-${cStatus.color}-50 text-${cStatus.color}-700`}>{cStatus.label}</span>
                                                     </td>
@@ -607,6 +629,21 @@ export const PublicTendersModule: React.FC<PublicTendersModuleProps> = ({ tender
                                         <div>
                                             <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Bitiş Tarihi</label>
                                             <input type="date" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-sm text-slate-700 focus:border-blue-500 outline-none" value={formData.contract?.endDate || ''} onChange={e => setFormData({ ...formData, contract: { ...formData.contract!, endDate: e.target.value } })} />
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {/* İdari Bilgiler */}
+                                <div className="space-y-2">
+                                    <h4 className="text-xs font-black text-slate-400 uppercase flex items-center gap-2"><Briefcase className="w-3.5 h-3.5" />İdari Bilgiler</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                        <div>
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">Sorumlu Personel</label>
+                                            <input type="text" className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-sm text-slate-700 focus:border-blue-500 outline-none" value={formData.responsible || ''} onChange={e => setFormData({ ...formData, responsible: e.target.value })} placeholder="Personel Adı" />
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="text-[10px] font-bold text-slate-500 uppercase block mb-1">İdari Notlar</label>
+                                            <textarea rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-semibold text-sm text-slate-700 focus:border-blue-500 outline-none resize-none" value={formData.adminNotes || ''} onChange={e => setFormData({ ...formData, adminNotes: e.target.value })} placeholder="İhale veya sözleşme ile ilgili notlar..." />
                                         </div>
                                     </div>
                                 </div>

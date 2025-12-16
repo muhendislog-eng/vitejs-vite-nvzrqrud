@@ -13,6 +13,9 @@ import {
   HardHat,
   Briefcase,
   ChevronDown,
+  Users,
+  Calculator,
+  Search,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -27,9 +30,14 @@ import Footer from './components/Footer';
 import { LoginModal, ProjectInfoModal, PoseSelectorModal } from './components/Modals';
 import { ProjectManagerModal } from './components/ProjectManagerModal';
 import { PaymentModule, type YesilDefterEntry } from './components/PaymentModule';
-import { ConstructionManagementModule, DailyReport } from './components/ConstructionManagementModule';
-import { PublicTendersModule, Tender } from './components/PublicTendersModule';
+import { ConstructionManagementModule, type DailyReport } from './components/ConstructionManagementModule';
+import { PublicTendersModule, type Tender } from './components/PublicTendersModule';
 import type { ProjectMetadata } from './components/ProjectManagerModal';
+import { SubcontractorModule, type Subcontractor, type SubcontractorPayment } from './components/SubcontractorModule';
+import { ComparativeDiscovery } from './components/ComparativeDiscovery';
+
+import { MarketPriceResearch } from './components/MarketPriceResearch';
+import { TermsOfUse, PrivacyPolicy, LicenseInfo } from './components/LegalPages';
 
 // --- DATA & HELPERS ---
 import {
@@ -41,7 +49,7 @@ import {
   initialElectricalData,
 } from './data/constants';
 
-import { loadScript, formatCurrency } from './utils/helpers';
+import { loadScript } from './utils/helpers';
 
 // --- TYPES ---
 type ActiveTab =
@@ -55,7 +63,13 @@ type ActiveTab =
   | 'project_results'
   | 'payment'
   | 'construction_management'
-  | 'public_tenders'; // Added new type
+  | 'public_tenders'
+  | 'subcontractor_module'
+  | 'comparative_discovery' // Added new type
+  | 'market_research'
+  | 'terms_of_use'
+  | 'privacy_policy'
+  | 'license_info';
 
 type MetrajItem = {
   id: number | string;
@@ -67,6 +81,8 @@ type MetrajItem = {
   category?: string;
   isManual?: boolean;
   locationId?: string | number | null;
+  subcontractorId?: string;
+  realizedQuantity?: number; // Added for Comparative Discovery (User input)
   [key: string]: any;
 };
 
@@ -75,6 +91,7 @@ type MetrajItem = {
 // --- DROPDOWN COMPONENTS (Liquid Premium Design) ---
 const DropdownMenu = ({ label, icon: Icon, children, isActive, isOpen, onToggle }: any) => {
   const [isMobile, setIsMobile] = useState(false);
+  const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     const checkMobile = () => setIsMobile(window.innerWidth < 640);
@@ -83,6 +100,22 @@ const DropdownMenu = ({ label, icon: Icon, children, isActive, isOpen, onToggle 
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
+  const handleMouseEnter = () => {
+    if (isMobile) return;
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+      timeoutRef.current = null;
+    }
+    onToggle(true);
+  };
+
+  const handleMouseLeave = () => {
+    if (isMobile) return;
+    timeoutRef.current = setTimeout(() => {
+      onToggle(false);
+    }, 300); // 300ms delay for better stability
+  };
+
   return (
     <motion.div
       layout={!isMobile}
@@ -90,9 +123,12 @@ const DropdownMenu = ({ label, icon: Icon, children, isActive, isOpen, onToggle 
         ? 'bg-slate-900 border-slate-900 shadow-lg shadow-slate-900/20'
         : 'border-transparent hover:bg-white/50'
         }`}
-      onMouseEnter={() => !isMobile && onToggle(true)}
-      onMouseLeave={() => !isMobile && onToggle(false)}
-      onClick={() => onToggle(!isOpen)}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+      onClick={() => {
+        if (isMobile) onToggle(!isOpen);
+        else if (!isOpen) onToggle(true);
+      }}
     >
       {/* Trigger Area */}
       <button
@@ -196,12 +232,17 @@ export default function App() {
   // Module States
   const [paymentMeasurements, setPaymentMeasurements] = useState<YesilDefterEntry[]>([]);
   const [dailyReports, setDailyReports] = useState<DailyReport[]>([]);
-  const [tenders, setTenders] = useState<Tender[]>([]); // New State
+  const [tenders, setTenders] = useState<Tender[]>([]);
+  const [subcontractors, setSubcontractors] = useState<Subcontractor[]>([]);
+  const [subcontractorPayments, setSubcontractorPayments] = useState<SubcontractorPayment[]>([]);
+  const [marketItems, setMarketItems] = useState<any[]>([]); // Market Price Research State
+  const [marketFirms, setMarketFirms] = useState<string[]>(['Firma A', 'Firma B', 'Firma C']);
+  const [administrationName, setAdministrationName] = useState<string>('');
 
   const [locations, setLocations] = useState(INITIAL_LOCATIONS);
   const [projectInfo, setProjectInfo] = useState({ name: '', area: '', floors: '', city: '' });
 
-  const [posLibrary, setPosLibrary] = useState(INITIAL_POS_LIBRARY);
+  const [posLibrary] = useState(INITIAL_POS_LIBRARY);
   const [isXLSXLoaded, setIsXLSXLoaded] = useState(false);
   const [isPDFLoaded, setIsPDFLoaded] = useState(false);
   const [isLoadingScripts, setIsLoadingScripts] = useState(true);
@@ -212,8 +253,7 @@ export default function App() {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [targetCategory, setTargetCategory] = useState('');
 
-  const fileInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
+
 
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
 
@@ -319,7 +359,12 @@ export default function App() {
         setWindowItems(parsed.windowItems || []);
         setPaymentMeasurements(parsed.paymentMeasurements || []);
         setDailyReports(parsed.dailyReports || []);
-        setTenders(parsed.tenders || []); // Load Tenders
+        setTenders(parsed.tenders || []);
+        setSubcontractors(parsed.subcontractors || []);
+        setSubcontractorPayments(parsed.subcontractorPayments || []);
+        setMarketItems(parsed.marketItems || []);
+        setMarketFirms(parsed.marketFirms || ['Firma A', 'Firma B', 'Firma C']);
+        setAdministrationName(parsed.administrationName || '');
         setProjectInfo(parsed.projectInfo || { name: '', area: '', floors: '', city: '' });
         setLocations(parsed.locations || INITIAL_LOCATIONS);
       } catch (e) {
@@ -342,6 +387,11 @@ export default function App() {
     setPaymentMeasurements([]);
     setDailyReports([]);
     setTenders([]);
+    setSubcontractors([]);
+    setSubcontractorPayments([]);
+    setMarketItems([]);
+    setMarketFirms(['Firma A', 'Firma B', 'Firma C']);
+    setAdministrationName('');
   };
 
   const handleSwitchProject = (id: string) => {
@@ -383,6 +433,10 @@ export default function App() {
       paymentMeasurements: [],
       dailyReports: [],
       tenders: [],
+      subcontractors: [],
+      subcontractorPayments: [],
+      marketItems: [],
+      marketFirms: ['Firma A', 'Firma B', 'Firma C'],
     };
     localStorage.setItem(`gkmetraj_data_${newId}`, JSON.stringify(emptyData));
     setProjectInfo(prev => ({ ...prev, name }));
@@ -391,6 +445,7 @@ export default function App() {
   };
 
   const handleDeleteProject = (id: string) => {
+    const deletedIndex = projects.findIndex(p => p.id === id);
     const updatedProjects = projects.filter(p => p.id !== id);
     setProjects(updatedProjects);
     localStorage.setItem('gkmetraj_projects', JSON.stringify(updatedProjects));
@@ -398,7 +453,14 @@ export default function App() {
 
     if (id === activeProjectId) {
       if (updatedProjects.length > 0) {
-        handleSwitchProject(updatedProjects[0].id);
+        // Switch to the previous project (index - 1) if possible, otherwise the next one (which is now at the same index or 0)
+        // If deletedIndex was 0, max(0, -1) is 0. If deletedIndex was 1, max(0, 0) is 0.
+        // If deletedIndex was last item (length-1), we want length-2.
+        // Actually simpler: if deletedIndex > 0, pick deletedIndex - 1. Else pick 0.
+        const nextIndex = deletedIndex > 0 ? deletedIndex - 1 : 0;
+        // Ensure index is valid (it should be since length > 0)
+        const targetId = updatedProjects[Math.min(nextIndex, updatedProjects.length - 1)].id;
+        handleSwitchProject(targetId);
       } else {
         handleCreateProject('Yeni Proje');
       }
@@ -432,7 +494,11 @@ export default function App() {
       locations,
       paymentMeasurements,
       dailyReports,
-      tenders, // Save Tenders
+      tenders,
+      subcontractors,
+      subcontractorPayments,
+      marketItems,
+      marketFirms,
       lastSaved: new Date().toLocaleTimeString(),
     };
 
@@ -490,6 +556,26 @@ export default function App() {
     else if (type === 'architectural') setArchitecturalItems(patch);
     else if (type === 'mechanical') setMechanicalItems(patch);
     else setElectricalItems(patch);
+  };
+
+  const handleUpdateSubcontractor = (id: number | string, subId: string) => {
+    // Find which list contains the item (simplified check)
+    // In a real app we might pass the type explicitly, but here we can check all or rely on activeTab
+    const patch = (list: MetrajItem[]) => list.map(it => (it.id === id ? { ...it, subcontractorId: subId } : it));
+
+    // We update all lists just in case, or we could optimize
+    setStaticItems(patch);
+    setArchitecturalItems(patch);
+    setMechanicalItems(patch);
+    setElectricalItems(patch);
+  };
+
+  const handleUpdateRealizedQuantity = (id: number | string, category: string, quantity: number) => {
+    const patch = (list: MetrajItem[]) => list.map(it => (it.id === id ? { ...it, realizedQuantity: quantity } : it));
+    if (category === 'static') setStaticItems(patch);
+    else if (category === 'architectural') setArchitecturalItems(patch);
+    else if (category === 'mechanical') setMechanicalItems(patch);
+    else if (category === 'electrical') setElectricalItems(patch);
   };
 
   const handleOpenSelector = (item: MetrajItem) => {
@@ -583,6 +669,20 @@ export default function App() {
   const handleImportFromXLSX = (e: React.ChangeEvent<HTMLInputElement>) => {
     alert('Excel yükleme özelliği şu an demo modundadır.');
     e.target.value = '';
+  };
+
+  const handleAddSubcontractorMeasurement = (subId: string, category: string, item: any) => {
+    const newItem = {
+      ...item,
+      id: Date.now(),
+      category: category === 'static' ? 'Statik' : category === 'architectural' ? 'Mimari' : category === 'mechanical' ? 'Mekanik' : 'Elektrik',
+      subcontractorId: subId
+    };
+
+    if (category === 'static') setStaticItems(prev => [...prev, newItem]);
+    else if (category === 'architectural') setArchitecturalItems(prev => [...prev, newItem]);
+    else if (category === 'mechanical') setMechanicalItems(prev => [...prev, newItem]);
+    else if (category === 'electrical') setElectricalItems(prev => [...prev, newItem]);
   };
 
   const handleDownloadDescriptions = () => {
@@ -716,6 +816,8 @@ export default function App() {
                 onToggle={(isOpen: boolean) => handleDropdownToggle('admin', isOpen)}
               >
                 <DropdownItem onClick={() => setActiveTab('public_tenders')} active={activeTab === 'public_tenders'} label="Kamu İhale" icon={Briefcase} />
+                <DropdownItem onClick={() => setActiveTab('comparative_discovery')} active={activeTab === 'comparative_discovery'} label="M. Keşif" icon={Calculator} />
+                <DropdownItem onClick={() => setActiveTab('market_research')} active={activeTab === 'market_research'} label="Piyasa Araş." icon={Search} />
               </DropdownMenu>
             </div>
 
@@ -729,6 +831,7 @@ export default function App() {
                 onToggle={(isOpen: boolean) => handleDropdownToggle('project', isOpen)}
               >
                 <DropdownItem onClick={() => setActiveTab('green_book')} active={activeTab === 'green_book'} label="Yeşil Defter" icon={Book} />
+                <DropdownItem onClick={() => setActiveTab('subcontractor_module')} active={activeTab === 'subcontractor_module'} label="Taşeron" icon={Users} />
                 <DropdownItem onClick={() => setActiveTab('project_results')} active={activeTab === 'project_results'} label="Proje Sonuçları" icon={LayoutDashboard} />
                 <DropdownItem onClick={() => setActiveTab('payment')} active={activeTab === 'payment'} label="Hakediş" icon={CreditCard} />
                 <DropdownItem onClick={() => setActiveTab('construction_management')} active={activeTab === 'construction_management'} label="Şantiye" icon={HardHat} />
@@ -753,6 +856,8 @@ export default function App() {
                 onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'static')}
                 onUpdateManualItem={handleUpdateManualItem}
                 onDeleteManualItem={handleDeleteManualItem}
+                subcontractors={subcontractors}
+                onUpdateSubcontractor={handleUpdateSubcontractor}
               />
             )}
 
@@ -766,6 +871,8 @@ export default function App() {
                 onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'architectural')}
                 onUpdateManualItem={handleUpdateManualItem}
                 onDeleteManualItem={handleDeleteManualItem}
+                subcontractors={subcontractors}
+                onUpdateSubcontractor={handleUpdateSubcontractor}
               />
             )}
 
@@ -779,6 +886,8 @@ export default function App() {
                 onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'mechanical')}
                 onUpdateManualItem={handleUpdateManualItem}
                 onDeleteManualItem={handleDeleteManualItem}
+                subcontractors={subcontractors}
+                onUpdateSubcontractor={handleUpdateSubcontractor}
               />
             )}
 
@@ -792,11 +901,29 @@ export default function App() {
                 onUpdateLocation={(id: any, loc: any) => handleUpdateLocation(id, loc, 'electrical')}
                 onUpdateManualItem={handleUpdateManualItem}
                 onDeleteManualItem={handleDeleteManualItem}
+                subcontractors={subcontractors}
+                onUpdateSubcontractor={handleUpdateSubcontractor}
               />
             )}
 
             {activeTab === 'door_calculation' && (
               <DoorCalculationArea items={doorItems} setItems={setDoorItems} onUpdateQuantities={handleBatchUpdateQuantities} />
+            )}
+
+            {activeTab === 'subcontractor_module' && (
+              <SubcontractorModule
+                subcontractors={subcontractors}
+                payments={subcontractorPayments}
+                measurements={[
+                  ...staticItems.map(i => ({ ...i, source: 'Statik' })),
+                  ...architecturalItems.map(i => ({ ...i, source: 'Mimari' })),
+                  ...mechanicalItems.map(i => ({ ...i, source: 'Mekanik' })),
+                  ...electricalItems.map(i => ({ ...i, source: 'Elektrik' }))
+                ]}
+                onUpdateSubcontractors={setSubcontractors}
+                onUpdatePayments={setSubcontractorPayments}
+                onAddMeasurement={handleAddSubcontractorMeasurement}
+              />
             )}
 
             {activeTab === 'window_calculation' && (
@@ -849,11 +976,49 @@ export default function App() {
                 onUpdateTenders={setTenders}
               />
             )}
+
+            {activeTab === 'comparative_discovery' && (
+              <ComparativeDiscovery
+                staticItems={staticItems}
+                architecturalItems={architecturalItems}
+                mechanicalItems={mechanicalItems}
+                electricalItems={electricalItems}
+                onUpdateRealizedQuantity={handleUpdateRealizedQuantity}
+              />
+            )}
+
+            {activeTab === 'market_research' && (
+              <MarketPriceResearch
+                items={marketItems}
+                onUpdateItems={setMarketItems}
+                firms={marketFirms}
+                onUpdateFirms={setMarketFirms}
+                administrationName={administrationName}
+                onUpdateAdministrationName={setAdministrationName}
+              />
+            )}
+
+            {/* LEGAL PAGES */}
+            {activeTab === 'terms_of_use' && <TermsOfUse onBack={() => setActiveTab('project_results')} />}
+            {activeTab === 'privacy_policy' && <PrivacyPolicy onBack={() => setActiveTab('project_results')} />}
+            {activeTab === 'license_info' && <LicenseInfo onBack={() => setActiveTab('project_results')} />}
+
+
           </div>
         </div>
       </main>
 
-      <Footer onOpenProjects={() => setIsProjectManagerOpen(true)} onOpenCalculations={() => setActiveTab('architectural')} onOpenGreenBook={() => setActiveTab('green_book')} onOpenReports={() => setActiveTab('project_results')} />
+      <Footer
+        onOpenProjects={() => {
+          setIsProjectManagerOpen(true);
+        }}
+        onOpenCalculations={() => setActiveTab('door_calculation')}
+        onOpenGreenBook={() => setActiveTab('green_book')}
+        onOpenReports={() => setActiveTab('project_results')}
+        onOpenTerms={() => setActiveTab('terms_of_use')}
+        onOpenPrivacy={() => setActiveTab('privacy_policy')}
+        onOpenLicense={() => setActiveTab('license_info')}
+      />
 
       {/* Lock Screen */}
       <AnimatePresence>

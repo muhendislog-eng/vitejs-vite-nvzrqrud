@@ -30,6 +30,7 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
     const [isCreating, setIsCreating] = useState(false);
     const [newProjectName, setNewProjectName] = useState('');
     const [searchQuery, setSearchQuery] = useState('');
+    const [projectToDelete, setProjectToDelete] = useState<{ id: string; name: string } | null>(null);
 
     if (!isOpen) return null;
 
@@ -47,9 +48,15 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
     };
 
     const confirmDelete = (e: React.MouseEvent, id: string, name: string) => {
-        e.stopPropagation();
-        if (window.confirm(`"${name}" projesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.`)) {
-            onDeleteProject(id);
+        e.preventDefault(); // Stop default button behavior
+        e.stopPropagation(); // Stop clicking the card
+        setProjectToDelete({ id, name });
+    };
+
+    const executeDelete = () => {
+        if (projectToDelete) {
+            onDeleteProject(projectToDelete.id);
+            setProjectToDelete(null);
         }
     };
 
@@ -176,15 +183,13 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
 
                                         {/* Actions overlay (Only on hover or active) */}
                                         <div className="absolute bottom-4 right-4 z-20 flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
-                                            {!isActive && (
-                                                <button
-                                                    onClick={(e) => confirmDelete(e, project.id, project.name)}
-                                                    className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 transition-all"
-                                                    title="Projeyi Sil"
-                                                >
-                                                    <Trash2 className="w-4 h-4" />
-                                                </button>
-                                            )}
+                                            <button
+                                                onClick={(e) => confirmDelete(e, project.id, project.name)}
+                                                className="p-2 rounded-lg bg-red-500/10 text-red-400 hover:bg-red-500 hover:text-white border border-red-500/20 transition-all"
+                                                title="Projeyi Sil"
+                                            >
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
                                             {isActive ? (
                                                 <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                                                     <Check className="w-4 h-4" />
@@ -261,6 +266,47 @@ export const ProjectManagerModal: React.FC<ProjectManagerModalProps> = ({
                                     </div>
                                 </div>
                             </motion.form>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* Delete Confirmation Modal Overlay */}
+                <AnimatePresence>
+                    {projectToDelete && (
+                        <div className="absolute inset-0 z-[60] flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-6">
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.95 }}
+                                animate={{ opacity: 1, scale: 1 }}
+                                exit={{ opacity: 0, scale: 0.95 }}
+                                className="w-full max-w-md bg-slate-900 border border-red-500/30 rounded-3xl shadow-2xl p-8 relative overflow-hidden"
+                            >
+                                <div className="absolute top-0 right-0 w-64 h-64 bg-red-500/5 rounded-full blur-3xl -mr-32 -mt-32 pointer-events-none" />
+
+                                <div className="text-center relative z-10">
+                                    <div className="w-16 h-16 bg-red-500/10 rounded-2xl mx-auto flex items-center justify-center mb-4 text-red-500">
+                                        <Trash2 className="w-8 h-8" />
+                                    </div>
+                                    <h3 className="text-2xl font-bold text-white mb-2">Projeyi Sil?</h3>
+                                    <p className="text-slate-400 mb-6">
+                                        <span className="text-white font-bold">"{projectToDelete.name}"</span> projesini silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+                                    </p>
+
+                                    <div className="flex items-center gap-3">
+                                        <button
+                                            onClick={() => setProjectToDelete(null)}
+                                            className="flex-1 px-6 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl font-bold transition-all"
+                                        >
+                                            İptal
+                                        </button>
+                                        <button
+                                            onClick={executeDelete}
+                                            className="flex-1 px-6 py-3 bg-red-600 hover:bg-red-500 text-white rounded-xl font-bold shadow-lg shadow-red-900/40 hover:shadow-red-900/60 transition-all"
+                                        >
+                                            Evet, Sil
+                                        </button>
+                                    </div>
+                                </div>
+                            </motion.div>
                         </div>
                     )}
                 </AnimatePresence>

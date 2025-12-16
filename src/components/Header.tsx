@@ -7,7 +7,6 @@ import {
   Save,
   LogOut,
   LogIn,
-  FileText,
   Loader2,
   FolderOpen,
   Command,
@@ -45,7 +44,6 @@ interface HeaderProps {
 const Header: React.FC<HeaderProps> = ({
   isLoggedIn,
   projectInfo,
-  isPDFLoaded,
   isXLSXLoaded,
   isLoadingScripts,
   onOpenProjectModal,
@@ -56,10 +54,8 @@ const Header: React.FC<HeaderProps> = ({
   onDownloadDescriptions,
   onExportToXLSX,
   onImportExcel,
-  onUpdatePDF,
 }) => {
   const excelInputRef = useRef<HTMLInputElement>(null);
-  const pdfInputRef = useRef<HTMLInputElement>(null);
   const [isScrolled, setIsScrolled] = useState(false);
 
   useEffect(() => {
@@ -71,7 +67,6 @@ const Header: React.FC<HeaderProps> = ({
   }, []);
 
   const excelEnabled = isLoggedIn && isXLSXLoaded && !isLoadingScripts;
-  const pdfEnabled = isLoggedIn && isPDFLoaded && !isLoadingScripts;
 
   // -- Components --
 
@@ -127,18 +122,14 @@ const Header: React.FC<HeaderProps> = ({
           <div className="relative flex items-center justify-between gap-4">
 
             {/* LEFT: Identity */}
-            <div className="flex items-center gap-4 md:gap-6 shrink-0">
+            <div className="flex items-center gap-4 md:gap-6 shrink-0 ml-4">
               {/* Logo */}
               <div className="flex items-center gap-3 cursor-pointer group">
                 <div className="relative flex items-center justify-center w-14 h-14 rounded-xl">
                   <div className="absolute inset-0 bg-blue-500/20 blur-md rounded-xl opacity-0 group-hover:opacity-100 transition-opacity"></div>
                   <img src={logo} alt="GK" className="w-full h-full object-contain relative z-10 opacity-90 group-hover:opacity-100 transition-opacity scale-150" />
                 </div>
-                <div className="hidden sm:block">
-                  <h1 className="text-lg font-bold text-white tracking-tight group-hover:text-blue-200 transition-colors">
-                    GK<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">metraj</span>
-                  </h1>
-                </div>
+                {/* Text Removed */}
               </div>
 
               {/* Vertical Divider */}
@@ -182,8 +173,6 @@ const Header: React.FC<HeaderProps> = ({
                     <input type="file" ref={excelInputRef} onChange={onImportExcel} accept=".xlsx,.xls" className="hidden" />
                     <IconButton onClick={() => excelInputRef.current?.click()} disabled={!excelEnabled} icon={Upload} label="Yükle" title="Excel Yükle" />
 
-                    <input type="file" ref={pdfInputRef} onChange={onUpdatePDF} accept=".pdf" className="hidden" />
-                    <IconButton onClick={() => pdfInputRef.current?.click()} disabled={!pdfEnabled} icon={FileText} label="PDF" title="PDF Yükle" />
 
                   </div>
 

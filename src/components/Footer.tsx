@@ -6,13 +6,19 @@ interface FooterProps {
   onOpenCalculations: () => void;
   onOpenGreenBook: () => void;
   onOpenReports: () => void;
+  onOpenTerms: () => void;
+  onOpenPrivacy: () => void;
+  onOpenLicense: () => void;
 }
 
 const Footer: React.FC<FooterProps> = ({
   onOpenProjects,
   onOpenCalculations,
   onOpenGreenBook,
-  onOpenReports
+  onOpenReports,
+  onOpenTerms,
+  onOpenPrivacy,
+  onOpenLicense
 }) => {
   return (
     <footer className="w-full bg-[#0B1121] text-slate-400 py-12 border-t border-slate-800/50 mt-auto relative overflow-hidden">
@@ -72,9 +78,9 @@ const Footer: React.FC<FooterProps> = ({
           <div>
             <h4 className="text-white font-bold mb-4">Yasal</h4>
             <ul className="space-y-2 text-sm">
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Kullanım Koşulları</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Gizlilik Politikası</a></li>
-              <li><a href="#" className="hover:text-blue-400 transition-colors">Lisans Bilgisi</a></li>
+              <li><button onClick={onOpenTerms} className="hover:text-blue-400 transition-colors text-left">Kullanım Koşulları</button></li>
+              <li><button onClick={onOpenPrivacy} className="hover:text-blue-400 transition-colors text-left">Gizlilik Politikası</button></li>
+              <li><button onClick={onOpenLicense} className="hover:text-blue-400 transition-colors text-left">Lisans Bilgisi</button></li>
             </ul>
           </div>
         </div>

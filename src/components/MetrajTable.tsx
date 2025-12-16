@@ -25,6 +25,7 @@ type MetrajItem = {
   category?: string;
   isManual?: boolean;
   locationId?: string | number | null;
+  subcontractorId?: string;
   [key: string]: any;
 };
 
@@ -44,10 +45,9 @@ const MetrajTable = ({
   onOpenSelector,
   onAddNewItem,
   // Props required by App.tsx but seemingly unused in logic currently
-  locations = [],
-  onUpdateLocation,
   onUpdateManualItem,
   onDeleteManualItem,
+
 }: {
   data: MetrajItem[];
   onUpdateQuantity: (id: number | string, quantity: number) => void;
@@ -57,6 +57,7 @@ const MetrajTable = ({
   onUpdateLocation?: (id: number | string, locId: any) => void;
   onUpdateManualItem: (id: number | string, patch: Partial<MetrajItem>) => void;
   onDeleteManualItem: (id: number | string) => void;
+
 }) => {
   const [editingId, setEditingId] = useState<number | string | null>(null);
   const [draft, setDraft] = useState<{ pos: string; desc: string; unit: string; price: string }>({
@@ -226,9 +227,10 @@ const MetrajTable = ({
                 <table className="w-full text-left table-fixed min-w-[1100px]">
                   <thead className={`text-slate-500 text-[10px] sm:text-[11px] font-extrabold uppercase tracking-widest border-b ${style.border}`}>
                     <tr>
-                      <th className={`px-3 sm:px-8 py-3 sm:py-4 w-24 sm:w-32 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-white/80 backdrop-blur-md`}>Poz No</th>
+                      <th className={`px-3 sm:px-8 py-3 sm:py-4 w-24 sm:w-32 sticky left-0 z-20 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] bg-white/80 backdrop-blur-md text-center`}>Poz No</th>
 
                       <th className="px-3 sm:px-8 py-3 sm:py-4 w-auto min-w-[200px] sm:min-w-[320px]">İmalat Adı</th>
+
                       <th className="px-2 sm:px-8 py-3 sm:py-4 w-20 sm:w-28 text-center">Birim</th>
                       <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-40 text-right">Birim Fiyat</th>
                       <th className="px-3 sm:px-8 py-3 sm:py-4 w-28 sm:w-40 text-center">İşlem</th>
@@ -250,19 +252,21 @@ const MetrajTable = ({
                         >
                           {/* Poz No */}
                           <td className="px-3 sm:px-8 py-3 sm:py-5 sticky left-0 bg-white group-hover:bg-slate-50 transition-colors z-10 shadow-[2px_0_5px_-2px_rgba(0,0,0,0.05)] border-r border-slate-50">
-                            {isEditing ? (
-                              <input
-                                value={draft.pos}
-                                onChange={(e) => setDraft((d) => ({ ...d, pos: e.target.value }))}
-                                className={`w-full px-3 py-2 text-xs font-mono font-bold ${inputBase}`}
-                                placeholder="Poz No"
-                                autoFocus
-                              />
-                            ) : (
-                              <span className="font-mono text-xs font-black text-slate-700 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
-                                {item.pos}
-                              </span>
-                            )}
+                            <div className="flex justify-center w-full">
+                              {isEditing ? (
+                                <input
+                                  value={draft.pos}
+                                  onChange={(e) => setDraft((d) => ({ ...d, pos: e.target.value }))}
+                                  className={`w-full px-3 py-2 text-xs font-mono font-bold ${inputBase}`}
+                                  placeholder="Poz No"
+                                  autoFocus
+                                />
+                              ) : (
+                                <span className="font-mono text-xs font-black text-slate-700 bg-slate-100 px-2 py-1 rounded-md border border-slate-200">
+                                  {item.pos}
+                                </span>
+                              )}
+                            </div>
                           </td>
 
                           {/* Tanım */}
@@ -281,6 +285,8 @@ const MetrajTable = ({
                               </p>
                             )}
                           </td>
+
+
 
                           {/* Birim */}
                           <td className="px-2 sm:px-8 py-3 sm:py-5 text-center">

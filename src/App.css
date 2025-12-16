@@ -43,3 +43,66 @@
 .read-the-docs {
   color: #888;
 }
+
+/* Hide scrollbar for Chrome, Safari and Opera */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+
+/* Hide scrollbar for IE, Edge and Firefox */
+.no-scrollbar {
+  -ms-overflow-style: none;
+  /* IE and Edge */
+  scrollbar-width: none;
+  /* Firefox */
+}
+
+@media print {
+
+  /* HIDE EVERYTHING INITIALLY */
+  body * {
+    visibility: hidden;
+  }
+
+  /* RESET VISIBILITY FOR PRINT CONTENT */
+  .print-content,
+  .print-content * {
+    visibility: visible;
+  }
+
+  /* POSITION PRINT CONTENT TO FILL THE PAGE */
+  .print-content {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100vw;
+    /* Use vw/vh to ensure it fills viewport if mm fails */
+    min-height: 100vh;
+    margin: 0;
+    padding: 0 !important;
+    /* padding handled inside or needs to be specific */
+    background: white;
+    box-shadow: none !important;
+    z-index: 9999;
+  }
+
+  /* FORCE BODY TO ALLOW CONTENT */
+  body {
+    overflow: visible !important;
+    height: auto !important;
+  }
+
+  /* HIDE SPECIFIC UI ELEMENTS THAT MIGHT INTERFERE */
+  .no-print,
+  nav,
+  header {
+    display: none !important;
+  }
+}
+
+/* Ensure background colors print */
+* {
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
