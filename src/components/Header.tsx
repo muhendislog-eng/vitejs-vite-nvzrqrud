@@ -16,7 +16,7 @@ import {
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-import logo from '../assets/gk_logo_new.png';
+import logo from '../assets/hdr.png';
 
 export interface ProjectInfo {
   name: string;
